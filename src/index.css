@@ -1,0 +1,6 @@
+/* Reset básico para o Nuvcoin (remove CSS padrão do Vite) */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
