@@ -1,97 +1,45 @@
-import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import "./layout.css";
+import "./layout.css"; // Importa o CSS do layout premium
+import { Link } from "react-router-dom"; // Links sem recarregar a página
 
-export default function Layout() {
-  const navigate = useNavigate();
-  const location = useLocation();
+type Props = {
+  children: React.ReactNode; // Tudo que vai dentro do layout (cada página)
+};
 
-  function handleLogout() {
-    localStorage.removeItem("nuvcoin_mock_token");
-    navigate("/login");
-  }
-
-  // Título do topo conforme rota atual
-  const pageTitle =
-    location.pathname === "/dashboard"
-      ? "Visão geral"
-      : location.pathname === "/receitas"
-      ? "Receitas"
-      : location.pathname === "/despesas"
-      ? "Despesas"
-      : location.pathname === "/config"
-      ? "Configurações"
-      : "Nuvcoin";
-
+export default function Layout({ children }: Props) {
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <div>
-          <div className="sidebar-logo">
+    <div className="app-shell">
+      {/* Topbar fixa com blur e cara de SaaS */}
+      <header className="topbar">
+        <div className="topbar-inner">
+          {/* Marca do app */}
+          <div className="brand">
             <span className="logo-dot" />
-            Nuvcoin
+            <h1>NUVCOIN</h1>
+            <span className="badge">Trial ativo</span>
           </div>
 
-          <nav className="sidebar-menu">
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                isActive ? "sidebar-link active" : "sidebar-link"
-              }
-            >
-              <span className="sidebar-ico">📊</span>
-              Dashboard
-            </NavLink>
-
-            <NavLink
-              to="/receitas"
-              className={({ isActive }) =>
-                isActive ? "sidebar-link active" : "sidebar-link"
-              }
-            >
-              <span className="sidebar-ico">💰</span>
-              Receitas
-            </NavLink>
-
-            <NavLink
-              to="/despesas"
-              className={({ isActive }) =>
-                isActive ? "sidebar-link active" : "sidebar-link"
-              }
-            >
-              <span className="sidebar-ico">🧾</span>
-              Despesas
-            </NavLink>
-
-            <NavLink
-              to="/config"
-              className={({ isActive }) =>
-                isActive ? "sidebar-link active" : "sidebar-link"
-              }
-            >
-              <span className="sidebar-ico">⚙️</span>
-              Configurações
-            </NavLink>
-
-            <button
-              onClick={handleLogout}
-              className="sidebar-link sidebar-btn"
-            >
-              <span className="sidebar-ico">🚪</span>
-              Sair
-            </button>
+          {/* Navegação */}
+          <nav className="nav">
+            <Link to="/dashboard">Dashboard</Link>
+            <Link to="/receitas">Receitas</Link>
+            <Link to="/despesas">Despesas</Link>
           </nav>
         </div>
+      </header>
 
-        <div className="sidebar-footer">MVP • Mock Login • v0.1</div>
-      </aside>
-
-      <main className="content">
-        <div className="content-top">
-          <p className="content-title">{pageTitle}</p>
-        </div>
-
-        <Outlet />
-      </main>
+      {/* Conteúdo da página */}
+      <main className="page">{children}</main>
     </div>
   );
 }
+
+/*
+Desenvolvido por Lucas Vinicius
+lucassousa@gmail.com
+
+// O que esse Layout faz:
+// - Cria uma Topbar premium (sticky + blur)
+// - Centraliza tudo num container (max-width)
+// - Adiciona navegação real (Dashboard/Receitas/Despesas)
+// - Mantém o conteúdo das páginas dentro de <main className="page">
+*/

@@ -1,28 +1,35 @@
-import { Navigate, Outlet } from "react-router-dom"; 
-// Importa componentes do React Router:
-// - Navigate → redireciona
-// - Outlet → renderiza a rota filha protegida
+import { Navigate } from "react-router-dom"; // Redirecionamento de rota
+import type { ReactNode } from "react"; // Tipo do React para children
 
-// Função que verifica se existe "login mock"
-export function isMockLoggedIn(): boolean {
-  const token = localStorage.getItem("nuvcoin_mock_token"); 
-  // Busca no navegador um token salvo
+type Props = {
+  children: ReactNode; // Conteúdo protegido que vai renderizar se estiver logado
+};
 
-  return Boolean(token); 
-  // Se existir token → true
-  // Se não existir → false
-}
+export default function ProtectedRoute({ children }: Props) {
+  // ✅ Regra simples de "logado" no mock:
+  // - se existir alguma chave comum no localStorage, consideramos logado
+  const hasToken = !!localStorage.getItem("token"); // Caso você salve token
+  const hasUser = !!localStorage.getItem("user"); // Caso você salve user
+  const hasAuth = localStorage.getItem("auth") === "true"; // Caso você salve auth=true
+  const hasLogged = localStorage.getItem("logged") === "true"; // Caso você salve logged=true
 
-// Componente que protege rotas
-export default function ProtectedRoute() {
+  const isLoggedIn = hasToken || hasUser || hasAuth || hasLogged; // Se qualquer uma existir, entra
 
-  // Se NÃO estiver logado
-  if (!isMockLoggedIn()) {
-    return <Navigate to="/login" replace />;
-    // Redireciona automaticamente para a página de login
+  // ❌ Se não estiver logado, manda pro login
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />; // replace evita voltar pro protected pelo "voltar"
   }
 
-  // Se estiver logado
-  return <Outlet />;
-  // Libera acesso à rota filha (ex: /dashboard)
+  // ✅ Se estiver logado, renderiza o conteúdo protegido (Layout + Página)
+  return <>{children}</>; // Renderiza exatamente o que foi passado dentro do ProtectedRoute
 }
+
+/*
+Desenvolvido por Lucas Vinicius
+lucassousa@gmail.com
+
+// O que esse ProtectedRoute faz:
+// - Verifica se o usuário está "logado" usando chaves comuns do localStorage
+// - Se não estiver, redireciona para /login
+// - Se estiver, renderiza o conteúdo (children)
+*/
