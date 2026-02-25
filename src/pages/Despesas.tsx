@@ -1,99 +1,156 @@
-import { useEffect, useMemo, useState } from "react"; // // Hooks do React
-import type { FinanceCategory, FinanceItem } from "../types/finance"; // // Tipos do financeiro
-import { addFinanceItem, calcFinanceSummary, deleteFinanceItem, loadFinanceItems, makeId, todayISO } from "../lib/financeStorage"; // // Funções do localStorage
+import { useEffect, useMemo, useState } from "react"; // Hooks do React
+import type { FinanceCategory, FinanceItem, PaymentType, FinanceStatus } from "../types/finance"; // Tipos do financeiro
+import "./dashboard.css"; // Reaproveita visual
 
-export default function Despesas() { // // Página de Despesas
-  const [title, setTitle] = useState(""); // // Campo: título/descrição
-  const [category, setCategory] = useState<FinanceCategory>("Alimentação"); // // Campo: categoria (default despesa)
-  const [amount, setAmount] = useState(""); // // Campo: valor (string, ex: "123,45")
-  const [dateISO, setDateISO] = useState(todayISO()); // // Campo: data do lançamento
-  const [items, setItems] = useState<FinanceItem[]>([]); // // Lista carregada do storage
+import {
+  financeAdd, // ✅ Add via service
+  financeList, // ✅ List via service
+  financeRemove, // ✅ Remove via service
+  financeSubscribe, // ✅ Atualiza em tempo real
+  makeId, // ✅ Helper
+  todayISO, // ✅ Helper
+} from "../lib/financeService"; // ✅ Service
 
-  useEffect(() => { // // Ao abrir a tela, carrega dados
-    const loaded = loadFinanceItems(); // // Lê do localStorage
-    setItems(loaded); // // Seta no estado
-  }, []); // // Roda uma vez
+import { calcFinanceSummary } from "../lib/financeStorage"; // Resumo (mantém igual)
 
-  const despesas = useMemo(() => { // // Filtra só despesas pra listar nesta tela
-    return items.filter((x) => x.type === "DESPESA"); // // Mantém apenas DESPESA
-  }, [items]); // // Recalcula quando items muda
+// Converte "1.234,56" -> 123456
+function parseAmountToCents(input: string): number {
+  const normalized = input.trim().replace(/\./g, "").replace(",", ".");
+  const value = Number(normalized);
+  if (Number.isNaN(value) || value <= 0) return 0;
+  return Math.round(value * 100);
+}
 
-  const summary = useMemo(() => { // // Calcula resumo total (para mostrar na tela)
-    return calcFinanceSummary(items); // // Usa helper
-  }, [items]); // // Recalcula quando items muda
+// Formata centavos em BRL
+function formatCentsBRL(cents: number): string {
+  const value = cents / 100;
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
 
-  function parseAmountToCents(input: string): number { // // Converte "1.234,56" -> 123456
-    const normalized = input // // Normaliza string
-      .trim() // // Remove espaços
-      .replace(/\./g, "") // // Remove separador de milhar
-      .replace(",", "."); // // Troca vírgula por ponto
-    const value = Number(normalized); // // Converte pra número
-    if (Number.isNaN(value) || value <= 0) return 0; // // Valida
-    return Math.round(value * 100); // // Centavos
-  }
+export default function Despesas() {
+  const [title, setTitle] = useState(""); // Campo: título
+  const [category, setCategory] = useState<FinanceCategory>("Alimentação"); // Categoria
+  const [amount, setAmount] = useState(""); // Valor
+  const [dateISO, setDateISO] = useState(todayISO()); // Data
+  const [items, setItems] = useState<FinanceItem[]>([]); // Lista do service
 
-  function formatCentsBRL(cents: number): string { // // Formata centavos em R$ bonitinho
-    const value = cents / 100; // // Converte pra reais
-    return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); // // Formata BRL
-  }
+  // Campos obrigatórios (já prepara crédito depois)
+  const [paymentType, setPaymentType] = useState<PaymentType>("pix"); // pix | debit | cash | credit
+  const [status, setStatus] = useState<FinanceStatus>("paid"); // paid | pending
 
-  function onAdd() { // // Ação de adicionar despesa
-    const amountCents = parseAmountToCents(amount); // // Converte valor
-    if (!title.trim()) return alert("Informe um título."); // // Valida título
-    if (amountCents <= 0) return alert("Informe um valor válido."); // // Valida valor
-
-    const newItem: FinanceItem = { // // Monta item
-      id: makeId(), // // Id único
-      type: "DESPESA", // // Tipo fixo nesta tela
-      title: title.trim(), // // Título
-      category, // // Categoria selecionada
-      amountCents, // // Valor em centavos
-      dateISO, // // Data informada
-      createdAtISO: new Date().toISOString(), // // Data/hora de criação
+  // Carrega ao abrir + escuta mudanças
+  useEffect(() => {
+    const load = () => {
+      setItems(financeList()); // ✅ Lê via service
     };
 
-    const updated = addFinanceItem(newItem); // // Salva no localStorage e retorna lista atualizada
-    setItems(updated); // // Atualiza estado
-    setTitle(""); // // Limpa título
-    setAmount(""); // // Limpa valor
-    setDateISO(todayISO()); // // Volta data pra hoje
+    load();
+
+    const unsubscribe = financeSubscribe(load); // ✅ Atualiza em tempo real
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const despesas = useMemo(() => {
+    return items.filter((x) => x.type === "DESPESA");
+  }, [items]);
+
+  const summary = useMemo(() => {
+    return calcFinanceSummary(items);
+  }, [items]);
+
+  function onAdd() {
+    const amountCents = parseAmountToCents(amount);
+    if (!title.trim()) return alert("Informe um título.");
+    if (amountCents <= 0) return alert("Informe um valor válido.");
+
+    const newItem: FinanceItem = {
+      id: makeId(),
+      type: "DESPESA",
+      title: title.trim(),
+      category,
+      amountCents,
+      dateISO,
+      createdAtISO: new Date().toISOString(),
+
+      // ✅ Campos obrigatórios do seu types/finance.ts
+      paymentType,
+      status,
+    };
+
+    const updated = financeAdd(newItem); // ✅ Add via service
+    setItems(updated);
+
+    setTitle("");
+    setAmount("");
+    setDateISO(todayISO());
+    setPaymentType("pix");
+    setStatus("paid");
   }
 
-  function onDelete(id: string) { // // Ação de remover item
-    const ok = confirm("Remover esta despesa?"); // // Confirmação simples
-    if (!ok) return; // // Se cancelar, para
-    const updated = deleteFinanceItem(id); // // Remove e salva no storage
-    setItems(updated); // // Atualiza estado
+  function onDelete(id: string) {
+    const ok = confirm("Remover esta despesa?");
+    if (!ok) return;
+
+    const updated = financeRemove(id); // ✅ Remove via service
+    setItems(updated);
   }
 
-  return ( // // UI da tela
-    <div style={{ padding: 16, maxWidth: 900, margin: "0 auto" }}> {/* // Container central */}
-      <h1 style={{ marginBottom: 8 }}>Despesas</h1> {/* // Título */}
+  return (
+    <>
+      <h2 style={{ marginBottom: 14 }}>Despesas</h2>
 
-      <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}> {/* // Cards resumo */}
-        <div style={{ padding: 12, border: "1px solid #333", borderRadius: 12, minWidth: 200 }}> {/* // Card receitas */}
-          <div style={{ opacity: 0.8 }}>Total Receitas</div> {/* // Label */}
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{formatCentsBRL(summary.totalReceitasCents)}</div> {/* // Valor */}
+      {/* Cards */}
+      <div className="dashboard-grid" style={{ marginBottom: 20 }}>
+        <div className="stat-card">
+          <div className="stat-title">Total Receitas</div>
+          <div className="stat-value green">{formatCentsBRL(summary.totalReceitasCents)}</div>
         </div>
 
-        <div style={{ padding: 12, border: "1px solid #333", borderRadius: 12, minWidth: 200 }}> {/* // Card despesas */}
-          <div style={{ opacity: 0.8 }}>Total Despesas</div> {/* // Label */}
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{formatCentsBRL(summary.totalDespesasCents)}</div> {/* // Valor */}
+        <div className="stat-card">
+          <div className="stat-title">Total Despesas</div>
+          <div className="stat-value red">{formatCentsBRL(summary.totalDespesasCents)}</div>
         </div>
 
-        <div style={{ padding: 12, border: "1px solid #333", borderRadius: 12, minWidth: 200 }}> {/* // Card saldo */}
-          <div style={{ opacity: 0.8 }}>Saldo</div> {/* // Label */}
-          <div style={{ fontSize: 20, fontWeight: 700 }}>{formatCentsBRL(summary.saldoCents)}</div> {/* // Valor */}
+        <div className="stat-card">
+          <div className="stat-title">Saldo</div>
+          <div className="stat-value">{formatCentsBRL(summary.saldoCents)}</div>
         </div>
       </div>
 
-      <div style={{ padding: 12, border: "1px solid #333", borderRadius: 12, marginBottom: 16 }}> {/* // Box formulário */}
-        <h2 style={{ marginTop: 0 }}>Adicionar Despesa</h2> {/* // Subtítulo */}
+      {/* Form */}
+      <div className="chart-card" style={{ marginBottom: 18 }}>
+        <div className="chart-title" style={{ fontSize: 22, fontWeight: 800, marginBottom: 14 }}>
+          Adicionar Despesa
+        </div>
 
-        <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr 220px 180px 160px" }}> {/* // Grid */}
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título (ex: Aluguel)" /> {/* // Input título */}
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1.4fr 1fr 1fr 0.8fr" }}>
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Título (ex: Aluguel)"
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
+          />
 
-          <select value={category} onChange={(e) => setCategory(e.target.value as FinanceCategory)}> {/* // Select categoria */}
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as FinanceCategory)}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
+          >
             <option>Salário</option>
             <option>Freelance</option>
             <option>Vendas</option>
@@ -105,35 +162,131 @@ export default function Despesas() { // // Página de Despesas
             <option>Outros</option>
           </select>
 
-          <input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="Valor (ex: 250,00)" /> {/* // Input valor */}
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Valor (ex: 250,00)"
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
+          />
 
-          <input type="date" value={dateISO} onChange={(e) => setDateISO(e.target.value)} /> {/* // Input data */}
+          <input
+            type="date"
+            value={dateISO}
+            onChange={(e) => setDateISO(e.target.value)}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
+          />
         </div>
 
-        <div style={{ marginTop: 12 }}> {/* // Área botão */}
-          <button onClick={onAdd} style={{ padding: "10px 14px", borderRadius: 12, cursor: "pointer" }}> {/* // Botão adicionar */}
+        {/* Extras: paymentType + status (não muda visual do app, só dá controle) */}
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", marginTop: 12 }}>
+          <select
+            value={paymentType}
+            onChange={(e) => setPaymentType(e.target.value as PaymentType)}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
+          >
+            <option value="pix">pix</option>
+            <option value="debit">debit</option>
+            <option value="cash">cash</option>
+            <option value="credit">credit</option>
+          </select>
+
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as FinanceStatus)}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
+          >
+            <option value="paid">paid</option>
+            <option value="pending">pending</option>
+          </select>
+        </div>
+
+        <div style={{ marginTop: 14 }}>
+          <button
+            onClick={onAdd}
+            style={{
+              padding: "12px 18px",
+              borderRadius: 10,
+              border: "none",
+              background: "#3b82f6",
+              color: "white",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
             Adicionar Despesa
           </button>
         </div>
       </div>
 
-      <div style={{ padding: 12, border: "1px solid #333", borderRadius: 12 }}> {/* // Box listagem */}
-        <h2 style={{ marginTop: 0 }}>Lista de Despesas</h2> {/* // Subtítulo */}
+      {/* Lista */}
+      <div className="chart-card">
+        <div className="chart-title" style={{ fontSize: 22, fontWeight: 800, marginBottom: 14 }}>
+          Lista de Despesas
+        </div>
 
-        {despesas.length === 0 ? ( // // Se não tem dados
-          <div style={{ opacity: 0.8 }}>Nenhuma despesa cadastrada ainda.</div> // // Texto vazio
-        ) : ( // // Se tem dados
-          <div style={{ display: "grid", gap: 10 }}> {/* // Lista */}
-            {despesas.map((d) => ( // // Renderiza cada item
-              <div key={d.id} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: 12, border: "1px solid #333", borderRadius: 12 }}> {/* // Card item */}
-                <div> {/* // Infos */}
-                  <div style={{ fontWeight: 700 }}>{d.title}</div> {/* // Título */}
-                  <div style={{ opacity: 0.8 }}>{d.category} • {d.dateISO}</div> {/* // Categoria e data */}
+        {despesas.length === 0 ? (
+          <div style={{ color: "var(--text-secondary)", padding: 10 }}>
+            Nenhuma despesa cadastrada ainda.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {despesas.map((d) => (
+              <div
+                key={d.id}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: 14,
+                  borderRadius: 12,
+                  border: "1px solid rgba(148,163,184,0.18)",
+                  background: "rgba(15,23,42,0.25)",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 800 }}>{d.title}</div>
+                  <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                    {d.category} • {d.dateISO}
+                  </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}> {/* // Ações */}
-                  <div style={{ fontWeight: 700 }}>{formatCentsBRL(d.amountCents)}</div> {/* // Valor */}
-                  <button onClick={() => onDelete(d.id)} style={{ padding: "8px 12px", borderRadius: 12, cursor: "pointer" }}> {/* // Botão remover */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div style={{ fontWeight: 900 }}>{formatCentsBRL(d.amountCents)}</div>
+                  <button
+                    onClick={() => onDelete(d.id)}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 10,
+                      border: "1px solid rgba(148,163,184,0.25)",
+                      background: "transparent",
+                      color: "white",
+                      cursor: "pointer",
+                    }}
+                  >
                     Remover
                   </button>
                 </div>
@@ -142,12 +295,15 @@ export default function Despesas() { // // Página de Despesas
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 }
 
-// Desenvolvido por Lucas Vinicius
-// lucassousa@gmail.com
-// Esta tela cria Despesas com formulário e lista, salvando no localStorage.
-// Ela também calcula um resumo (receitas, despesas, saldo) usando calcFinanceSummary.
-// amountCents é usado para evitar bug de arredondamento.
+/*
+Desenvolvido por Lucas Vinicius
+lucassousa@gmail.com
+
+Despesas.tsx:
+- Migrado para financeService (hoje localStorage, amanhã API)
+- Mantém UI igual
+*/

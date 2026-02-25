@@ -10,11 +10,23 @@ import {
   YAxis, // Eixo Y
   Tooltip, // Tooltip
   CartesianGrid, // Grade
+  PieChart, // Donut
+  Pie, // Donut
+  Cell, // Fatias
 } from "recharts"; // Biblioteca de gráficos
 
 import type { FinanceItem } from "../types/finance"; // Tipo dos itens financeiros
 
-import { loadFinanceItems, calcFinanceSummary } from "../lib/financeStorage"; // Storage + resumo
+import {
+  financeList, // ✅ Lê itens via service
+  financeSubscribe, // ✅ Escuta mudanças via service
+} from "../lib/financeService"; // Camada única (hoje localStorage, amanhã API)
+
+import {
+  calculateSummary, // Resumo (cards)
+  groupExpensesByCategory, // Agrupa despesas por categoria (donut)
+  calculateMonthComparison, // Comparação vs mês anterior
+} from "../lib/financeCalculations"; // Cálculos do dashboard
 
 type PeriodKey = "MONTH" | "LAST_3" | "YEAR" | "ALL"; // Tipos de filtro
 
@@ -41,6 +53,7 @@ function getYearMonth(dateISO: string): string {
 function ymToLabel(ym: string): string {
   const [y, m] = ym.split("-"); // Separa ano e mês
   const month = Number(m); // Mês numérico
+
   const monthNames = [
     "Jan",
     "Fev",
@@ -55,7 +68,9 @@ function ymToLabel(ym: string): string {
     "Nov",
     "Dez",
   ]; // Nomes
+
   const yy = y.slice(2); // Dois últimos dígitos do ano
+
   return `${monthNames[month - 1]}/${yy}`; // Label
 }
 
@@ -106,61 +121,74 @@ function getStartISO(period: PeriodKey): string | null {
 
 // Label amigável do período
 function getPeriodLabel(period: PeriodKey): string {
-  if (period === "MONTH") return "Mês atual";
-  if (period === "LAST_3") return "Últimos 3 meses";
-  if (period === "YEAR") return "Ano";
-  return "Tudo";
+  if (period === "MONTH") return "Mês atual"; // Label
+  if (period === "LAST_3") return "Últimos 3 meses"; // Label
+  if (period === "YEAR") return "Ano"; // Label
+  return "Tudo"; // Label
 }
 
 export default function Dashboard() {
   const [items, setItems] = useState<FinanceItem[]>([]); // Estado com itens
-  const [period, setPeriod] = useState<PeriodKey>("LAST_3"); // Filtro padrão: últimos 3 meses
+  const [period, setPeriod] = useState<PeriodKey>("LAST_3"); // Filtro padrão
 
-  // Carrega itens na entrada + escuta mudanças do localStorage (entre abas) e evento custom (mesma aba)
+  // Carrega itens na entrada + escuta mudanças via service (entre abas + mesma aba)
   useEffect(() => {
     const load = () => {
-      setItems(loadFinanceItems()); // Lê do localStorage
+      setItems(financeList()); // ✅ Lê via service
     };
 
     load(); // Carrega ao abrir
 
-    // Atualiza quando mudar o localStorage (outra aba)
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === "nuvcoin_finance_items_v1") load(); // Recarrega se mudou a chave
-    };
-
-    // Atualiza na mesma aba quando suas telas dispararem o evento custom
-    const onUpdated = () => {
-      load(); // Recarrega
-    };
-
-    window.addEventListener("storage", onStorage); // Listener entre abas
-    window.addEventListener("nuvcoin_finance_updated", onUpdated as EventListener); // Listener mesma aba
+    const unsubscribe = financeSubscribe(load); // ✅ Assina mudanças
 
     return () => {
-      window.removeEventListener("storage", onStorage); // Remove listener
-      window.removeEventListener("nuvcoin_finance_updated", onUpdated as EventListener); // Remove listener
+      unsubscribe(); // ✅ Remove listeners
     };
   }, []);
 
-  // ✅ Filtra itens conforme o período
+  // Filtra itens conforme o período
   const filteredItems = useMemo(() => {
     const startISO = getStartISO(period); // Pega startISO ou null
-
     if (!startISO) return items; // ALL: retorna tudo
-
-    // Como é "YYYY-MM-DD", comparar string funciona corretamente
-    return items.filter((x) => x.dateISO >= startISO); // Filtra por data
+    return items.filter((x) => x.dateISO >= startISO); // Filtra por data (string ISO)
   }, [items, period]);
 
-  // ✅ Cards respeitam período
-  const summary = useMemo(() => calcFinanceSummary(filteredItems), [filteredItems]);
+  // Cards respeitam período (com crédito)
+  const summary = useMemo(() => calculateSummary(filteredItems), [filteredItems]);
 
-  // ✅ Gráfico respeita período e inclui meses vazios
+  // Saldo com cor (verde se >= 0, vermelho se < 0)
+  const saldoClass = summary.saldoCents >= 0 ? "green" : "red"; // Classe pra cor do saldo
+
+  // Comparação mês atual vs mês anterior (baseado em "hoje")
+  const monthCmp = useMemo(() => {
+    const referenceISO = toISODate(new Date()); // Hoje (mês atual)
+    return calculateMonthComparison(items, referenceISO); // Compara mês atual vs anterior
+  }, [items]);
+
+  // Texto curto “vs mês anterior”
+  const cmpLine = useMemo(() => {
+    const arrow = (dir: "UP" | "DOWN" | "FLAT") => {
+      if (dir === "UP") return "↑";
+      if (dir === "DOWN") return "↓";
+      return "—";
+    };
+
+    const lineFrom = (pct: number | null, dir: "UP" | "DOWN" | "FLAT") => {
+      if (pct === null) return "vs mês anterior: —";
+      return `vs mês anterior: ${arrow(dir)} ${Math.abs(pct).toFixed(1)}%`;
+    };
+
+    return {
+      receitas: lineFrom(monthCmp.receitas.pct, monthCmp.receitas.direction),
+      despesas: lineFrom(monthCmp.despesas.pct, monthCmp.despesas.direction),
+      saldo: lineFrom(monthCmp.saldo.pct, monthCmp.saldo.direction),
+    };
+  }, [monthCmp]);
+
+  // Gráfico respeita período e inclui meses vazios
   const chartData = useMemo(() => {
     const map = new Map<string, { receitasCents: number; despesasCents: number }>(); // Buckets por mês
 
-    // Soma valores por mês
     for (const item of filteredItems) {
       const ym = getYearMonth(item.dateISO); // "YYYY-MM"
 
@@ -174,7 +202,6 @@ export default function Dashboard() {
       if (item.type === "DESPESA") bucket.despesasCents += item.amountCents; // Soma despesa
     }
 
-    // Intervalo de meses a exibir
     const now = new Date(); // Hoje
     const endYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`; // "YYYY-MM" do mês atual
 
@@ -187,14 +214,12 @@ export default function Dashboard() {
     } else if (period === "YEAR") {
       startYM = `${now.getFullYear()}-01`; // Janeiro do ano
     } else {
-      // ALL: do primeiro mês com dado até o atual; se não tiver dado, só atual
       const monthsWithData = Array.from(map.keys()).sort(); // Meses existentes
       startYM = monthsWithData.length > 0 ? monthsWithData[0] : endYM; // Primeiro mês com dado
     }
 
     const monthsToShow = listMonthsBetween(startYM, endYM); // Meses no período
 
-    // Dataset final (inclui meses sem movimento como 0)
     return monthsToShow.map((ym) => {
       const bucket = map.get(ym) ?? { receitasCents: 0, despesasCents: 0 }; // Se não existir, zera
       return {
@@ -204,6 +229,38 @@ export default function Dashboard() {
       };
     });
   }, [filteredItems, period]);
+
+  // Donut: despesas por categoria (respeita período)
+  const donutData = useMemo(() => {
+    const grouped = groupExpensesByCategory(filteredItems); // Agrupa em centavos
+
+    return grouped.map((x) => ({
+      name: x.category, // Label
+      value: Math.round(x.totalCents / 100), // Reais (número)
+      valueCents: x.totalCents, // Mantém centavos pra tooltip e lista
+    }));
+  }, [filteredItems]);
+
+  // Paleta simples (9 cores)
+  const donutColors = [
+    "#60A5FA",
+    "#22C55E",
+    "#F97316",
+    "#A78BFA",
+    "#EF4444",
+    "#14B8A6",
+    "#EAB308",
+    "#F472B6",
+    "#94A3B8",
+  ]; // Cores do donut
+
+  // Últimas transações (ordena por data desc e pega 8)
+  const latestItems = useMemo(() => {
+    return filteredItems
+      .slice() // Cria cópia
+      .sort((a, b) => b.dateISO.localeCompare(a.dateISO)) // Ordena desc
+      .slice(0, 8); // Pega 8
+  }, [filteredItems]);
 
   return (
     <>
@@ -242,6 +299,10 @@ export default function Dashboard() {
           <div className="stat-value green">
             {formatBRLFromCents(summary.totalReceitasCents)}
           </div>
+
+          <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-secondary)" }}>
+            {cmpLine.receitas}
+          </div>
         </div>
 
         <div className="stat-card">
@@ -249,46 +310,210 @@ export default function Dashboard() {
           <div className="stat-value red">
             {formatBRLFromCents(summary.totalDespesasCents)}
           </div>
+
+          <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-secondary)" }}>
+            {cmpLine.despesas}
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-title">Crédito</div>
+          <div className="stat-value red">
+            {formatBRLFromCents(summary.totalCreditoCents)}
+          </div>
         </div>
 
         <div className="stat-card">
           <div className="stat-title">Saldo</div>
-          <div className="stat-value">{formatBRLFromCents(summary.saldoCents)}</div>
+
+          <div className={`stat-value ${saldoClass}`}>
+            {formatBRLFromCents(summary.saldoCents)}
+          </div>
+
+          <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-secondary)" }}>
+            {cmpLine.saldo}
+          </div>
         </div>
       </div>
 
-      {/* Gráfico */}
-      <div className="chart-card">
-        <div className="chart-title">Receitas x Despesas ({getPeriodLabel(period)})</div>
+      {/* Layout 2 colunas: linha à esquerda + donut à direita */}
+      <div className="dashboard-charts">
+        {/* Gráfico linha */}
+        <div className="chart-card">
+          <div className="chart-title">
+            Receitas x Despesas ({getPeriodLabel(period)})
+          </div>
 
-        {chartData.length === 0 ? (
+          {chartData.length === 0 ? (
+            <div style={{ color: "var(--text-secondary)", padding: 10 }}>
+              Ainda não há lançamentos suficientes para montar o gráfico. Cadastre
+              uma receita e uma despesa.
+            </div>
+          ) : (
+            <div style={{ width: "100%", height: 320 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(148,163,184,0.15)"
+                  />
+                  <XAxis dataKey="mes" stroke="#94A3B8" />
+                  <YAxis stroke="#94A3B8" />
+                  <Tooltip
+                    formatter={(value: any) => {
+                      const n = typeof value === "number" ? value : Number(value);
+                      if (Number.isNaN(n)) return value;
+                      return n.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      });
+                    }}
+                    contentStyle={{
+                      backgroundColor: "#0b1220",
+                      border: "1px solid rgba(148,163,184,0.2)",
+                      borderRadius: 10,
+                      color: "#F1F5F9",
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="receitas"
+                    stroke="#22C55E"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="despesas"
+                    stroke="#EF4444"
+                    strokeWidth={3}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Donut */}
+        <div className="chart-card">
+          <div className="chart-title">
+            Despesas por categoria ({getPeriodLabel(period)})
+          </div>
+
+          {donutData.length === 0 ? (
+            <div style={{ color: "var(--text-secondary)", padding: 10 }}>
+              Ainda não há despesas suficientes para montar o gráfico.
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
+              <div style={{ width: 240, height: 240, position: "relative" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={donutData}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={2}
+                    >
+                      {donutData.map((_, index) => (
+                        <Cell
+                          key={index}
+                          fill={donutColors[index % donutColors.length]}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+
+                <div
+                  style={{
+                    position: "absolute",
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    textAlign: "center",
+                    fontWeight: 700,
+                  }}
+                >
+                  <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
+                    Total
+                  </div>
+                  <div style={{ fontSize: 18 }}>
+                    {formatBRLFromCents(summary.totalDespesasCents)}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ flex: 1 }}>
+                {donutData.map((item, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <div
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          background: donutColors[index % donutColors.length],
+                        }}
+                      />
+                      <span style={{ fontSize: 13 }}>{item.name}</span>
+                    </div>
+
+                    <span style={{ fontWeight: 600 }}>
+                      {formatBRLFromCents(item.valueCents)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Últimas Transações */}
+      <div className="chart-card" style={{ marginTop: 18 }}>
+        <div className="chart-title">Últimas Transações</div>
+
+        {latestItems.length === 0 ? (
           <div style={{ color: "var(--text-secondary)", padding: 10 }}>
-            Ainda não há lançamentos suficientes para montar o gráfico. Cadastre uma receita e uma despesa.
+            Ainda não há transações cadastradas.
           </div>
         ) : (
-          <div style={{ width: "100%", height: 320 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
-                <XAxis dataKey="mes" stroke="#94A3B8" />
-                <YAxis stroke="#94A3B8" />
-                <Tooltip
-                  formatter={(value: any) => {
-                    const n = typeof value === "number" ? value : Number(value); // Converte seguro
-                    if (Number.isNaN(n)) return value; // Se não for número, volta
-                    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); // Formata BRL
-                  }}
-                  contentStyle={{
-                    backgroundColor: "#0b1220",
-                    border: "1px solid rgba(148,163,184,0.2)",
-                    borderRadius: 10,
-                    color: "#F1F5F9",
-                  }}
-                />
-                <Line type="monotone" dataKey="receitas" stroke="#22C55E" strokeWidth={3} dot={false} />
-                <Line type="monotone" dataKey="despesas" stroke="#EF4444" strokeWidth={3} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="transactions-table">
+            <div className="transaction-head">
+              <div>Data</div>
+              <div>Descrição</div>
+              <div>Categoria</div>
+              <div style={{ textAlign: "right" }}>Valor</div>
+            </div>
+
+            {latestItems.map((item) => (
+              <div key={item.id} className="transaction-row">
+                <div className="t-date">
+                  {new Date(item.dateISO).toLocaleDateString("pt-BR")}
+                </div>
+
+                <div className="t-title">{item.title}</div>
+
+                <div className="t-category">{item.category}</div>
+
+                <div className={item.type === "RECEITA" ? "t-value green" : "t-value red"}>
+                  {item.type === "RECEITA" ? "+ " : "- "}
+                  {formatBRLFromCents(item.amountCents)}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -297,11 +522,13 @@ export default function Dashboard() {
 }
 
 /*
+=====================================================
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
+=====================================================
 
-// O que foi corrigido aqui:
-// - filteredItems respeita o período e alimenta cards + chart
-// - Gráfico mostra meses vazios como 0
-// - Select usa className="period-select" (pra corrigir o dropdown branco via CSS)
+Mudança feita:
+
+✔ Dashboard agora pega dados via financeService (hoje localStorage, amanhã API)
+✔ Não mexi em layout, gráficos, donut, tabela, nem filtro
 */

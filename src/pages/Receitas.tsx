@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from "react"; // Hooks
 import type { FinanceCategory, FinanceItem } from "../types/finance"; // Tipos
 import {
-  addFinanceItem, // Adiciona item
-  deleteFinanceItem, // Remove item
-  loadFinanceItems, // Carrega itens
-  calcFinanceSummary, // Resumo
-  makeId, // ID
-  todayISO, // Data ISO
-} from "../lib/financeStorage"; // Storage
+  financeAdd, // ✅ Adiciona via service
+  financeList, // ✅ Lista via service
+  financeRemove, // ✅ Remove via service
+  financeSubscribe, // ✅ Atualiza em tempo real
+  makeId, // ✅ Helper (reexport do storage)
+  todayISO, // ✅ Helper (reexport do storage)
+} from "../lib/financeService"; // ✅ Service
+import { calcFinanceSummary } from "../lib/financeStorage"; // Resumo (mantém igual)
 import "./dashboard.css"; // Reaproveita visual
 
 // Formata centavos para BRL
@@ -18,17 +19,13 @@ function formatBRLFromCents(valueCents: number): string {
 
 // Converte "1500", "1500,50", "1.500,50" -> centavos
 function parseBRLToCents(input: string): number {
-  const normalized = input
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .replace(/[^\d.]/g, "");
-
+  const normalized = input.replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, "");
   const value = Number(normalized || "0");
   return Math.round(value * 100);
 }
 
 export default function Receitas() {
-  const [items, setItems] = useState<FinanceItem[]>([]); // Itens do storage
+  const [items, setItems] = useState<FinanceItem[]>([]); // Itens do service
 
   // Form
   const [title, setTitle] = useState(""); // Título
@@ -36,9 +33,19 @@ export default function Receitas() {
   const [dateISO, setDateISO] = useState(todayISO()); // Data ISO
   const [category, setCategory] = useState<FinanceCategory>("Salário"); // Categoria válida
 
-  // Carrega ao abrir
+  // Carrega ao abrir + escuta mudanças (mesma aba + entre abas)
   useEffect(() => {
-    setItems(loadFinanceItems());
+    const load = () => {
+      setItems(financeList()); // ✅ Lê via service
+    };
+
+    load(); // Carrega ao abrir
+
+    const unsubscribe = financeSubscribe(load); // ✅ Atualiza em tempo real
+
+    return () => {
+      unsubscribe(); // ✅ Cleanup
+    };
   }, []);
 
   // Resumo
@@ -57,13 +64,17 @@ export default function Receitas() {
       id: makeId(),
       type: "RECEITA",
       title: title.trim(),
-      category, // ✅ Categoria válida pelo tipo FinanceCategory
+      category, // Categoria válida
       amountCents: parseBRLToCents(amount),
       dateISO,
       createdAtISO: new Date().toISOString(),
+
+      // ✅ Campos obrigatórios do seu types/finance.ts
+      paymentType: "pix", // Receita: por padrão pix (pode mudar depois)
+      status: "paid", // Receita: por padrão paid
     };
 
-    const updated = addFinanceItem(newItem);
+    const updated = financeAdd(newItem); // ✅ Salva via service
     setItems(updated);
 
     setTitle("");
@@ -73,7 +84,7 @@ export default function Receitas() {
   }
 
   function handleRemove(id: string) {
-    const updated = deleteFinanceItem(id);
+    const updated = financeRemove(id); // ✅ Remove via service
     setItems(updated);
   }
 
@@ -110,13 +121,25 @@ export default function Receitas() {
             placeholder="Título (ex: Salário)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.25)", color: "white" }}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
           />
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as FinanceCategory)}
-            style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.25)", color: "white" }}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
           >
             <option value="Salário">Salário</option>
             <option value="Freelance">Freelance</option>
@@ -128,14 +151,26 @@ export default function Receitas() {
             placeholder="Valor (ex: 2500,00)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.25)", color: "white" }}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
           />
 
           <input
             type="date"
             value={dateISO}
             onChange={(e) => setDateISO(e.target.value)}
-            style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(148,163,184,0.18)", background: "rgba(15,23,42,0.25)", color: "white" }}
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(15,23,42,0.25)",
+              color: "white",
+            }}
           />
         </div>
 
@@ -218,8 +253,7 @@ export default function Receitas() {
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
 
-// Receitas.tsx:
-// - Cria receitas com categoria válida (FinanceCategory)
-// - Salva em nuvcoin_finance_items_v1
-// - Lista e remove receitas
+Receitas.tsx:
+- Migrado para financeService (hoje localStorage, amanhã API)
+- Mantém UI igual
 */

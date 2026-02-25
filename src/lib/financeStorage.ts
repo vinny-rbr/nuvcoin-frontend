@@ -1,6 +1,6 @@
-import type { FinanceItem, FinanceSummary } from "../types/finance";
+import type { FinanceItem, FinanceSummary } from "../types/finance"; // Tipos do app
 
-const STORAGE_KEY = "nuvcoin_finance_items_v1";
+const STORAGE_KEY = "nuvcoin_finance_items_v1"; // Chave do localStorage
 
 /* =====================================================
    EVENTO INTERNO PARA ATUALIZAÇÃO EM TEMPO REAL
@@ -8,7 +8,7 @@ const STORAGE_KEY = "nuvcoin_finance_items_v1";
 
 export function notifyFinanceUpdated(): void {
   // Dispara evento interno na mesma aba
-  window.dispatchEvent(new Event("nuvcoin_finance_updated"));
+  window.dispatchEvent(new Event("nuvcoin_finance_updated")); // Evento que o Dashboard escuta
 }
 
 /* =====================================================
@@ -17,16 +17,16 @@ export function notifyFinanceUpdated(): void {
 
 export function loadFinanceItems(): FinanceItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    const raw = localStorage.getItem(STORAGE_KEY); // Lê do localStorage
+    if (!raw) return []; // Se não tiver nada, retorna vazio
 
-    const parsed = JSON.parse(raw) as FinanceItem[];
+    const parsed = JSON.parse(raw) as FinanceItem[]; // Converte JSON -> array
 
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(parsed)) return []; // Garante que é array
 
-    return parsed;
+    return parsed; // Retorna itens
   } catch {
-    return [];
+    return []; // Se der erro, retorna vazio
   }
 }
 
@@ -35,10 +35,10 @@ export function loadFinanceItems(): FinanceItem[] {
    ===================================================== */
 
 export function saveFinanceItems(items: FinanceItem[]): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); // Salva JSON
 
   // 🔥 Notifica todas as telas da mesma aba
-  notifyFinanceUpdated();
+  notifyFinanceUpdated(); // Dispara evento interno
 }
 
 /* =====================================================
@@ -46,13 +46,13 @@ export function saveFinanceItems(items: FinanceItem[]): void {
    ===================================================== */
 
 export function addFinanceItem(newItem: FinanceItem): FinanceItem[] {
-  const items = loadFinanceItems();
+  const items = loadFinanceItems(); // Carrega itens atuais
 
-  const updated = [newItem, ...items];
+  const updated = [newItem, ...items]; // Coloca o novo no topo
 
-  saveFinanceItems(updated);
+  saveFinanceItems(updated); // Salva e notifica
 
-  return updated;
+  return updated; // Retorna atualizado
 }
 
 /* =====================================================
@@ -60,13 +60,13 @@ export function addFinanceItem(newItem: FinanceItem): FinanceItem[] {
    ===================================================== */
 
 export function deleteFinanceItem(id: string): FinanceItem[] {
-  const items = loadFinanceItems();
+  const items = loadFinanceItems(); // Carrega itens atuais
 
-  const updated = items.filter((x) => x.id !== id);
+  const updated = items.filter((x) => x.id !== id); // Remove pelo id
 
-  saveFinanceItems(updated);
+  saveFinanceItems(updated); // Salva e notifica
 
-  return updated;
+  return updated; // Retorna atualizado
 }
 
 /* =====================================================
@@ -74,18 +74,32 @@ export function deleteFinanceItem(id: string): FinanceItem[] {
    ===================================================== */
 
 export function calcFinanceSummary(items: FinanceItem[]): FinanceSummary {
-  let receitas = 0;
-  let despesas = 0;
+  let receitas = 0; // Acumulador receitas
+  let despesas = 0; // Acumulador despesas
+  let credito = 0; // Acumulador crédito (DESPESA + paymentType=credit)
 
   for (const item of items) {
-    if (item.type === "RECEITA") receitas += item.amountCents;
-    if (item.type === "DESPESA") despesas += item.amountCents;
+    // Soma receitas
+    if (item.type === "RECEITA") {
+      receitas += item.amountCents; // Soma em centavos
+    }
+
+    // Soma despesas e crédito
+    if (item.type === "DESPESA") {
+      despesas += item.amountCents; // Soma despesas
+
+      // Crédito = DESPESA com paymentType = credit
+      if (item.paymentType === "credit") {
+        credito += item.amountCents; // Soma crédito
+      }
+    }
   }
 
   return {
-    totalReceitasCents: receitas,
-    totalDespesasCents: despesas,
-    saldoCents: receitas - despesas,
+    totalReceitasCents: receitas, // Total receitas
+    totalDespesasCents: despesas, // Total despesas
+    totalCreditoCents: credito, // Total crédito
+    saldoCents: receitas - despesas, // Saldo
   };
 }
 
@@ -94,16 +108,16 @@ export function calcFinanceSummary(items: FinanceItem[]): FinanceSummary {
    ===================================================== */
 
 export function makeId(): string {
-  return crypto.randomUUID();
+  return crypto.randomUUID(); // ID seguro
 }
 
 export function todayISO(): string {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const d = new Date(); // Data atual
+  const yyyy = d.getFullYear(); // Ano
+  const mm = String(d.getMonth() + 1).padStart(2, "0"); // Mês
+  const dd = String(d.getDate()).padStart(2, "0"); // Dia
 
-  return `${yyyy}-${mm}-${dd}`;
+  return `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
 }
 
 /*
@@ -117,9 +131,10 @@ O que este arquivo faz agora:
 ✔ Armazena itens financeiros no localStorage
 ✔ Atualiza automaticamente Dashboard/Receitas/Despesas
 ✔ Dispara evento interno para atualização em tempo real
-✔ Calcula resumo financeiro
+✔ Calcula resumo financeiro (inclui crédito)
 ✔ Gera ID seguro
 ✔ Retorna data ISO padrão
 
-Pronto para MVP SaaS.
+Crédito:
+- totalCreditoCents = soma de DESPESA onde paymentType = "credit"
 */
