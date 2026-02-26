@@ -1,37 +1,80 @@
 import { useState } from "react"; // Hook para controlar estados (inputs)
-import { Link, useNavigate } from "react-router-dom"; // Link (navega sem reload) + useNavigate (redireciona via código)
+import { Link, useNavigate } from "react-router-dom"; // Link + navegação
 
 export default function Login() {
   const navigate = useNavigate(); // Permite redirecionar o usuário para outra rota
 
   const [email, setEmail] = useState(""); // Estado que guarda o e-mail digitado
-  const [token, setToken] = useState(""); // Estado que guarda o token digitado (mock/dev)
+  const [name, setName] = useState(""); // Estado que guarda o nome digitado (opcional)
+  const [loading, setLoading] = useState(false); // Estado de carregamento
 
-  function handleLogin() {
+  async function handleLogin() {
     // Função executada ao clicar no botão "Entrar"
 
-    if (!email || !token) {
-      // Valida se os campos estão preenchidos
-      alert("Preencha email e token."); // Mostra alerta
+    if (!email) {
+      // Valida se o e-mail foi preenchido
+      alert("Preencha o e-mail."); // Mostra alerta
       return; // Para aqui se estiver vazio
     }
 
-    // =========================
-    // ✅ Chaves oficiais do mock
-    // =========================
+    try {
+      setLoading(true); // Ativa loading
 
-    localStorage.setItem("auth", "true"); // ✅ Marca como logado (compatível com ProtectedRoute)
-    localStorage.setItem("token", token); // ✅ Salva um token genérico (compatível com ProtectedRoute)
+      // =========================
+      // ✅ Chama backend pra gerar JWT válido
+      // =========================
 
-    // =========================
-    // ✅ Chaves específicas do Nuvcoin
-    // =========================
+      const res = await fetch("/api/auth/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(), // Email do usuário
+          name: name.trim() || undefined, // Nome opcional
+        }),
+      });
 
-    localStorage.setItem("nuvcoin_email", email); // Salva email (mock)
-    localStorage.setItem("nuvcoin_mock_token", token); // Salva token mock (se você quiser usar depois)
+      if (!res.ok) {
+        // Se backend retornar erro
+        const text = await res.text(); // Lê resposta
+        throw new Error(`Erro no login: ${res.status} - ${text}`); // Dispara erro
+      }
 
-    // Depois de salvar, manda pro Dashboard
-    navigate("/dashboard"); // ✅ Vai para a rota protegida
+      const data = (await res.json()) as {
+        token: string;
+        userId: string;
+        name: string;
+        email: string;
+      };
+
+      if (!data.token) {
+        // Se não vier token, não dá pra continuar
+        throw new Error("Login falhou: token não retornou.");
+      }
+
+      // =========================
+      // ✅ Chaves oficiais do app
+      // =========================
+
+      localStorage.setItem("auth", "true"); // Marca como logado (compatível com ProtectedRoute)
+      localStorage.setItem("token", data.token); // ✅ JWT real (compatível com financeServices)
+
+      // =========================
+      // ✅ Chaves específicas do Nuvcoin
+      // =========================
+
+      localStorage.setItem("nuvcoin_email", data.email); // Email
+      localStorage.setItem("nuvcoin_userId", data.userId); // UserId
+      localStorage.setItem("nuvcoin_name", data.name ?? ""); // Nome
+
+      // Depois de salvar, manda pro Dashboard
+      navigate("/dashboard"); // Vai para a rota protegida
+    } catch (err: any) {
+      alert(err?.message ?? "Erro ao logar."); // Mostra erro pro usuário
+    } finally {
+      setLoading(false); // Desativa loading
+    }
   }
 
   return (
@@ -50,7 +93,7 @@ export default function Login() {
           backgroundColor: "#1e293b", // Card escuro
           padding: 40, // Espaçamento interno
           borderRadius: 12, // Bordas arredondadas
-          width: 320, // Largura fixa do card
+          width: 340, // Largura fixa do card
           display: "flex", // Flex
           flexDirection: "column", // Itens em coluna
           gap: 16, // Espaço entre elementos
@@ -60,7 +103,7 @@ export default function Login() {
         <h1 style={{ textAlign: "center" }}>Nuvcoin</h1>
 
         <p style={{ textAlign: "center", fontSize: 14, opacity: 0.85 }}>
-          Login (mock / dev-token)
+          Login (JWT real / API)
         </p>
 
         <input
@@ -78,9 +121,9 @@ export default function Login() {
         />
 
         <input
-          placeholder="Dev token (qualquer texto)"
-          value={token}
-          onChange={(e) => setToken(e.target.value)} // Atualiza estado token
+          placeholder="Seu nome (opcional)"
+          value={name}
+          onChange={(e) => setName(e.target.value)} // Atualiza estado name
           style={{
             padding: 10,
             borderRadius: 8,
@@ -93,20 +136,25 @@ export default function Login() {
 
         <button
           onClick={handleLogin} // Ao clicar, executa login
+          disabled={loading} // Desabilita enquanto carrega
           style={{
             padding: 10,
             borderRadius: 10,
             border: "none",
-            backgroundColor: "#3b82f6",
+            backgroundColor: loading ? "#64748b" : "#3b82f6",
             color: "white",
             fontWeight: "bold",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
             transition: "0.2s ease",
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")} // Hover simples
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")} // Volta ao normal
+          onMouseEnter={(e) => {
+            if (!loading) e.currentTarget.style.opacity = "0.9";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.opacity = "1";
+          }}
         >
-          Entrar
+          {loading ? "Entrando..." : "Entrar"}
         </button>
 
         <p style={{ textAlign: "center", fontSize: 14 }}>
@@ -121,11 +169,16 @@ export default function Login() {
 }
 
 /*
+=====================================================
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
+=====================================================
 
-// O que foi ajustado:
-// - Agora salvamos "auth=true" e "token", que o ProtectedRoute aceita
-// - Mantivemos as chaves específicas do Nuvcoin ("nuvcoin_email" e "nuvcoin_mock_token")
-// - Resultado: clicar Entrar -> libera /dashboard e renderiza Layout + Dashboard
+O que foi feito:
+
+✔ Removido login por "dev token"
+✔ Agora chama POST /api/auth/token
+✔ Salva JWT real em localStorage.setItem("token", jwt)
+✔ Mantém "auth=true" para continuar compatível com ProtectedRoute
+✔ Salva dados úteis: nuvcoin_email, nuvcoin_userId, nuvcoin_name
 */
