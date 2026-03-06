@@ -23,6 +23,7 @@ export default function Layout({ children }: Props) {
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/receitas">Receitas</Link>
             <Link to="/despesas">Despesas</Link>
+            <Link to="/groups">Groups</Link>
           </nav>
         </div>
       </header>
@@ -40,6 +41,6 @@ lucassousa@gmail.com
 // O que esse Layout faz:
 // - Cria uma Topbar premium (sticky + blur)
 // - Centraliza tudo num container (max-width)
-// - Adiciona navegação real (Dashboard/Receitas/Despesas)
+// - Adiciona navegação real (Dashboard/Receitas/Despesas/Groups)
 // - Mantém o conteúdo das páginas dentro de <main className="page">
 */

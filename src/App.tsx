@@ -7,6 +7,7 @@ import Register from "./pages/Register"; // Página de cadastro
 import Dashboard from "./pages/Dashboard"; // Página dashboard
 import Receitas from "./pages/Receitas"; // Página receitas
 import Despesas from "./pages/Despesas"; // Página despesas
+import Groups from "./pages/Groups"; // ✅ Página de grupos (Splitwise)
 
 export default function App() {
   return (
@@ -49,6 +50,18 @@ export default function App() {
         }
       />
 
+      {/* ✅ NOVO: Groups */}
+      <Route
+        path="/groups"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Groups />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
       {/* Rota inicial: manda pro dashboard */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
@@ -65,6 +78,6 @@ lucassousa@gmail.com
 // O que este App.tsx faz:
 // - Define as rotas públicas (/login e /register)
 // - Protege as rotas principais com ProtectedRoute (mock login)
-// - Envolve Dashboard/Receitas/Despesas com <Layout> para renderizar o conteúdo dentro do layout premium
+// - Envolve Dashboard/Receitas/Despesas/Groups com <Layout> para renderizar o conteúdo dentro do layout premium
 // - Faz "/" e rotas desconhecidas redirecionarem para "/dashboard"
 */
