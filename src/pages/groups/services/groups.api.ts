@@ -10,6 +10,16 @@ import type {
 
 import { getAuthTokenOrThrow } from "../utils/groups.helpers";
 
+type CreateGroupRequest = {
+  name: string;
+};
+
+type AddGroupMemberRequest = {
+  email?: string;
+  userId?: string;
+  name?: string;
+};
+
 
 // ==============================
 // GET GROUPS
@@ -37,6 +47,58 @@ export async function fetchGroups(): Promise<GroupDto[]> {
 
 
 // ==============================
+// CREATE GROUP
+// ==============================
+
+export async function createGroup(
+  payload: CreateGroupRequest
+): Promise<GroupDto> {
+
+  const token = getAuthTokenOrThrow();
+
+  const response = await fetch("/api/groups", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Erro ao criar grupo: HTTP ${response.status} - ${text || "sem detalhes"}`);
+  }
+
+  return response.json();
+}
+
+
+// ==============================
+// DELETE GROUP
+// ==============================
+
+export async function deleteGroup(groupId: string): Promise<void> {
+
+  const token = getAuthTokenOrThrow();
+
+  const response = await fetch(`/api/groups/${groupId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Erro ao excluir grupo: HTTP ${response.status} - ${text || "sem detalhes"}`);
+  }
+}
+
+
+// ==============================
 // GET MEMBERS
 // ==============================
 
@@ -58,6 +120,60 @@ export async function fetchMembers(groupId: string): Promise<GroupMembersRespons
   }
 
   return res.json();
+}
+
+
+// ==============================
+// ADD MEMBER
+// ==============================
+
+export async function addMember(
+  groupId: string,
+  payload: AddGroupMemberRequest
+): Promise<void> {
+
+  const token = getAuthTokenOrThrow();
+
+  const response = await fetch(`/api/groups/${groupId}/members`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Erro ao adicionar membro: HTTP ${response.status} - ${text || "sem detalhes"}`);
+  }
+}
+
+
+// ==============================
+// REMOVE MEMBER
+// ==============================
+
+export async function removeMember(
+  groupId: string,
+  memberId: string
+): Promise<void> {
+
+  const token = getAuthTokenOrThrow();
+
+  const response = await fetch(`/api/groups/${groupId}/members/${memberId}`, {
+    method: "DELETE",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Erro ao remover membro: HTTP ${response.status} - ${text || "sem detalhes"}`);
+  }
 }
 
 
@@ -197,3 +313,14 @@ export async function deleteExpense(expenseId: string): Promise<void> {
 //
 // Este arquivo centraliza todas as chamadas de API
 // do módulo Groups do NUVCOIN.
+//
+// Novas funções adicionadas nesta etapa:
+// - createGroup
+// - deleteGroup
+// - addMember
+// - removeMember
+//
+// Observação importante:
+// - Mantive os payloads de grupo/membro de forma segura e simples.
+// - Para addMember, deixei o payload flexível com email, userId ou name,
+//   porque o formato exato pode variar conforme o backend já implementado.
