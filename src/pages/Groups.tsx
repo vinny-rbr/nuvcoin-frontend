@@ -16,12 +16,13 @@ import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de açõ
 import useGroupsBaseConfig from "./groups/hooks/useGroupsBaseConfig"; // Hook da base salarial / percentual
 import { useGroupsCalculations } from "./groups/hooks/useGroupsCalculations"; // Hook de cálculos do dashboard
 import { useGroupsDashboard } from "./groups/hooks/useGroupsDashboard"; // Hook central do dashboard
+import useGroupsEditExpense from "./groups/hooks/useGroupsEditExpense"; // Hook da edição de despesa
+import useGroupsExpenses from "./groups/hooks/useGroupsExpenses"; // Hook das despesas do módulo
 import useGroupsForms from "./groups/hooks/useGroupsForms"; // Hook de formulários do módulo
 import useGroupsModals from "./groups/hooks/useGroupsModals"; // Hook de modais do módulo
 
 import type {
   GroupDto,
-  GroupExpenseListItemDto,
   GroupsApiState,
 } from "./groups/types/groups.types"; // Tipos do módulo
 
@@ -146,34 +147,49 @@ export default function Groups() {
   const [removeMemberError, setRemoveMemberError] = useState<string | null>(null); // Erro ao remover membro
 
   // ==============================
-  // STATE: modal adicionar despesas
+  // HOOK: despesas
   // ==============================
 
-  const [expensesTab, setExpensesTab] = useState<"HOUSE" | "QUICK">("HOUSE"); // Aba ativa do modal
-
-  // ==============================
-  // STATE: conta do mês
-  // ==============================
-
-  const [houseName, setHouseName] = useState(""); // Nome da conta do mês
-  const [houseAmountBRL, setHouseAmountBRL] = useState("0,00"); // Valor em BRL
-  const [houseDate, setHouseDate] = useState<string>(""); // Data da conta
-  const [housePaidByUserId, setHousePaidByUserId] = useState<string>(""); // Quem pagou
-  const [houseLoading, setHouseLoading] = useState(false); // Loading ao criar conta do mês
-  const [houseError, setHouseError] = useState<string | null>(null); // Erro da conta do mês
-  const [houseSuccess, setHouseSuccess] = useState<string | null>(null); // Sucesso da conta do mês
-
-  // ==============================
-  // STATE: despesa avulsa
-  // ==============================
-
-  const [quickDesc, setQuickDesc] = useState(""); // Descrição da despesa avulsa
-  const [quickAmountBRL, setQuickAmountBRL] = useState("0,00"); // Valor da despesa avulsa
-  const [quickDate, setQuickDate] = useState<string>(""); // Data da despesa avulsa
-  const [quickPaidByUserId, setQuickPaidByUserId] = useState<string>(""); // Quem pagou
-  const [quickLoading, setQuickLoading] = useState(false); // Loading da despesa avulsa
-  const [quickError, setQuickError] = useState<string | null>(null); // Erro da despesa avulsa
-  const [quickSuccess, setQuickSuccess] = useState<string | null>(null); // Sucesso da despesa avulsa
+  const {
+    expensesTab,
+    setExpensesTab,
+    houseName,
+    setHouseName,
+    houseAmountBRL,
+    setHouseAmountBRL,
+    houseDate,
+    setHouseDate,
+    housePaidByUserId,
+    houseLoading,
+    setHouseLoading,
+    houseError,
+    setHouseError,
+    houseSuccess,
+    setHouseSuccess,
+    quickDesc,
+    setQuickDesc,
+    quickAmountBRL,
+    setQuickAmountBRL,
+    quickDate,
+    setQuickDate,
+    quickPaidByUserId,
+    quickLoading,
+    setQuickLoading,
+    quickError,
+    setQuickError,
+    quickSuccess,
+    setQuickSuccess,
+    clearExpenseFeedback,
+    prepareHouseExpenseFlow,
+    prepareQuickExpenseFlow,
+    handleHouseAmountFocus,
+    handleHouseAmountBlur,
+    handleQuickAmountFocus,
+    handleQuickAmountBlur,
+  } = useGroupsExpenses({
+    selectedGroupId,
+    balances,
+  }); // Hook que centraliza os estados e handlers das despesas
 
   // ==============================
   // HOOK: base salarial / percentual
@@ -202,73 +218,33 @@ export default function Groups() {
   }); // Hook que centraliza toda a lógica da base do grupo
 
   // ==============================
-  // STATE: modal editar despesa
+  // HOOK: edição de despesa
   // ==============================
 
-  const [editLoading, setEditLoading] = useState(false); // Loading da edição
-  const [editError, setEditError] = useState<string | null>(null); // Erro da edição
-  const [editSuccess, setEditSuccess] = useState<string | null>(null); // Sucesso da edição
+  const {
+    editingExpense,
+    editLoading,
+    setEditLoading,
+    editError,
+    setEditError,
+    editSuccess,
+    setEditSuccess,
+    clearEditFeedback,
+    handleOpenEditExpenseModal,
+    handleCloseEditExpenseModal,
+    handleEditAmountFocus,
+    handleEditAmountBlur,
+  } = useGroupsEditExpense({
+    expenses: expenses?.items ?? [],
+    selectedExpenseId,
+    openEditExpenseModal,
+    closeEditExpenseModalState,
+    clearSelectedExpense,
+    resetEditExpenseForm,
+    startEditExpenseForm,
+  }); // Hook que centraliza estado e fluxo da edição
 
   const RECOMMENDED_LIMIT_PERCENT = 30; // Limite recomendado de comprometimento
-
-  const editingExpense = useMemo<GroupExpenseListItemDto | null>(() => {
-    if (!selectedExpenseId) return null; // Sai se não existir despesa selecionada
-    return expenses.find((expense) => expense.id === selectedExpenseId) ?? null; // Busca a despesa atual pelo id salvo no hook de modais
-  }, [expenses, selectedExpenseId]); // Recalcula quando lista de despesas ou id selecionado mudar
-
-  // ==============================
-  // RESET: modal despesas
-  // ==============================
-
-  function resetExpenseForms() {
-    setHouseError(null); // Limpa erro da conta do mês
-    setHouseSuccess(null); // Limpa sucesso da conta do mês
-    setQuickError(null); // Limpa erro da despesa avulsa
-    setQuickSuccess(null); // Limpa sucesso da despesa avulsa
-
-    const defaultPaidBy = (balances?.members ?? [])[0]?.userId ?? ""; // Primeiro membro como padrão
-
-    setHouseName(""); // Reseta nome da conta
-    setHouseAmountBRL("0,00"); // Reseta valor da conta
-    setHouseDate(""); // Reseta data da conta
-    setHousePaidByUserId(defaultPaidBy); // Reseta quem pagou
-
-    setQuickDesc(""); // Reseta descrição da despesa avulsa
-    setQuickAmountBRL("0,00"); // Reseta valor da despesa avulsa
-    setQuickDate(""); // Reseta data da despesa avulsa
-    setQuickPaidByUserId(defaultPaidBy); // Reseta quem pagou
-  }
-
-  // ==============================
-  // RESET: modal editar
-  // ==============================
-
-  function handleOpenEditExpenseModal(expense: GroupExpenseListItemDto) {
-    setEditError(null); // Limpa erro da edição
-    setEditSuccess(null); // Limpa sucesso da edição
-
-    openEditExpenseModal({
-      expenseId: expense.id,
-      title: expense.description,
-    }); // Salva a despesa selecionada e abre o modal pelo hook
-
-    startEditExpenseForm({
-      title: expense.description ?? "",
-      amountCents: expense.amountCents ?? 0,
-      occurredOn: expense.date ?? "",
-      paidByUserId: expense.paidByUserId ?? "",
-      splitMode: "equal",
-      manualPercentByUserId: {},
-    }); // Preenche o formulário de edição usando o hook de forms
-  }
-
-  function handleCloseEditExpenseModal() {
-    closeEditExpenseModalState(); // Fecha o modal de edição
-    clearSelectedExpense(); // Limpa despesa selecionada
-    resetEditExpenseForm(); // Reseta o formulário de edição
-    setEditError(null); // Limpa erro
-    setEditSuccess(null); // Limpa sucesso
-  }
 
   // ==============================
   // HOOK: actions
@@ -320,9 +296,7 @@ export default function Groups() {
 
   useEffect(() => {
     closeCreateExpenseModal(); // Fecha modal de despesas
-    setExpensesTab("HOUSE"); // Volta aba padrão
     closeBaseConfigModal(); // Fecha modal da base
-
     handleCloseEditExpenseModal(); // Fecha modal de edição
 
     setCreateGroupError(null); // Limpa erro de criação
@@ -331,27 +305,10 @@ export default function Groups() {
     setAddMemberSuccess(null); // Limpa sucesso de adicionar membro
     setRemoveMemberError(null); // Limpa erro de remover membro
 
-    setHouseError(null); // Limpa erro da conta do mês
-    setHouseSuccess(null); // Limpa sucesso da conta do mês
-    setQuickError(null); // Limpa erro da despesa avulsa
-    setQuickSuccess(null); // Limpa sucesso da despesa avulsa
-
+    clearExpenseFeedback(); // Limpa feedback do modal de despesas
     clearBaseFeedback(); // Limpa feedback do modal da base
+    clearEditFeedback(); // Limpa feedback do modal de edição
   }, [selectedGroupId]); // Executa ao trocar grupo
-
-  useEffect(() => {
-    const firstUserId = (balances?.members ?? [])[0]?.userId ?? ""; // Primeiro userId do grupo
-
-    setHousePaidByUserId((prev) => {
-      if (prev) return prev; // Mantém valor atual se já existir
-      return firstUserId; // Usa primeiro membro
-    });
-
-    setQuickPaidByUserId((prev) => {
-      if (prev) return prev; // Mantém valor atual se já existir
-      return firstUserId; // Usa primeiro membro
-    });
-  }, [balances]); // Ajusta pagador padrão quando balances mudar
 
   // ==============================
   // UI data via hook
@@ -392,10 +349,7 @@ export default function Groups() {
     setCreateGroupSuccess(null); // Limpa sucesso de criação
     setCreateGroupError(null); // Limpa erro de criação
 
-    setHouseSuccess(null); // Limpa sucesso da conta do mês
-    setHouseError(null); // Limpa erro da conta do mês
-    setQuickSuccess(null); // Limpa sucesso da despesa avulsa
-    setQuickError(null); // Limpa erro da despesa avulsa
+    clearExpenseFeedback(); // Limpa feedback das despesas
 
     setAddMemberSuccess(null); // Limpa sucesso de membro
     setAddMemberError(null); // Limpa erro de membro
@@ -404,9 +358,10 @@ export default function Groups() {
     setSalaryError(null); // Limpa erro do modal base
     setSalarySuccess(null); // Limpa sucesso do modal base
 
+    clearEditFeedback(); // Limpa feedback da edição
+
     closeCreateExpenseModal(); // Fecha modal despesas
     closeBaseConfigModal(); // Fecha modal base
-
     handleCloseEditExpenseModal(); // Fecha modal edição
   }
 
@@ -512,8 +467,7 @@ export default function Groups() {
                   <button
                     type="button"
                     onClick={() => {
-                      resetExpenseForms();
-                      setExpensesTab("HOUSE");
+                      prepareHouseExpenseFlow();
                       openCreateExpenseModal();
                     }}
                     style={primaryButton}
@@ -646,8 +600,7 @@ export default function Groups() {
                         <button
                           type="button"
                           onClick={() => {
-                            resetExpenseForms();
-                            setExpensesTab("HOUSE");
+                            prepareHouseExpenseFlow();
                             openCreateExpenseModal();
                           }}
                           disabled={!selectedGroupId}
@@ -663,8 +616,7 @@ export default function Groups() {
                         <button
                           type="button"
                           onClick={() => {
-                            setExpensesTab("QUICK");
-                            resetExpenseForms();
+                            prepareQuickExpenseFlow();
                             openCreateExpenseModal();
                           }}
                           disabled={!selectedGroupId}
@@ -752,12 +704,8 @@ export default function Groups() {
         onHouseNameChange={setHouseName}
         onHouseAmountChange={setHouseAmountBRL}
         onHouseDateChange={setHouseDate}
-        onHouseAmountFocus={() => {
-          if ((houseAmountBRL ?? "").trim() === "0,00") setHouseAmountBRL("");
-        }}
-        onHouseAmountBlur={() => {
-          if (!(houseAmountBRL ?? "").trim()) setHouseAmountBRL("0,00");
-        }}
+        onHouseAmountFocus={handleHouseAmountFocus}
+        onHouseAmountBlur={handleHouseAmountBlur}
         onCreateHouseExpense={() =>
           onCreateHouseExpense({
             houseName,
@@ -769,12 +717,8 @@ export default function Groups() {
         onQuickDescChange={setQuickDesc}
         onQuickAmountChange={setQuickAmountBRL}
         onQuickDateChange={setQuickDate}
-        onQuickAmountFocus={() => {
-          if ((quickAmountBRL ?? "").trim() === "0,00") setQuickAmountBRL("");
-        }}
-        onQuickAmountBlur={() => {
-          if (!(quickAmountBRL ?? "").trim()) setQuickAmountBRL("0,00");
-        }}
+        onQuickAmountFocus={handleQuickAmountFocus}
+        onQuickAmountBlur={handleQuickAmountBlur}
         onCreateQuickExpense={() =>
           onCreateQuickExpense({
             quickDesc,
@@ -808,12 +752,8 @@ export default function Groups() {
         onEditDescChange={setEditingExpenseTitle}
         onEditAmountChange={setEditingExpenseAmount}
         onEditDateChange={setEditingExpenseDate}
-        onEditAmountFocus={() => {
-          if ((editingExpenseAmount ?? "").trim() === "0,00") setEditingExpenseAmount("");
-        }}
-        onEditAmountBlur={() => {
-          if (!(editingExpenseAmount ?? "").trim()) setEditingExpenseAmount("0,00");
-        }}
+        onEditAmountFocus={() => handleEditAmountFocus(editingExpenseAmount, setEditingExpenseAmount)}
+        onEditAmountBlur={() => handleEditAmountBlur(editingExpenseAmount, setEditingExpenseAmount)}
         onSave={() =>
           onSaveEditExpense({
             editingExpense,
@@ -875,12 +815,12 @@ export default function Groups() {
 // lucassousa@gmail.com
 //
 // Ajuste aplicado nesta etapa:
-// - ✅ criada a extração da lógica de base salarial/manual para o hook useGroupsBaseConfig
-// - ✅ removidos do Groups.tsx os helpers de load/save e validação da base
-// - ✅ modal GroupsBaseModal agora consome handlers centralizados do hook
-// - ✅ Groups.tsx ficou ainda mais focado em UI, composição e fluxo visual
+// - ✅ extraída a lógica do modal de edição para o hook useGroupsEditExpense
+// - ✅ removidos do Groups.tsx o estado local de editLoading/editError/editSuccess
+// - ✅ removida do Groups.tsx a lógica de open/close/focus/blur da edição
+// - ✅ Groups.tsx ficou ainda mais como orquestrador de UI
 //
 // Próximo passo recomendado:
-// - testa compilação
-// - se estiver tudo certo, a próxima etapa pode ser refatorar os estados de despesas em um hook próprio
-// - se der qualquer erro, me manda o erro inteiro que eu corrijo completo
+// - testar compilação
+// - se passar, o próximo nível é extrair os estados/feedbacks de grupo e membros
+// - aí o Groups.tsx fica quase totalmente declarativo

@@ -57,7 +57,7 @@ export function shortGuid(value: string): string {
   return `${v.slice(0, 8)}…`; // Exibe curto
 }
 
-export function safeName(name?: string, email?: string, userId?: string): string {
+export function safeName(name?: string | null, email?: string | null, userId?: string | null): string {
   const n = (name ?? "").trim(); // Nome
   if (n) return n; // Se tiver nome, usa
 
