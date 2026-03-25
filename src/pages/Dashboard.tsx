@@ -130,6 +130,7 @@ function getPeriodLabel(period: PeriodKey): string {
 export default function Dashboard() {
   const [items, setItems] = useState<FinanceItem[]>([]); // Estado com itens
   const [period, setPeriod] = useState<PeriodKey>("LAST_3"); // Filtro padrão
+  const [animate, setAnimate] = useState(false); // Controla animação suave de entrada/atualização
 
   // Carrega itens na entrada + escuta mudanças via service (entre abas + mesma aba)
   useEffect(() => {
@@ -145,6 +146,19 @@ export default function Dashboard() {
       unsubscribe(); // ✅ Remove listeners
     };
   }, []);
+
+  // Dispara animação sempre que período ou dados mudarem
+  useEffect(() => {
+    setAnimate(false); // Reseta antes de animar de novo
+
+    const timeoutId = window.setTimeout(() => {
+      setAnimate(true); // Ativa a animação depois de um pequeno intervalo
+    }, 40);
+
+    return () => {
+      window.clearTimeout(timeoutId); // Limpa timeout ao desmontar ou mudar dependência
+    };
+  }, [period, items]);
 
   // Filtra itens conforme o período
   const filteredItems = useMemo(() => {
@@ -263,7 +277,14 @@ export default function Dashboard() {
   }, [filteredItems]);
 
   return (
-    <>
+    <div
+      style={{
+        opacity: animate ? 1 : 0,
+        transform: animate ? "translateY(0px)" : "translateY(10px)",
+        transition: "opacity 0.35s ease, transform 0.35s ease",
+        willChange: "opacity, transform",
+      }}
+    >
       {/* Cabeçalho + filtro */}
       <div
         style={{
@@ -517,7 +538,7 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -531,4 +552,8 @@ Mudança feita:
 
 ✔ Dashboard agora pega dados via financeService (hoje localStorage, amanhã API)
 ✔ Não mexi em layout, gráficos, donut, tabela, nem filtro
+✔ Adicionei animação suave de fade + subida
+✔ A animação dispara quando o período muda
+✔ A animação dispara quando os dados mudam
+✔ Foi feita direto no componente, sem depender de mexer no dashboard.css
 */

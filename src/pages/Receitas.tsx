@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react"; // Hooks
 import type { FinanceCategory, FinanceItem } from "../types/finance"; // Tipos
 import {
-  financeAdd, // ✅ Adiciona via service
-  financeList, // ✅ Lista via service
-  financeRemove, // ✅ Remove via service
-  financeSubscribe, // ✅ Atualiza em tempo real
-  makeId, // ✅ Helper (reexport do storage)
-  todayISO, // ✅ Helper (reexport do storage)
-} from "../lib/financeService"; // ✅ Service
-import { calcFinanceSummary } from "../lib/financeStorage"; // Resumo (mantém igual)
-import "./dashboard.css"; // Reaproveita visual
+  financeAdd,
+  financeList,
+  financeRemove,
+  financeSubscribe,
+  makeId,
+  todayISO,
+} from "../lib/financeService";
+import { calcFinanceSummary } from "../lib/financeStorage";
+import "./dashboard.css";
 
 // Formata centavos para BRL
 function formatBRLFromCents(valueCents: number): string {
@@ -17,7 +17,7 @@ function formatBRLFromCents(valueCents: number): string {
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-// Converte "1500", "1500,50", "1.500,50" -> centavos
+// Converte para centavos
 function parseBRLToCents(input: string): number {
   const normalized = input.replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, "");
   const value = Number(normalized || "0");
@@ -25,33 +25,43 @@ function parseBRLToCents(input: string): number {
 }
 
 export default function Receitas() {
-  const [items, setItems] = useState<FinanceItem[]>([]); // Itens do service
+  const [items, setItems] = useState<FinanceItem[]>([]);
 
-  // Form
-  const [title, setTitle] = useState(""); // Título
-  const [amount, setAmount] = useState(""); // Valor
-  const [dateISO, setDateISO] = useState(todayISO()); // Data ISO
-  const [category, setCategory] = useState<FinanceCategory>("Salário"); // Categoria válida
+  const [title, setTitle] = useState("");
+  const [amount, setAmount] = useState("");
+  const [dateISO, setDateISO] = useState(todayISO());
+  const [category, setCategory] = useState<FinanceCategory>("Salário");
 
-  // Carrega ao abrir + escuta mudanças (mesma aba + entre abas)
+  const [animate, setAnimate] = useState(false); // 🔥 animação
+
+  // Carrega + subscribe
   useEffect(() => {
     const load = () => {
-      setItems(financeList()); // ✅ Lê via service
+      setItems(financeList());
     };
 
-    load(); // Carrega ao abrir
+    load();
 
-    const unsubscribe = financeSubscribe(load); // ✅ Atualiza em tempo real
+    const unsubscribe = financeSubscribe(load);
 
     return () => {
-      unsubscribe(); // ✅ Cleanup
+      unsubscribe();
     };
   }, []);
 
-  // Resumo
+  // 🔥 animação ao mudar dados
+  useEffect(() => {
+    setAnimate(false);
+
+    const t = setTimeout(() => {
+      setAnimate(true);
+    }, 40);
+
+    return () => clearTimeout(t);
+  }, [items]);
+
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
 
-  // Lista só receitas
   const receitas = useMemo(() => items.filter((x) => x.type === "RECEITA"), [items]);
 
   function handleAdd() {
@@ -64,17 +74,15 @@ export default function Receitas() {
       id: makeId(),
       type: "RECEITA",
       title: title.trim(),
-      category, // Categoria válida
+      category,
       amountCents: parseBRLToCents(amount),
       dateISO,
       createdAtISO: new Date().toISOString(),
-
-      // ✅ Campos obrigatórios do seu types/finance.ts
-      paymentType: "pix", // Receita: por padrão pix (pode mudar depois)
-      status: "paid", // Receita: por padrão paid
+      paymentType: "pix",
+      status: "paid",
     };
 
-    const updated = financeAdd(newItem); // ✅ Salva via service
+    const updated = financeAdd(newItem);
     setItems(updated);
 
     setTitle("");
@@ -84,12 +92,18 @@ export default function Receitas() {
   }
 
   function handleRemove(id: string) {
-    const updated = financeRemove(id); // ✅ Remove via service
+    const updated = financeRemove(id);
     setItems(updated);
   }
 
   return (
-    <>
+    <div
+      style={{
+        opacity: animate ? 1 : 0,
+        transform: animate ? "translateY(0px)" : "translateY(10px)",
+        transition: "all 0.35s ease",
+      }}
+    >
       <h2 style={{ marginBottom: 14 }}>Receitas</h2>
 
       {/* Cards */}
@@ -110,7 +124,7 @@ export default function Receitas() {
         </div>
       </div>
 
-      {/* Card Form */}
+      {/* Form */}
       <div className="chart-card" style={{ marginBottom: 18 }}>
         <div className="chart-title" style={{ fontSize: 22, fontWeight: 800, marginBottom: 14 }}>
           Adicionar Receita
@@ -121,25 +135,11 @@ export default function Receitas() {
             placeholder="Título (ex: Salário)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            style={{
-              padding: 12,
-              borderRadius: 10,
-              border: "1px solid rgba(148,163,184,0.18)",
-              background: "rgba(15,23,42,0.25)",
-              color: "white",
-            }}
           />
 
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value as FinanceCategory)}
-            style={{
-              padding: 12,
-              borderRadius: 10,
-              border: "1px solid rgba(148,163,184,0.18)",
-              background: "rgba(15,23,42,0.25)",
-              color: "white",
-            }}
           >
             <option value="Salário">Salário</option>
             <option value="Freelance">Freelance</option>
@@ -151,44 +151,17 @@ export default function Receitas() {
             placeholder="Valor (ex: 2500,00)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            style={{
-              padding: 12,
-              borderRadius: 10,
-              border: "1px solid rgba(148,163,184,0.18)",
-              background: "rgba(15,23,42,0.25)",
-              color: "white",
-            }}
           />
 
           <input
             type="date"
             value={dateISO}
             onChange={(e) => setDateISO(e.target.value)}
-            style={{
-              padding: 12,
-              borderRadius: 10,
-              border: "1px solid rgba(148,163,184,0.18)",
-              background: "rgba(15,23,42,0.25)",
-              color: "white",
-            }}
           />
         </div>
 
         <div style={{ marginTop: 14 }}>
-          <button
-            onClick={handleAdd}
-            style={{
-              padding: "12px 18px",
-              borderRadius: 10,
-              border: "none",
-              background: "#3b82f6",
-              color: "white",
-              fontWeight: 800,
-              cursor: "pointer",
-            }}
-          >
-            Adicionar Receita
-          </button>
+          <button onClick={handleAdd}>Adicionar Receita</button>
         </div>
       </div>
 
@@ -205,38 +178,20 @@ export default function Receitas() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {receitas.map((item) => (
-              <div
-                key={item.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: 14,
-                  borderRadius: 12,
-                  border: "1px solid rgba(148,163,184,0.18)",
-                  background: "rgba(15,23,42,0.25)",
-                }}
-              >
+              <div key={item.id} style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontWeight: 800 }}>{item.title}</div>
-                  <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>
+                  <div style={{ fontSize: 13 }}>
                     {item.category} • {item.dateISO}
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ fontWeight: 900 }}>{formatBRLFromCents(item.amountCents)}</div>
-                  <button
-                    onClick={() => handleRemove(item.id)}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 10,
-                      border: "1px solid rgba(148,163,184,0.25)",
-                      background: "transparent",
-                      color: "white",
-                      cursor: "pointer",
-                    }}
-                  >
+                <div style={{ display: "flex", gap: 12 }}>
+                  <div style={{ fontWeight: 900 }}>
+                    {formatBRLFromCents(item.amountCents)}
+                  </div>
+
+                  <button onClick={() => handleRemove(item.id)}>
                     Remover
                   </button>
                 </div>
@@ -245,7 +200,7 @@ export default function Receitas() {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -253,7 +208,7 @@ export default function Receitas() {
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
 
-Receitas.tsx:
-- Migrado para financeService (hoje localStorage, amanhã API)
-- Mantém UI igual
+✔ Animação adicionada (fade + subida)
+✔ Dispara ao atualizar dados
+✔ Mesmo padrão do Dashboard e Despesas
 */

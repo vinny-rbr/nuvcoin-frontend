@@ -23,26 +23,35 @@ export default function GroupsMetrics({
   subtleText,
   metricCard,
 }: GroupsMetricsProps) {
+  const valueStyle: CSSProperties = {
+    fontWeight: 900,
+    fontSize: "clamp(14px, 1.6vw, 22px)",
+    lineHeight: 1.1,
+    letterSpacing: -0.4,
+    whiteSpace: "nowrap",
+    minWidth: 0,
+  }; // Fonte menor e mais proporcional para caber sem cortar
+
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
-      <div style={metricCard("blue")}>
+      <div style={{ ...metricCard("blue"), minWidth: 0 }}>
         <div style={subtleText}>Total do mês</div>
-        <div style={{ fontWeight: 900, fontSize: 26, letterSpacing: -0.5 }}>{formatBRLFromCents(monthTotalCents)}</div>
+        <div style={valueStyle}>{formatBRLFromCents(monthTotalCents)}</div>
       </div>
 
-      <div style={metricCard("green")}>
+      <div style={{ ...metricCard("green"), minWidth: 0 }}>
         <div style={subtleText}>Despesas no mês</div>
-        <div style={{ fontWeight: 900, fontSize: 26 }}>{monthExpensesCount}</div>
+        <div style={valueStyle}>{monthExpensesCount}</div>
       </div>
 
-      <div style={metricCard("purple")}>
+      <div style={{ ...metricCard("purple"), minWidth: 0 }}>
         <div style={subtleText}>Membros</div>
-        <div style={{ fontWeight: 900, fontSize: 26 }}>{membersCount}</div>
+        <div style={valueStyle}>{membersCount}</div>
       </div>
 
-      <div style={metricCard(highestBurden > recommendedLimitPercent ? "red" : "blue")}>
+      <div style={{ ...metricCard(highestBurden > recommendedLimitPercent ? "red" : "blue"), minWidth: 0 }}>
         <div style={subtleText}>Média por pessoa</div>
-        <div style={{ fontWeight: 900, fontSize: 26, letterSpacing: -0.4 }}>{formatBRLFromCents(averagePerPersonCents)}</div>
+        <div style={valueStyle}>{formatBRLFromCents(averagePerPersonCents)}</div>
       </div>
     </div>
   );
@@ -51,9 +60,8 @@ export default function GroupsMetrics({
 // Desenvolvido por Lucas Vinicius
 // lucassousa@gmail.com
 //
-// Componente extraído do Groups.tsx:
-// - Cards de métricas
-// - Total do mês
-// - Despesas no mês
-// - Membros
-// - Média por pessoa
+// Ajuste aplicado:
+// - ✅ removido ellipsis
+// - ✅ mantido valor completo
+// - ✅ fonte reduzida de forma proporcional
+// - ✅ espaçamento ajustado para caber melhor no card

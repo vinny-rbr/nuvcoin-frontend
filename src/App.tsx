@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from "react-router-dom"; // Rotas do React Router
+import { useEffect, useState, type ReactNode } from "react"; // Hooks + tipo
+import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Rotas do React Router
 import Layout from "./components/Layout"; // Layout premium (topbar + container)
 import ProtectedRoute from "./routes/ProtectedRoute"; // Proteção de rota (mock login)
 
@@ -7,7 +8,42 @@ import Register from "./pages/Register"; // Página de cadastro
 import Dashboard from "./pages/Dashboard"; // Página dashboard
 import Receitas from "./pages/Receitas"; // Página receitas
 import Despesas from "./pages/Despesas"; // Página despesas
-import Groups from "./pages/Groups"; // ✅ Página de grupos (Splitwise)
+import Groups from "./pages/Groups"; // Página de grupos (Splitwise)
+
+type AnimatedPageProps = {
+  children: ReactNode; // Conteúdo da página
+};
+
+// Componente interno para animar a entrada das páginas
+function AnimatedPage({ children }: AnimatedPageProps) {
+  const location = useLocation(); // Detecta troca de rota
+  const [visible, setVisible] = useState(false); // Controla animação
+
+  useEffect(() => {
+    setVisible(false); // Reseta ao mudar rota
+
+    const timeoutId = window.setTimeout(() => {
+      setVisible(true); // Ativa a animação logo após montar
+    }, 40);
+
+    return () => {
+      window.clearTimeout(timeoutId); // Limpa timeout
+    };
+  }, [location.pathname]);
+
+  return (
+    <div
+      style={{
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0px)" : "translateY(12px)",
+        transition: "opacity 0.35s ease, transform 0.35s ease",
+        willChange: "opacity, transform",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -16,68 +52,82 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Rotas protegidas (só entra se estiver logado no mock) */}
+      {/* Dashboard */}
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
             <Layout>
-              <Dashboard />
+              <AnimatedPage>
+                <Dashboard />
+              </AnimatedPage>
             </Layout>
           </ProtectedRoute>
         }
       />
 
+      {/* Receitas */}
       <Route
         path="/receitas"
         element={
           <ProtectedRoute>
             <Layout>
-              <Receitas />
+              <AnimatedPage>
+                <Receitas />
+              </AnimatedPage>
             </Layout>
           </ProtectedRoute>
         }
       />
 
+      {/* Despesas */}
       <Route
         path="/despesas"
         element={
           <ProtectedRoute>
             <Layout>
-              <Despesas />
+              <AnimatedPage>
+                <Despesas />
+              </AnimatedPage>
             </Layout>
           </ProtectedRoute>
         }
       />
 
-      {/* ✅ NOVO: Groups */}
+      {/* Groups */}
       <Route
         path="/groups"
         element={
           <ProtectedRoute>
             <Layout>
-              <Groups />
+              <AnimatedPage>
+                <Groups />
+              </AnimatedPage>
             </Layout>
           </ProtectedRoute>
         }
       />
 
-      {/* Rota inicial: manda pro dashboard */}
+      {/* Rota inicial */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-      {/* Qualquer outra rota: manda pro dashboard */}
+      {/* Qualquer rota desconhecida */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   );
 }
 
 /*
+=====================================================
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
+=====================================================
 
-// O que este App.tsx faz:
-// - Define as rotas públicas (/login e /register)
-// - Protege as rotas principais com ProtectedRoute (mock login)
-// - Envolve Dashboard/Receitas/Despesas/Groups com <Layout> para renderizar o conteúdo dentro do layout premium
-// - Faz "/" e rotas desconhecidas redirecionarem para "/dashboard"
+Mudança feita:
+
+✔ Adicionada animação global entre páginas protegidas
+✔ Fade + subida suave ao trocar rota
+✔ Aplicado em Dashboard, Receitas, Despesas e Groups
+✔ Sem criar arquivo novo
+✔ Sem depender de biblioteca externa
 */
