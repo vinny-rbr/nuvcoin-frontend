@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react"; // Hooks do React
+import { useCallback, useEffect, useRef, useState } from "react"; // Hooks do React
 
 type UseGroupsCreateTransitionParams = {
   closeModal: () => void; // Fecha o modal de criar grupo
@@ -17,11 +17,16 @@ export default function useGroupsCreateTransition({
   onAfterCreate,
 }: UseGroupsCreateTransitionParams): UseGroupsCreateTransitionReturn {
   const [isTransitionVisible, setIsTransitionVisible] = useState(false); // Exibe a transição visual
-  const [isCreatingWithTransition, setIsCreatingWithTransition] = useState(false); // Estado de proteção contra repetição
-  const timeoutRef = useRef<number | null>(null); // Guarda o timer para limpeza segura
+  const [isCreatingWithTransition, setIsCreatingWithTransition] = useState(false); // Estado que bloqueia repetição
+
+  const startAtRef = useRef<number | null>(null); // Guarda o momento em que a transição começou
+  const timeoutRef = useRef<number | null>(null); // Guarda o timer ativo
+
+  const ENTER_DELAY_MS = 120; // Pequena pausa para a UI começar a responder visualmente
+  const MIN_VISIBLE_MS = 820; // Tempo mínimo da transição ficar visível
+  const CLOSE_MODAL_DELAY_MS = 90; // Delay curto para o modal sair mais suave
 
   const clearTransitionTimer = useCallback(() => {
-    // Limpa timer anterior se existir
     if (timeoutRef.current !== null) {
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -29,62 +34,79 @@ export default function useGroupsCreateTransition({
   }, []);
 
   const finishCreateTransition = useCallback(() => {
-    // Limpa qualquer timer pendente
     clearTransitionTimer();
-
-    // Esconde a transição
+    startAtRef.current = null;
     setIsTransitionVisible(false);
-
-    // Libera o estado de loading/transição
     setIsCreatingWithTransition(false);
   }, [clearTransitionTimer]);
 
+  const wait = useCallback((ms: number) => {
+    return new Promise<void>((resolve) => {
+      timeoutRef.current = window.setTimeout(() => {
+        timeoutRef.current = null;
+        resolve();
+      }, ms);
+    });
+  }, []);
+
   const startCreateTransition = useCallback(
     async (createAction: () => Promise<void>) => {
-      // Impede múltiplos cliques enquanto já estiver criando
       if (isCreatingWithTransition) {
         return;
       }
 
-      // Marca início do fluxo
+      clearTransitionTimer();
       setIsCreatingWithTransition(true);
+      setIsTransitionVisible(true);
+      startAtRef.current = Date.now();
 
       try {
-        // Executa a criação real do grupo
+        // Dá um pequeno tempo para a interface reagir antes da criação pesada
+        await wait(ENTER_DELAY_MS);
+
+        // Executa a criação real
         await createAction();
 
-        // Fecha o modal primeiro
+        // Pequeno respiro para o modal sair de forma mais elegante
+        await wait(CLOSE_MODAL_DELAY_MS);
+
         closeModal();
 
-        // Mostra a camada de transição visual
-        setIsTransitionVisible(true);
+        // Garante que a transição fique visível por tempo mínimo
+        const elapsed = startAtRef.current ? Date.now() - startAtRef.current : 0;
+        const remaining = Math.max(MIN_VISIBLE_MS - elapsed, 0);
 
-        // Espera a animação acontecer antes de limpar
-        timeoutRef.current = window.setTimeout(() => {
-          // Esconde a transição após a animação
-          setIsTransitionVisible(false);
+        if (remaining > 0) {
+          await wait(remaining);
+        }
 
-          // Libera o estado
-          setIsCreatingWithTransition(false);
-
-          // Dispara callback opcional no final
-          onAfterCreate?.();
-
-          // Limpa a referência do timer
-          timeoutRef.current = null;
-        }, 900);
-      } catch (error) {
-        // Em caso de erro, garante limpeza do estado
-        clearTransitionTimer();
         setIsTransitionVisible(false);
         setIsCreatingWithTransition(false);
-
-        // Relança o erro para manter o fluxo atual do app
+        startAtRef.current = null;
+        onAfterCreate?.();
+      } catch (error) {
+        finishCreateTransition();
         throw error;
       }
     },
-    [clearTransitionTimer, closeModal, isCreatingWithTransition, onAfterCreate],
+    [
+      ENTER_DELAY_MS,
+      MIN_VISIBLE_MS,
+      CLOSE_MODAL_DELAY_MS,
+      clearTransitionTimer,
+      closeModal,
+      finishCreateTransition,
+      isCreatingWithTransition,
+      onAfterCreate,
+      wait,
+    ],
   );
+
+  useEffect(() => {
+    return () => {
+      clearTransitionTimer();
+    };
+  }, [clearTransitionTimer]);
 
   return {
     isTransitionVisible,
@@ -100,11 +122,23 @@ Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
 =====================================================
 
-O que esse hook faz:
+// O que foi melhorado neste hook:
 
-// Controla a lógica da transição de criação de grupo
-// Fecha o modal depois que o grupo é criado com sucesso
-// Exibe a camada visual da animação por alguns milissegundos
-// Evita clique duplo no botão "Criar grupo"
-// Mantém a lógica fora do Groups.tsx, como combinado
+// 1) A transição agora começa ANTES de finalizar toda a criação,
+// deixando a resposta visual mais forte e mais "SaaS".
+
+// 2) Foi adicionado um tempo mínimo de exibição da transição,
+// evitando aquele efeito muito rápido ou seco demais.
+
+// 3) O modal agora fecha com um pequeno atraso controlado,
+// deixando a sensação visual mais suave.
+
+// 4) Continua existindo proteção contra clique duplo,
+// para impedir múltiplas criações ao mesmo tempo.
+
+// 5) Foi adicionado cleanup no unmount,
+// evitando timer solto na memória.
+
+// 6) A assinatura do hook foi mantida igual,
+// então não quebra o restante do fluxo atual.
 */

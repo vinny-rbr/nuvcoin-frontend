@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type KeyboardEvent } from "react";
 
 type Props = {
   open: boolean;
@@ -38,10 +38,53 @@ export default function GroupsCreateModal({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: globalThis.KeyboardEvent) => {
+      // Fecha no ESC apenas se não estiver carregando
+      if (event.key === "Escape" && !loading) {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open, loading, onClose]);
+
+  const handleCreate = () => {
+    // Evita múltiplos cliques durante o loading
+    if (loading) return;
+
+    // Evita criar grupo com nome vazio
+    if (!value.trim()) return;
+
+    onCreate();
+  };
+
+  const handleOverlayClick = () => {
+    // Não fecha enquanto estiver criando
+    if (loading) return;
+
+    onClose();
+  };
+
+  const handleKeyDownInput = (event: KeyboardEvent<HTMLInputElement>) => {
+    // Enter cria grupo
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleCreate();
+    }
+  };
+
   if (!open) return null;
 
   return (
     <div
+      onClick={handleOverlayClick}
       style={{
         ...overlay,
         opacity: visible ? 1 : 0,
@@ -49,6 +92,7 @@ export default function GroupsCreateModal({
       }}
     >
       <div
+        onClick={(event) => event.stopPropagation()}
         style={{
           ...modal,
           opacity: visible ? 1 : 0,
@@ -64,7 +108,15 @@ export default function GroupsCreateModal({
             Criar novo grupo
           </div>
 
-          <button onClick={onClose} style={closeBtn}>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              ...closeBtn,
+              opacity: loading ? 0.45 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
             ✕
           </button>
         </div>
@@ -78,9 +130,17 @@ export default function GroupsCreateModal({
           <input
             value={value}
             onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDownInput}
             placeholder="Nome do grupo"
-            style={input}
+            style={{
+              ...input,
+              border: error
+                ? "1px solid rgba(255,107,107,0.55)"
+                : "1px solid rgba(255,255,255,0.1)",
+              opacity: loading ? 0.7 : 1,
+            }}
             autoFocus
+            disabled={loading}
           />
 
           {error && (
@@ -98,20 +158,35 @@ export default function GroupsCreateModal({
 
         {/* Footer */}
         <div style={footer}>
-          <button onClick={onClose} style={cancelBtn}>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            style={{
+              ...cancelBtn,
+              opacity: loading ? 0.45 : 1,
+              cursor: loading ? "not-allowed" : "pointer",
+            }}
+          >
             Cancelar
           </button>
 
           <button
-            onClick={onCreate}
-            disabled={loading}
+            onClick={handleCreate}
+            disabled={loading || !value.trim()}
             style={{
               ...primaryBtn,
-              opacity: loading ? 0.7 : 1,
-              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading || !value.trim() ? 0.7 : 1,
+              cursor: loading || !value.trim() ? "not-allowed" : "pointer",
             }}
           >
-            {loading ? "Criando..." : "Criar grupo"}
+            {loading ? (
+              <span style={loadingContent}>
+                <span style={spinner} />
+                Criando...
+              </span>
+            ) : (
+              "Criar grupo"
+            )}
           </button>
         </div>
       </div>
@@ -132,6 +207,7 @@ const overlay: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   zIndex: 999,
+  padding: 12,
 };
 
 const modal: CSSProperties = {
@@ -166,7 +242,6 @@ const subText: CSSProperties = {
 const input: CSSProperties = {
   padding: 12,
   borderRadius: 12,
-  border: "1px solid rgba(255,255,255,0.1)",
   background: "rgba(255,255,255,0.04)",
   color: "white",
   outline: "none",
@@ -179,6 +254,10 @@ const primaryBtn: CSSProperties = {
   background: "linear-gradient(135deg, #4f46e5, #3b82f6)",
   color: "white",
   fontWeight: 700,
+  minWidth: 132,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
 };
 
 const cancelBtn: CSSProperties = {
@@ -187,15 +266,28 @@ const cancelBtn: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.15)",
   background: "transparent",
   color: "white",
-  cursor: "pointer",
 };
 
 const closeBtn: CSSProperties = {
   background: "transparent",
   border: "none",
   color: "#94a3b8",
-  cursor: "pointer",
   fontSize: 18,
+};
+
+const loadingContent: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 8,
+};
+
+const spinner: CSSProperties = {
+  width: 14,
+  height: 14,
+  borderRadius: "50%",
+  border: "2px solid rgba(255,255,255,0.35)",
+  borderTop: "2px solid white",
+  animation: "spin 0.8s linear infinite",
 };
 
 /*
@@ -204,11 +296,18 @@ Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
 =====================================================
 
-Mudança feita:
+Mudanças feitas neste passo:
 
-✔ Adicionada animação de entrada no modal
-✔ Fade no overlay
-✔ Fade + slide + scale no card
-✔ AutoFocus no input
-✔ Sem mexer no Groups.tsx
+✔ Enter cria o grupo
+✔ ESC fecha o modal
+✔ Clique no fundo fecha o modal
+✔ Clique dentro do card não fecha o modal
+✔ Bloqueio de fechamento enquanto loading estiver ativo
+✔ Botão de criar com spinner visual melhor
+✔ Impede criação com nome vazio
+✔ Input desabilitado durante criação
+
+Observação:
+✔ O style "animation: spin..." depende de keyframes globais
+✔ Se não girar visualmente, no próximo passo eu ajusto isso no arquivo pai ou no estilo global
 */

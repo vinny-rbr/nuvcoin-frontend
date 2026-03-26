@@ -15,6 +15,7 @@ import GroupsPeopleCard from "./groups/components/GroupsPeopleCard"; // Card de 
 import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de ações do módulo
 import useGroupsBaseConfig from "./groups/hooks/useGroupsBaseConfig"; // Hook da base salarial / percentual
 import { useGroupsCalculations } from "./groups/hooks/useGroupsCalculations"; // Hook de cálculos do dashboard
+import { useGroupsCreateGroup } from "./groups/hooks/useGroupsCreateGroup"; // Hook dedicado à criação de grupo
 import useGroupsCreateTransition from "./groups/hooks/useGroupsCreateTransition"; // Hook da transição visual ao criar grupo
 import { useGroupsDashboard } from "./groups/hooks/useGroupsDashboard"; // Hook central do dashboard
 import useGroupsEditExpense from "./groups/hooks/useGroupsEditExpense"; // Hook da edição de despesa
@@ -100,8 +101,6 @@ export default function Groups() {
   // ==============================
 
   const {
-    newGroupName,
-    setNewGroupName,
     editingExpenseTitle,
     setEditingExpenseTitle,
     editingExpenseAmount,
@@ -130,26 +129,6 @@ export default function Groups() {
   } = useGroupsModals();
 
   // ==============================
-  // STATE: criar grupo
-  // ==============================
-
-  const [createGroupError, setCreateGroupError] = useState<string | null>(null);
-  const [createGroupSuccess, setCreateGroupSuccess] = useState<string | null>(null);
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false); // Modal de criação de grupo
-
-  const {
-    isTransitionVisible,
-    startCreateTransition,
-  } = useGroupsCreateTransition({
-    closeModal: () => {
-      setIsCreateGroupModalOpen(false); // Fecha o modal depois do sucesso
-      setCreateGroupError(null); // Limpa erro da criação
-      setCreateGroupSuccess(null); // Limpa feedback de sucesso do modal
-      setNewGroupName(""); // Limpa nome para próxima criação
-    },
-  });
-
-  // ==============================
   // STATE: members
   // ==============================
 
@@ -160,6 +139,8 @@ export default function Groups() {
   const [removeMemberError, setRemoveMemberError] = useState<string | null>(null);
   const [animate, setAnimate] = useState(false);
   const [animationKey, setAnimationKey] = useState(0); // força nova execução visual
+  const [highlightGroupId, setHighlightGroupId] = useState<string | null>(null); // Destaca visualmente o grupo recém-criado
+  const [pendingCreatedGroupName, setPendingCreatedGroupName] = useState<string | null>(null); // Guarda o nome do grupo recém-criado até a lista atualizar
 
   // ==============================
   // HOOK: despesas
@@ -285,8 +266,8 @@ export default function Groups() {
     handleCreateExpense,
     handleUpdateExpense,
     handleDeleteExpense,
-    setCreateGroupError,
-    setCreateGroupSuccess,
+    setCreateGroupError: () => {},
+    setCreateGroupSuccess: () => {},
     setAddMemberError,
     setAddMemberSuccess,
     setRemoveMemberError,
@@ -306,6 +287,31 @@ export default function Groups() {
   });
 
   // ==============================
+  // HOOK: criar grupo
+  // ==============================
+
+  const createGroup = useGroupsCreateGroup({
+    createGroupRequest: async (name) => {
+      await Promise.resolve(
+        onCreateGroup({
+          newGroupName: name,
+        }),
+      );
+    },
+    reloadGroups,
+  });
+
+  const {
+    isTransitionVisible,
+    isCreatingWithTransition,
+    startCreateTransition,
+  } = useGroupsCreateTransition({
+    closeModal: () => {
+      createGroup.close(); // Fecha o modal depois do sucesso e limpa estado
+    },
+  });
+
+  // ==============================
   // EFFECT: reset visual ao trocar grupo
   // ==============================
 
@@ -314,8 +320,7 @@ export default function Groups() {
     closeBaseConfigModal();
     handleCloseEditExpenseModal();
 
-    setCreateGroupError(null);
-    setCreateGroupSuccess(null);
+    createGroup.close();
     setAddMemberError(null);
     setAddMemberSuccess(null);
     setRemoveMemberError(null);
@@ -343,15 +348,36 @@ export default function Groups() {
   }, [selectedGroupId]);
 
   // ==============================
-  // EFFECT: fecha modal ao criar grupo com sucesso
+  // EFFECT: encontra e destaca o grupo recém-criado
   // ==============================
 
   useEffect(() => {
-    if (!createGroupSuccess) return;
+    if (!pendingCreatedGroupName || groups.length === 0) return;
 
-    setIsCreateGroupModalOpen(false); // Fecha o modal ao criar com sucesso
-    setNewGroupName(""); // Limpa o campo para próxima criação
-  }, [createGroupSuccess, setNewGroupName]);
+    const matchedGroup = [...groups]
+      .reverse()
+      .find(
+        (group) =>
+          group.name.trim().toLowerCase() ===
+          pendingCreatedGroupName.trim().toLowerCase(),
+      );
+
+    if (!matchedGroup) return;
+
+    selectGroup(matchedGroup.id);
+    setHighlightGroupId(matchedGroup.id);
+    setPendingCreatedGroupName(null);
+
+    const timeoutId = window.setTimeout(() => {
+      setHighlightGroupId((currentId) =>
+        currentId === matchedGroup.id ? null : currentId,
+      );
+    }, 2200);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [groups, pendingCreatedGroupName, selectGroup]);
 
   // ==============================
   // UI data via hook
@@ -388,14 +414,14 @@ export default function Groups() {
   function handleSelectGroup(group: GroupDto) {
     selectGroup(group.id);
 
-    setCreateGroupSuccess(null);
-    setCreateGroupError(null);
-
+    createGroup.close();
     clearExpenseFeedback();
 
     setAddMemberSuccess(null);
     setAddMemberError(null);
     setRemoveMemberError(null);
+    setHighlightGroupId(null);
+    setPendingCreatedGroupName(null);
 
     setSalaryError(null);
     setSalarySuccess(null);
@@ -427,6 +453,11 @@ export default function Groups() {
       key={animationKey}
       style={{
         ...shellStyle,
+        transform: isTransitionVisible ? "scale(0.982)" : "scale(1)",
+        filter: isTransitionVisible ? "blur(6px)" : "blur(0px)",
+        opacity: isTransitionVisible ? 0.78 : 1,
+        transition: "transform 0.45s ease, filter 0.45s ease, opacity 0.3s ease",
+        willChange: "transform, filter, opacity",
       }}
     >
       <div style={getClockEntryStyle(0)}>
@@ -483,11 +514,11 @@ export default function Groups() {
               <button
                 type="button"
                 onClick={() => reloadGroups()}
-                disabled={state.loading}
+                disabled={state.loading || isCreatingWithTransition}
                 style={{
                   ...ghostButton,
-                  cursor: state.loading ? "not-allowed" : "pointer",
-                  opacity: state.loading ? 0.7 : 1,
+                  cursor: state.loading || isCreatingWithTransition ? "not-allowed" : "pointer",
+                  opacity: state.loading || isCreatingWithTransition ? 0.7 : 1,
                 }}
               >
                 {state.loading ? "Atualizando..." : "Atualizar grupos"}
@@ -495,39 +526,24 @@ export default function Groups() {
 
               <button
                 type="button"
-                onClick={() => {
-                  setCreateGroupError(null);
-                  setCreateGroupSuccess(null);
-                  setNewGroupName("");
-                  setIsCreateGroupModalOpen(true);
-                }}
-                disabled={creatingGroup}
+                onClick={createGroup.open}
+                disabled={createGroup.loading || creatingGroup || isCreatingWithTransition}
                 style={{
                   ...primaryButton,
-                  cursor: creatingGroup ? "not-allowed" : "pointer",
-                  opacity: creatingGroup ? 0.7 : 1,
+                  cursor:
+                    createGroup.loading || creatingGroup || isCreatingWithTransition
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity:
+                    createGroup.loading || creatingGroup || isCreatingWithTransition ? 0.7 : 1,
                 }}
               >
-                {creatingGroup ? "Criando..." : "+ Novo grupo"}
+                {createGroup.loading || creatingGroup || isCreatingWithTransition
+                  ? "Criando..."
+                  : "+ Novo grupo"}
               </button>
             </div>
           </div>
-
-          {(createGroupError || createGroupSuccess) && (
-            <div style={{ display: "grid", gap: 6, marginTop: 14 }}>
-              {createGroupError && (
-                <div style={{ ...subtleText, opacity: 0.95 }}>
-                  <strong>Falha:</strong> {createGroupError}
-                </div>
-              )}
-
-              {createGroupSuccess && (
-                <div style={{ ...subtleText, opacity: 0.95 }}>
-                  ✅ {createGroupSuccess}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
@@ -552,6 +568,7 @@ export default function Groups() {
               >
                 {state.groups.map((g) => {
                   const active = g.id === selectedGroupId;
+                  const isHighlight = g.id === highlightGroupId;
 
                   return (
                     <button
@@ -563,16 +580,26 @@ export default function Groups() {
                         textAlign: "left",
                         padding: "12px 16px",
                         borderRadius: 18,
-                        border: active
+                        border: isHighlight
+                          ? "1px solid rgba(91,140,255,0.95)"
+                          : active
                           ? "1px solid rgba(117,154,255,0.30)"
                           : "1px solid rgba(255,255,255,0.08)",
-                        background: active
+                        background: isHighlight
+                          ? "linear-gradient(180deg, rgba(91,140,255,0.32) 0%, rgba(255,255,255,0.05) 100%)"
+                          : active
                           ? "linear-gradient(180deg, rgba(92,132,255,0.16) 0%, rgba(255,255,255,0.03) 100%)"
                           : "rgba(255,255,255,0.02)",
                         color: "inherit",
-                        boxShadow: active ? "0 12px 28px rgba(47,84,235,0.12)" : "none",
+                        boxShadow: isHighlight
+                          ? "0 0 0 2px rgba(91,140,255,0.20), 0 12px 38px rgba(91,140,255,0.28)"
+                          : active
+                          ? "0 12px 28px rgba(47,84,235,0.12)"
+                          : "none",
                         minWidth: 220,
                         flexShrink: 0,
+                        transform: isHighlight ? "scale(1.035)" : "scale(1)",
+                        transition: "border 0.35s ease, background 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -589,7 +616,13 @@ export default function Groups() {
                           >
                             {g.name}
                           </div>
-                          <div style={subtleText}>{active ? "Selecionado" : "Clique para abrir"}</div>
+                          <div style={subtleText}>
+                            {isHighlight
+                              ? "Recém-criado"
+                              : active
+                              ? "Selecionado"
+                              : "Clique para abrir"}
+                          </div>
                         </div>
                       </div>
                     </button>
@@ -1048,35 +1081,124 @@ export default function Groups() {
             position: "fixed",
             inset: 0,
             zIndex: 1200,
-            background: "rgba(2,6,23,0.10)",
-            backdropFilter: "blur(2px)",
+            background: "rgba(2,6,23,0.20)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             pointerEvents: "none",
             opacity: 1,
             transition: "opacity 0.25s ease",
           }}
-        />
+        >
+          <div
+            style={{
+              minWidth: 280,
+              maxWidth: 340,
+              borderRadius: 24,
+              border: "1px solid rgba(255,255,255,0.10)",
+              background: "linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.82) 100%)",
+              boxShadow: "0 24px 80px rgba(0,0,0,0.38), 0 0 0 1px rgba(91,140,255,0.10)",
+              padding: "24px 22px",
+              display: "grid",
+              gap: 16,
+              justifyItems: "center",
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                position: "relative",
+                width: 72,
+                height: 72,
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  border: "4px solid rgba(255,255,255,0.10)",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: "50%",
+                  borderTop: "4px solid #5b8cff",
+                  borderRight: "4px solid transparent",
+                  borderBottom: "4px solid transparent",
+                  borderLeft: "4px solid transparent",
+                  animation: "nuvcoin-groups-spin 0.9s linear infinite",
+                }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 12,
+                  borderRadius: "50%",
+                  border: "3px solid rgba(91,140,255,0.18)",
+                  animation: "nuvcoin-groups-pulse 1.2s ease-in-out infinite",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "grid", gap: 6 }}>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 900,
+                  letterSpacing: -0.3,
+                }}
+              >
+                Criando grupo
+              </div>
+              <div style={{ ...subtleText, fontSize: 13 }}>
+                Organizando os dados e atualizando seu dashboard...
+              </div>
+            </div>
+
+            <div
+              style={{
+                width: "100%",
+                height: 6,
+                borderRadius: 999,
+                overflow: "hidden",
+                background: "rgba(255,255,255,0.08)",
+              }}
+            >
+              <div
+                style={{
+                  width: "42%",
+                  height: "100%",
+                  borderRadius: 999,
+                  background: "linear-gradient(90deg, rgba(91,140,255,0.45) 0%, rgba(91,140,255,1) 100%)",
+                  animation: "nuvcoin-groups-bar 1s ease-in-out infinite",
+                }}
+              />
+            </div>
+          </div>
+        </div>
       )}
 
       <GroupsCreateModal
-        open={isCreateGroupModalOpen}
-        value={newGroupName}
-        loading={creatingGroup}
-        error={createGroupError}
-        success={createGroupSuccess}
-        onChange={setNewGroupName}
-        onClose={() => {
-          setIsCreateGroupModalOpen(false);
-          setCreateGroupError(null);
-          setCreateGroupSuccess(null);
-          setNewGroupName("");
-        }}
+        open={createGroup.isOpen}
+        value={createGroup.name}
+        loading={createGroup.loading || isCreatingWithTransition || creatingGroup}
+        error={createGroup.error}
+        success={createGroup.success}
+        onChange={createGroup.setName}
+        onClose={createGroup.close}
         onCreate={async () => {
+          const createdGroupName = createGroup.name.trim(); // Guarda o nome antes do hook limpar o input
+
           await startCreateTransition(async () => {
-            await Promise.resolve(
-              onCreateGroup({
-                newGroupName,
-              }),
-            );
+            await createGroup.create();
+
+            if (createdGroupName) {
+              setPendingCreatedGroupName(createdGroupName);
+            }
 
             setAnimate(false);
 
@@ -1087,6 +1209,43 @@ export default function Groups() {
           });
         }}
       />
+
+      <style>
+        {`
+          @keyframes nuvcoin-groups-spin {
+            from {
+              transform: rotate(0deg);
+            }
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          @keyframes nuvcoin-groups-pulse {
+            0% {
+              transform: scale(0.92);
+              opacity: 0.45;
+            }
+            50% {
+              transform: scale(1.02);
+              opacity: 1;
+            }
+            100% {
+              transform: scale(0.92);
+              opacity: 0.45;
+            }
+          }
+
+          @keyframes nuvcoin-groups-bar {
+            0% {
+              transform: translateX(-120%);
+            }
+            100% {
+              transform: translateX(320%);
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
@@ -1099,10 +1258,12 @@ lucassousa@gmail.com
 
 Mudança feita nesta etapa:
 
-✔ Removido o loader central anterior
-✔ Criada animação real por blocos
-✔ Hero, lista de grupos, métricas e cards entram em cascata
-✔ Efeito com rotação leve, blur saindo e subida
-✔ Reforçada a animação após criar grupo
-✔ Mantido o Groups.tsx sem lógica pesada nova
+✔ Integrado isCreatingWithTransition no Groups.tsx
+✔ Botão de criar grupo agora respeita a transição visual
+✔ Modal recebe loading também durante a transição
+✔ Overlay visual ficou mais forte e mais profissional
+✔ Adicionado loading central com efeito de reloginho/spinner
+✔ Adicionada barra animada para reforçar feedback visual
+✔ Mantido highlight do grupo recém-criado
+✔ Mantido fluxo existente sem quebrar o restante da tela
 */
