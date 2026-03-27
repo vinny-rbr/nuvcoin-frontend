@@ -3,13 +3,14 @@ import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js"; // Ele
 
 import GroupsBaseModal from "./groups/components/GroupsBaseModal"; // Modal da base do grupo
 import GroupsCreateModal from "./groups/components/GroupsCreateModal"; // Modal profissional de criação de grupo
+import GroupsCreateTransitionOverlay from "./groups/components/GroupsCreateTransitionOverlay";
 import GroupsDivisionChart from "./groups/components/GroupsDivisionChart"; // Gráfico de divisão
 import GroupsEditExpenseModal from "./groups/components/GroupsEditExpenseModal"; // Modal de editar despesa
 import GroupsExpensesModal from "./groups/components/GroupsExpensesModal"; // Modal de adicionar despesa
-import GroupsHistoryCard from "./groups/components/GroupsHistoryCard"; // Card de histórico
+import GroupsGroupsLane from "./groups/components/GroupsGroupsLane";
+import GroupsHeaderActionModal from "./groups/components/GroupsHeaderActionModal";
+import GroupsHeaderActions from "./groups/components/GroupsHeaderActions";
 import GroupsMetrics from "./groups/components/GroupsMetrics"; // Cards de métricas
-import GroupsMonthSummary from "./groups/components/GroupsMonthSummary"; // Resumo do mês
-import GroupsPeopleCard from "./groups/components/GroupsPeopleCard"; // Card de pessoas
 
 import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de ações do módulo
 import useGroupsBaseConfig from "./groups/hooks/useGroupsBaseConfig"; // Hook da base salarial / percentual
@@ -27,7 +28,7 @@ import type {
   GroupsApiState,
 } from "./groups/types/groups.types"; // Tipos do módulo
 
-import { getInitials, safeName } from "./groups/utils/groups.helpers"; // Helpers do módulo
+import { safeName } from "./groups/utils/groups.helpers"; // Helpers do módulo
 
 import {
   dangerButtonSmall,
@@ -135,6 +136,7 @@ export default function Groups() {
     isCreateExpenseModalOpen,
     isEditExpenseModalOpen,
     isBaseConfigModalOpen,
+    activeHeaderAction,
     selectedExpenseId,
     openCreateExpenseModal,
     closeCreateExpenseModal,
@@ -142,6 +144,8 @@ export default function Groups() {
     closeEditExpenseModal: closeEditExpenseModalState,
     openBaseConfigModal,
     closeBaseConfigModal,
+    openHeaderActionModal,
+    closeHeaderActionModal,
     clearSelectedExpense,
   } = useGroupsModals();
 
@@ -160,12 +164,6 @@ export default function Groups() {
   const [pendingCreatedGroupName, setPendingCreatedGroupName] = useState<string | null>(null); // Guarda o nome do grupo recém-criado até a lista atualizar
   const [isGroupsLaneAnimating, setIsGroupsLaneAnimating] = useState(false); // Faz a faixa dos grupos reagir quando um novo grupo entra
   const [isSwitchingGroup, setIsSwitchingGroup] = useState(false); // Faz a troca entre grupos ficar suave
-  const [activeHeaderAction, setActiveHeaderAction] = useState<Exclude<
-    HeaderQuickActionId,
-    "refresh" | "create"
-  > | null>(null); // Controla a janela aberta ao clicar nos quadrados do topo
-  const [hoveredHeaderAction, setHoveredHeaderAction] = useState<HeaderQuickActionId | null>(null); // Controla o nome exibido no hover
-
   // ==============================
   // HOOK: despesas
   // ==============================
@@ -348,7 +346,7 @@ export default function Groups() {
     setAddMemberError(null);
     setAddMemberSuccess(null);
     setRemoveMemberError(null);
-    setActiveHeaderAction(null);
+    closeHeaderActionModal();
 
     clearExpenseFeedback();
     clearBaseFeedback();
@@ -420,8 +418,6 @@ export default function Groups() {
     monthExpenses,
     monthTotalCents,
     salaryTotal,
-    salaryWeights,
-    manualPercentNumberByUserId,
     manualPercentTotal,
     isManualConfigValid,
     canCalculateMonthSplit,
@@ -472,7 +468,7 @@ export default function Groups() {
       label: "Pessoas",
       disabled: !selectedGroupId,
       onClick: () => {
-        setActiveHeaderAction("people");
+        openHeaderActionModal("people");
         setAddMemberError(null);
         setAddMemberSuccess(null);
       },
@@ -483,7 +479,7 @@ export default function Groups() {
       label: "Base do grupo",
       disabled: !selectedGroupId,
       onClick: () => {
-        setActiveHeaderAction("base");
+        openHeaderActionModal("base");
         clearBaseFeedback();
       },
     },
@@ -493,7 +489,7 @@ export default function Groups() {
       label: "Lançar despesa",
       disabled: !selectedGroupId,
       onClick: () => {
-        setActiveHeaderAction("expense");
+        openHeaderActionModal("expense");
       },
     },
     {
@@ -502,7 +498,7 @@ export default function Groups() {
       label: "Resumo do mês",
       disabled: !selectedGroupId,
       onClick: () => {
-        setActiveHeaderAction("summary");
+        openHeaderActionModal("summary");
       },
     },
     {
@@ -511,7 +507,7 @@ export default function Groups() {
       label: "Histórico",
       disabled: !selectedGroupId,
       onClick: () => {
-        setActiveHeaderAction("history");
+        openHeaderActionModal("history");
       },
     },
   ]; // Quadrados do topo que substituem os cards inferiores
@@ -533,7 +529,7 @@ export default function Groups() {
       setHighlightGroupId(null);
       setPendingCreatedGroupName(null);
       setIsGroupsLaneAnimating(false);
-      setActiveHeaderAction(null);
+      closeHeaderActionModal();
 
       setSalaryError(null);
       setSalarySuccess(null);
@@ -563,268 +559,6 @@ export default function Groups() {
     };
   }
 
-  function getHeaderSquareStyle(action: HeaderQuickAction): CSSProperties {
-    const isHovered = hoveredHeaderAction === action.id;
-    const isDisabled = Boolean(action.disabled);
-
-    return {
-      position: "relative",
-      width: 52,
-      height: 52,
-      borderRadius: 16,
-      border:
-        action.id === "create"
-          ? "1px solid rgba(91,140,255,0.42)"
-          : "1px solid rgba(255,255,255,0.10)",
-      background:
-        action.id === "create"
-          ? "linear-gradient(180deg, rgba(91,140,255,0.22) 0%, rgba(255,255,255,0.05) 100%)"
-          : isHovered
-          ? "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)"
-          : "rgba(255,255,255,0.03)",
-      color: "#f8fafc",
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontWeight: 900,
-      fontSize: action.id === "expense" ? 16 : 20,
-      letterSpacing: -0.3,
-      boxShadow: isHovered
-        ? "0 14px 30px rgba(15,23,42,0.28), 0 0 0 1px rgba(255,255,255,0.04)"
-        : "0 10px 24px rgba(15,23,42,0.18)",
-      transform: isHovered ? "translateY(-2px)" : "translateY(0px)",
-      transition:
-        "transform 0.22s ease, background 0.22s ease, border 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease",
-      cursor: isDisabled ? "not-allowed" : "pointer",
-      opacity: isDisabled ? 0.45 : 1,
-      flexShrink: 0,
-      overflow: "visible",
-    };
-  }
-
-  function renderHeaderActionModalContent() {
-    if (!selectedGroupId || !activeHeaderAction) return null;
-
-    if (activeHeaderAction === "people") {
-      return (
-        <GroupsPeopleCard
-          membersInfo={membersInfo}
-          balances={balances}
-          membersLoading={loadingDetails}
-          balancesLoading={loadingDetails}
-          membersError={null}
-          balancesError={null}
-          removeMemberError={removeMemberError}
-          addMemberOpen={addMemberOpen}
-          addMemberUserId={addMemberUserId}
-          addMemberLoading={submittingMember}
-          addMemberError={addMemberError}
-          addMemberSuccess={addMemberSuccess}
-          removeMemberLoadingId={removingMemberId}
-          onToggleAddMember={() => setAddMemberOpen((v) => !v)}
-          onAddMemberUserIdChange={setAddMemberUserId}
-          onAddMember={() =>
-            onAddMember({
-              addMemberUserId,
-              onSuccess: () => {
-                setAddMemberUserId("");
-                setAddMemberOpen(false);
-              },
-            })
-          }
-          onRemoveMember={(memberId, role) => onRemoveMember({ memberId, role })}
-          sectionCard={{
-            ...sectionCard,
-            background: "transparent",
-            border: "none",
-            boxShadow: "none",
-            padding: 0,
-          }}
-          panelTitle={panelTitle}
-          subtleText={subtleText}
-          softButton={softButton}
-          ghostButton={ghostButton}
-          primaryButton={primaryButton}
-          inputStyle={inputStyle}
-          memberAvatarStyle={memberAvatarStyle}
-        />
-      );
-    }
-
-    if (activeHeaderAction === "base") {
-      return (
-        <div style={{ display: "grid", gap: 16 }}>
-          <div style={{ ...subtleText, fontSize: 13 }}>
-            Aqui você ajusta salários e percentuais do grupo sem ocupar espaço fixo no dashboard.
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setActiveHeaderAction(null);
-              openBaseConfigModal();
-            }}
-            style={{ ...primaryButton, width: "fit-content" }}
-          >
-            Abrir configuração da base
-          </button>
-
-          <div
-            style={{
-              display: "grid",
-              gap: 12,
-              padding: 18,
-              borderRadius: 20,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "rgba(255,255,255,0.02)",
-            }}
-          >
-            <div style={{ fontWeight: 800, fontSize: 16 }}>Resumo rápido da base</div>
-            <div style={subtleText}>
-              Modo atual: {splitMode === "SALARY" ? "Automático por salário" : "Manual por percentual"}
-            </div>
-            <div style={subtleText}>
-              Salários preenchidos: {salaryFilledCount}/{membersCount}
-            </div>
-            <div style={subtleText}>Total de salários: {salaryTotal > 0 ? "Configurado" : "Ainda não definido"}</div>
-            {splitMode === "MANUAL" && (
-              <div style={subtleText}>Percentual manual total: {manualPercentTotal.toFixed(2)}%</div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    if (activeHeaderAction === "expense") {
-      return (
-        <div style={{ display: "grid", gap: 18 }}>
-          <div style={{ display: "grid", gap: 4 }}>
-            <div style={{ fontWeight: 800, fontSize: 16 }}>Lançar nova despesa</div>
-            <div style={subtleText}>
-              Escolha qual fluxo você quer abrir. O cadastro continua no mesmo modal que você já aprovou.
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveHeaderAction(null);
-                prepareHouseExpenseFlow();
-                openCreateExpenseModal();
-              }}
-              disabled={!selectedGroupId}
-              style={{
-                ...primaryButton,
-                cursor: !selectedGroupId ? "not-allowed" : "pointer",
-                opacity: !selectedGroupId ? 0.7 : 1,
-              }}
-            >
-              Conta do mês
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveHeaderAction(null);
-                prepareQuickExpenseFlow();
-                openCreateExpenseModal();
-              }}
-              disabled={!selectedGroupId}
-              style={{
-                ...ghostButton,
-                cursor: !selectedGroupId ? "not-allowed" : "pointer",
-                opacity: !selectedGroupId ? 0.7 : 1,
-              }}
-            >
-              Despesa avulsa
-            </button>
-          </div>
-
-          {splitMode === "SALARY" && salaryTotal <= 0 && (
-            <div style={subtleText}>
-              Dica: defina salários primeiro para o resumo do mês ficar mais preciso.
-            </div>
-          )}
-
-          {splitMode === "MANUAL" && !isManualConfigValid && (
-            <div style={subtleText}>
-              Dica: ajuste os percentuais manuais para 100% antes de conferir o resumo.
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    if (activeHeaderAction === "summary") {
-      return (
-        <GroupsMonthSummary
-          selectedGroupId={selectedGroupId}
-          splitMode={splitMode}
-          currentMonthKey={currentMonthKey}
-          salaryTotal={salaryTotal}
-          isManualConfigValid={isManualConfigValid}
-          canCalculateMonthSplit={canCalculateMonthSplit}
-          monthTotalCents={monthTotalCents}
-          monthSplit={monthSplit}
-          expensesLoading={loadingDetails}
-          onRefreshExpenses={() => reloadSelectedGroupData()}
-          recommendedLimitPercent={RECOMMENDED_LIMIT_PERCENT}
-          sectionCard={{
-            ...sectionCard,
-            background: "transparent",
-            border: "none",
-            boxShadow: "none",
-            padding: 0,
-          }}
-          panelTitle={panelTitle}
-          subtleText={subtleText}
-          ghostButton={ghostButton}
-        />
-      );
-    }
-
-    if (activeHeaderAction === "history") {
-      return (
-        <GroupsHistoryCard
-          selectedGroupId={selectedGroupId}
-          expensesLoading={loadingDetails}
-          expensesError={null}
-          historyItems={historyItems}
-          deleteExpenseLoadingId={deletingExpenseId}
-          balancesLoading={loadingDetails}
-          onRefreshExpenses={() => reloadSelectedGroupData()}
-          onOpenEditExpense={handleOpenEditExpenseModal}
-          onDeleteExpenseFromHistory={onDeleteExpenseFromHistory}
-          sectionCard={{
-            ...sectionCard,
-            background: "transparent",
-            border: "none",
-            boxShadow: "none",
-            padding: 0,
-          }}
-          panelTitle={panelTitle}
-          subtleText={subtleText}
-          ghostButton={ghostButton}
-          dangerButtonSmall={dangerButtonSmall}
-          timelineCard={timelineCard}
-          memberAvatarStyle={memberAvatarStyle}
-        />
-      );
-    }
-
-    return null;
-  }
-
-  function getHeaderActionModalTitle() {
-    if (activeHeaderAction === "people") return "Pessoas do grupo";
-    if (activeHeaderAction === "base") return "Base do grupo";
-    if (activeHeaderAction === "expense") return "Lançar despesa";
-    if (activeHeaderAction === "summary") return "Resumo do mês";
-    if (activeHeaderAction === "history") return "Histórico";
-    return "";
-  }
-
   return (
     <div
       key={animationKey}
@@ -833,230 +567,28 @@ export default function Groups() {
       }}
     >
       <div style={getClockEntryStyle(0)}>
-        <div style={pageHeroStyle}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: 16,
-              flexWrap: "wrap",
-            }}
-          >
-            <div style={{ display: "grid", gap: 8 }}>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  ...pillStyle,
-                  width: "fit-content",
-                }}
-              >
-                <span
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 999,
-                    background: "#5b8cff",
-                    display: "inline-block",
-                  }}
-                />
-                NUVCOIN Groups
-              </div>
-
-              <div style={{ display: "grid", gap: 4 }}>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: 30,
-                    lineHeight: 1.05,
-                    letterSpacing: -0.6,
-                  }}
-                >
-                  Dashboard de grupos
-                </h2>
-                <div style={{ ...subtleText, fontSize: 13 }}>
-                  Crie grupos, adicione pessoas, defina salários ou percentuais e acompanhe tudo com um visual mais de produto SaaS.
-                </div>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                flexWrap: "wrap",
-                alignItems: "center",
-                justifyContent: "flex-end",
-              }}
-            >
-              {headerQuickActions.map((action) => (
-                <div
-                  key={action.id}
-                  style={{
-                    position: "relative",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                  onMouseEnter={() => setHoveredHeaderAction(action.id)}
-                  onMouseLeave={() => setHoveredHeaderAction((current) => (current === action.id ? null : current))}
-                >
-                  <button
-                    type="button"
-                    title={action.label}
-                    disabled={action.disabled}
-                    onClick={action.onClick}
-                    style={getHeaderSquareStyle(action)}
-                  >
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        lineHeight: 1,
-                        animation: action.loading ? "nuvcoin-groups-spin 0.9s linear infinite" : "none",
-                      }}
-                    >
-                      {action.icon}
-                    </span>
-                  </button>
-
-                  {hoveredHeaderAction === action.id && (
-                    <div
-                      style={{
-                        position: "absolute",
-                        top: "calc(100% + 10px)",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        padding: "8px 10px",
-                        borderRadius: 12,
-                        border: "1px solid rgba(255,255,255,0.08)",
-                        background: "rgba(15,23,42,0.96)",
-                        boxShadow: "0 16px 32px rgba(0,0,0,0.28)",
-                        color: "#f8fafc",
-                        fontSize: 12,
-                        fontWeight: 700,
-                        whiteSpace: "nowrap",
-                        zIndex: 20,
-                        pointerEvents: "none",
-                      }}
-                    >
-                      {action.label}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <GroupsHeaderActions
+          actions={headerQuickActions}
+          pageHeroStyle={pageHeroStyle}
+          pillStyle={pillStyle}
+          subtleText={subtleText}
+        />
       </div>
-
       {state.groups.length > 0 && (
         <div style={getClockEntryStyle(1)}>
-          <div style={sectionCard}>
-            <div style={{ display: "grid", gap: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                <div style={{ display: "grid", gap: 2 }}>
-                  <div style={panelTitle}>Meus grupos</div>
-                  <div style={subtleText}>{state.groups.length} grupo(s) encontrado(s)</div>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 12,
-                  overflowX: "auto",
-                  paddingBottom: 4,
-                  animation: isGroupsLaneAnimating ? "nuvcoin-groups-lane-reflow 0.62s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
-                  transformOrigin: "left center",
-                  willChange: "transform, filter",
-                }}
-              >
-                {state.groups.map((g) => {
-                  const active = g.id === selectedGroupId;
-                  const isHighlight = g.id === highlightGroupId;
-                  const shouldReactToLane = isGroupsLaneAnimating && !isHighlight;
-
-                  return (
-                    <button
-                      key={g.id}
-                      type="button"
-                      onClick={() => handleSelectGroup(g)}
-                      style={{
-                        cursor: "pointer",
-                        textAlign: "left",
-                        padding: "12px 16px",
-                        borderRadius: 18,
-                        border: isHighlight
-                          ? "1px solid rgba(91,140,255,0.95)"
-                          : active
-                          ? "1px solid rgba(117,154,255,0.30)"
-                          : "1px solid rgba(255,255,255,0.08)",
-                        background: isHighlight
-                          ? "linear-gradient(180deg, rgba(91,140,255,0.36) 0%, rgba(255,255,255,0.06) 100%)"
-                          : active
-                          ? "linear-gradient(180deg, rgba(92,132,255,0.16) 0%, rgba(255,255,255,0.03) 100%)"
-                          : "rgba(255,255,255,0.02)",
-                        color: "inherit",
-                        boxShadow: isHighlight
-                          ? "0 0 0 2px rgba(91,140,255,0.35), 0 0 40px rgba(91,140,255,0.55), 0 20px 60px rgba(91,140,255,0.45)"
-                          : active
-                          ? "0 12px 28px rgba(47,84,235,0.12)"
-                          : "none",
-                        minWidth: 220,
-                        flexShrink: 0,
-                        transform: isHighlight
-                          ? "translateY(-6px) scale(1.04)"
-                          : shouldReactToLane
-                          ? "translateX(6px) scale(0.995)"
-                          : active
-                          ? "scale(1.01)"
-                          : "scale(1)",
-                        opacity: isHighlight ? 0 : 1,
-                        animation: isHighlight
-                          ? "nuvcoin-group-enter 0.45s ease forwards, nuvcoin-group-glow 1.8s ease-in-out infinite"
-                          : shouldReactToLane
-                          ? "nuvcoin-group-shift 0.5s ease"
-                          : "none",
-                        transition:
-                          "border 0.35s ease, background 0.35s ease, box-shadow 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease",
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <div style={memberAvatarStyle}>{getInitials(g.name)}</div>
-
-                        <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
-                          <div
-                            style={{
-                              fontWeight: 900,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                            }}
-                          >
-                            {g.name}
-                          </div>
-                          <div style={subtleText}>
-                            {isHighlight
-                              ? "Recém-criado"
-                              : active
-                              ? "Selecionado"
-                              : "Clique para abrir"}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          <GroupsGroupsLane
+            groups={state.groups}
+            selectedGroupId={selectedGroupId}
+            highlightGroupId={highlightGroupId}
+            isGroupsLaneAnimating={isGroupsLaneAnimating}
+            onSelectGroup={handleSelectGroup}
+            sectionCard={sectionCard}
+            panelTitle={panelTitle}
+            subtleText={subtleText}
+            memberAvatarStyle={memberAvatarStyle}
+          />
         </div>
       )}
-
       {state.error && (
         <div style={getClockEntryStyle(2)}>
           <div
@@ -1399,173 +931,84 @@ export default function Groups() {
         tabButton={tabButton}
       />
 
-      {activeHeaderAction && selectedGroupId && (
-        <div
-          style={{
-            ...modalOverlay,
-            zIndex: 1150,
-            padding: 24,
-          }}
-          onClick={() => setActiveHeaderAction(null)}
-        >
-          <div
-            style={{
-              ...modalCard,
-              width: "min(980px, 100%)",
-              maxHeight: "88vh",
-              overflow: "hidden",
-              display: "grid",
-              gridTemplateRows: "auto 1fr",
-            }}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div
-              style={{
-                ...modalHeader,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <div style={{ display: "grid", gap: 4 }}>
-                <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.3 }}>
-                  {getHeaderActionModalTitle()}
-                </div>
-                <div style={{ ...subtleText, fontSize: 13 }}>
-                  {selectedGroupName} • acesso rápido pelo topo
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveHeaderAction(null)}
-                style={ghostButton}
-              >
-                Fechar
-              </button>
-            </div>
-
-            <div
-              style={{
-                ...modalBody,
-                overflowY: "auto",
-                paddingTop: 18,
-              }}
-            >
-              {renderHeaderActionModalContent()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isTransitionVisible && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1200,
-            background: "rgba(2,6,23,0.14)",
-            backdropFilter: "blur(2px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-            opacity: 1,
-            transition: "opacity 0.25s ease, background 0.25s ease, backdrop-filter 0.25s ease",
-          }}
-        >
-          <div
-            style={{
-              minWidth: 280,
-              maxWidth: 340,
-              borderRadius: 24,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background: "linear-gradient(180deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.78) 100%)",
-              boxShadow: "0 18px 52px rgba(0,0,0,0.26), 0 0 0 1px rgba(91,140,255,0.08)",
-              padding: "24px 22px",
-              display: "grid",
-              gap: 16,
-              justifyItems: "center",
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                position: "relative",
-                width: 72,
-                height: 72,
-              }}
-            >
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50%",
-                  border: "4px solid rgba(255,255,255,0.08)",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  borderRadius: "50%",
-                  borderTop: "4px solid #5b8cff",
-                  borderRight: "4px solid transparent",
-                  borderBottom: "4px solid transparent",
-                  borderLeft: "4px solid transparent",
-                  animation: "nuvcoin-groups-spin 0.9s linear infinite",
-                }}
-              />
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 12,
-                  borderRadius: "50%",
-                  border: "3px solid rgba(91,140,255,0.14)",
-                  animation: "nuvcoin-groups-pulse 1.2s ease-in-out infinite",
-                }}
-              />
-            </div>
-
-            <div style={{ display: "grid", gap: 6 }}>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 900,
-                  letterSpacing: -0.3,
-                }}
-              >
-                Criando grupo
-              </div>
-              <div style={{ ...subtleText, fontSize: 13 }}>
-                Organizando os dados e atualizando seu dashboard...
-              </div>
-            </div>
-
-            <div
-              style={{
-                width: "100%",
-                height: 6,
-                borderRadius: 999,
-                overflow: "hidden",
-                background: "rgba(255,255,255,0.06)",
-              }}
-            >
-              <div
-                style={{
-                  width: "42%",
-                  height: "100%",
-                  borderRadius: 999,
-                  background: "linear-gradient(90deg, rgba(91,140,255,0.38) 0%, rgba(91,140,255,0.92) 100%)",
-                  animation: "nuvcoin-groups-bar 1s ease-in-out infinite",
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
+      <GroupsHeaderActionModal
+        activeHeaderAction={activeHeaderAction}
+        selectedGroupId={selectedGroupId}
+        selectedGroupName={selectedGroupName}
+        splitMode={splitMode}
+        membersInfo={membersInfo}
+        balances={balances}
+        loadingDetails={loadingDetails}
+        removeMemberError={removeMemberError}
+        addMemberOpen={addMemberOpen}
+        addMemberUserId={addMemberUserId}
+        submittingMember={submittingMember}
+        addMemberError={addMemberError}
+        addMemberSuccess={addMemberSuccess}
+        removingMemberId={removingMemberId}
+        salaryFilledCount={salaryFilledCount}
+        membersCount={membersCount}
+        salaryTotal={salaryTotal}
+        manualPercentTotal={manualPercentTotal}
+        isManualConfigValid={isManualConfigValid}
+        currentMonthKey={currentMonthKey}
+        canCalculateMonthSplit={canCalculateMonthSplit}
+        monthTotalCents={monthTotalCents}
+        monthSplit={monthSplit}
+        historyItems={historyItems}
+        deletingExpenseId={deletingExpenseId}
+        recommendedLimitPercent={RECOMMENDED_LIMIT_PERCENT}
+        onClose={closeHeaderActionModal}
+        onToggleAddMember={() => setAddMemberOpen((value) => !value)}
+        onAddMemberUserIdChange={setAddMemberUserId}
+        onAddMember={() =>
+          onAddMember({
+            addMemberUserId,
+            onSuccess: () => {
+              setAddMemberUserId("");
+              setAddMemberOpen(false);
+            },
+          })
+        }
+        onRemoveMember={(memberId, role) => onRemoveMember({ memberId, role })}
+        onOpenBaseConfigModal={() => {
+          closeHeaderActionModal();
+          openBaseConfigModal();
+        }}
+        onOpenHouseExpenseFlow={() => {
+          closeHeaderActionModal();
+          prepareHouseExpenseFlow();
+          openCreateExpenseModal();
+        }}
+        onOpenQuickExpenseFlow={() => {
+          closeHeaderActionModal();
+          prepareQuickExpenseFlow();
+          openCreateExpenseModal();
+        }}
+        onRefreshSelectedGroupData={() => {
+          reloadSelectedGroupData();
+        }}
+        onOpenEditExpense={handleOpenEditExpenseModal}
+        onDeleteExpenseFromHistory={onDeleteExpenseFromHistory}
+        modalOverlay={modalOverlay}
+        modalCard={modalCard}
+        modalHeader={modalHeader}
+        modalBody={modalBody}
+        sectionCard={sectionCard}
+        panelTitle={panelTitle}
+        subtleText={subtleText}
+        softButton={softButton}
+        ghostButton={ghostButton}
+        primaryButton={primaryButton}
+        dangerButtonSmall={dangerButtonSmall}
+        inputStyle={inputStyle}
+        memberAvatarStyle={memberAvatarStyle}
+        timelineCard={timelineCard}
+      />
+      <GroupsCreateTransitionOverlay
+        isVisible={isTransitionVisible}
+        subtleText={subtleText}
+      />
       <GroupsCreateModal
         open={createGroup.isOpen}
         value={createGroup.name}
@@ -1718,3 +1161,14 @@ Mudança feita nesta etapa:
 ✔ Mantive os modais já existentes do projeto sem quebrar o fluxo
 ✔ Mantive criação de grupo, atualização e seleção funcionando
 */
+
+
+
+
+
+
+
+
+
+
+

@@ -3,7 +3,7 @@ import type { ChartOptions, TooltipItem } from "chart.js"; // Tipos do gráfico 
 
 import type {
   GroupBalancesResponse,
-  GroupExpenseListResponse,
+  GroupExpensesListResponse,
   GroupMembersResponse,
   GroupSplitMode,
 } from "../types/groups.types"; // Tipos principais do módulo Groups
@@ -19,7 +19,7 @@ import {
 type UseGroupsCalculationsParams = {
   balances: GroupBalancesResponse | null; // Dados de balances do grupo selecionado
   membersInfo: GroupMembersResponse | null; // Dados completos de membros
-  expenses: GroupExpenseListResponse | null; // Lista de despesas do grupo
+  expenses: GroupExpensesListResponse | null; // Lista de despesas do grupo
   splitMode: GroupSplitMode; // Modo atual de divisão (SALARY ou MANUAL)
   salaryByUserId: Record<string, number>; // Base salarial por usuário
   manualPercentInputByUserId: Record<string, string>; // Inputs manuais em texto por usuário

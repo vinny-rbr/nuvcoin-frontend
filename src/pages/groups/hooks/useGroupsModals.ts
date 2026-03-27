@@ -1,91 +1,99 @@
-import { useState } from "react"; // Hook do React para controlar estados locais
+import { useState } from "react";
+
+export type GroupsHeaderActionId =
+  | "people"
+  | "base"
+  | "expense"
+  | "summary"
+  | "history";
 
 type UseGroupsModalsReturn = {
-  isCreateGroupModalOpen: boolean; // Controla modal de criar grupo
-  isMembersModalOpen: boolean; // Controla modal de membros
-  isCreateExpenseModalOpen: boolean; // Controla modal de criar despesa
-  isEditExpenseModalOpen: boolean; // Controla modal de editar despesa
-  isBaseConfigModalOpen: boolean; // Controla modal de base/salários
-
-  selectedExpenseId: string | null; // Guarda a despesa selecionada para ações
-  selectedExpenseTitle: string; // Guarda o título da despesa selecionada
-
-  openCreateGroupModal: () => void; // Abre modal de criar grupo
-  closeCreateGroupModal: () => void; // Fecha modal de criar grupo
-
-  openMembersModal: () => void; // Abre modal de membros
-  closeMembersModal: () => void; // Fecha modal de membros
-
-  openCreateExpenseModal: () => void; // Abre modal de criar despesa
-  closeCreateExpenseModal: () => void; // Fecha modal de criar despesa
-
-  openEditExpenseModal: (params: {
-    expenseId: string; // Id da despesa que será editada
-    title?: string | null; // Título da despesa
-  }) => void; // Abre modal de edição e define despesa selecionada
-  closeEditExpenseModal: () => void; // Fecha modal de editar despesa
-
-  openBaseConfigModal: () => void; // Abre modal da base
-  closeBaseConfigModal: () => void; // Fecha modal da base
-
-  clearSelectedExpense: () => void; // Limpa despesa selecionada
+  isCreateGroupModalOpen: boolean;
+  isMembersModalOpen: boolean;
+  isCreateExpenseModalOpen: boolean;
+  isEditExpenseModalOpen: boolean;
+  isBaseConfigModalOpen: boolean;
+  activeHeaderAction: GroupsHeaderActionId | null;
+  selectedExpenseId: string | null;
+  selectedExpenseTitle: string;
+  openCreateGroupModal: () => void;
+  closeCreateGroupModal: () => void;
+  openMembersModal: () => void;
+  closeMembersModal: () => void;
+  openCreateExpenseModal: () => void;
+  closeCreateExpenseModal: () => void;
+  openEditExpenseModal: (params: { expenseId: string; title?: string | null }) => void;
+  closeEditExpenseModal: () => void;
+  openBaseConfigModal: () => void;
+  closeBaseConfigModal: () => void;
+  openHeaderActionModal: (actionId: GroupsHeaderActionId) => void;
+  closeHeaderActionModal: () => void;
+  clearSelectedExpense: () => void;
 };
 
 export default function useGroupsModals(): UseGroupsModalsReturn {
-  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false); // Estado do modal de criar grupo
-  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false); // Estado do modal de membros
-  const [isCreateExpenseModalOpen, setIsCreateExpenseModalOpen] = useState(false); // Estado do modal de criar despesa
-  const [isEditExpenseModalOpen, setIsEditExpenseModalOpen] = useState(false); // Estado do modal de editar despesa
-  const [isBaseConfigModalOpen, setIsBaseConfigModalOpen] = useState(false); // Estado do modal de base
-
-  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null); // Guarda id da despesa selecionada
-  const [selectedExpenseTitle, setSelectedExpenseTitle] = useState(""); // Guarda título da despesa selecionada
+  const [isCreateGroupModalOpen, setIsCreateGroupModalOpen] = useState(false);
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [isCreateExpenseModalOpen, setIsCreateExpenseModalOpen] = useState(false);
+  const [isEditExpenseModalOpen, setIsEditExpenseModalOpen] = useState(false);
+  const [isBaseConfigModalOpen, setIsBaseConfigModalOpen] = useState(false);
+  const [activeHeaderAction, setActiveHeaderAction] = useState<GroupsHeaderActionId | null>(null);
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+  const [selectedExpenseTitle, setSelectedExpenseTitle] = useState("");
 
   function openCreateGroupModal(): void {
-    setIsCreateGroupModalOpen(true); // Abre modal de criar grupo
+    setIsCreateGroupModalOpen(true);
   }
 
   function closeCreateGroupModal(): void {
-    setIsCreateGroupModalOpen(false); // Fecha modal de criar grupo
+    setIsCreateGroupModalOpen(false);
   }
 
   function openMembersModal(): void {
-    setIsMembersModalOpen(true); // Abre modal de membros
+    setIsMembersModalOpen(true);
   }
 
   function closeMembersModal(): void {
-    setIsMembersModalOpen(false); // Fecha modal de membros
+    setIsMembersModalOpen(false);
   }
 
   function openCreateExpenseModal(): void {
-    setIsCreateExpenseModalOpen(true); // Abre modal de criar despesa
+    setIsCreateExpenseModalOpen(true);
   }
 
   function closeCreateExpenseModal(): void {
-    setIsCreateExpenseModalOpen(false); // Fecha modal de criar despesa
+    setIsCreateExpenseModalOpen(false);
   }
 
   function openEditExpenseModal(params: { expenseId: string; title?: string | null }): void {
-    setSelectedExpenseId(params.expenseId); // Define id da despesa selecionada
-    setSelectedExpenseTitle(params.title ?? ""); // Define título da despesa selecionada
-    setIsEditExpenseModalOpen(true); // Abre modal de edição
+    setSelectedExpenseId(params.expenseId);
+    setSelectedExpenseTitle(params.title ?? "");
+    setIsEditExpenseModalOpen(true);
   }
 
   function closeEditExpenseModal(): void {
-    setIsEditExpenseModalOpen(false); // Fecha modal de edição
+    setIsEditExpenseModalOpen(false);
   }
 
   function openBaseConfigModal(): void {
-    setIsBaseConfigModalOpen(true); // Abre modal da base
+    setIsBaseConfigModalOpen(true);
   }
 
   function closeBaseConfigModal(): void {
-    setIsBaseConfigModalOpen(false); // Fecha modal da base
+    setIsBaseConfigModalOpen(false);
+  }
+
+  function openHeaderActionModal(actionId: GroupsHeaderActionId): void {
+    setActiveHeaderAction(actionId);
+  }
+
+  function closeHeaderActionModal(): void {
+    setActiveHeaderAction(null);
   }
 
   function clearSelectedExpense(): void {
-    setSelectedExpenseId(null); // Limpa id da despesa selecionada
-    setSelectedExpenseTitle(""); // Limpa título da despesa selecionada
+    setSelectedExpenseId(null);
+    setSelectedExpenseTitle("");
   }
 
   return {
@@ -94,25 +102,21 @@ export default function useGroupsModals(): UseGroupsModalsReturn {
     isCreateExpenseModalOpen,
     isEditExpenseModalOpen,
     isBaseConfigModalOpen,
-
+    activeHeaderAction,
     selectedExpenseId,
     selectedExpenseTitle,
-
     openCreateGroupModal,
     closeCreateGroupModal,
-
     openMembersModal,
     closeMembersModal,
-
     openCreateExpenseModal,
     closeCreateExpenseModal,
-
     openEditExpenseModal,
     closeEditExpenseModal,
-
     openBaseConfigModal,
     closeBaseConfigModal,
-
+    openHeaderActionModal,
+    closeHeaderActionModal,
     clearSelectedExpense,
   };
 }
