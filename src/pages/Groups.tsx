@@ -453,11 +453,6 @@ export default function Groups() {
       key={animationKey}
       style={{
         ...shellStyle,
-        transform: isTransitionVisible ? "scale(0.982)" : "scale(1)",
-        filter: isTransitionVisible ? "blur(6px)" : "blur(0px)",
-        opacity: isTransitionVisible ? 0.78 : 1,
-        transition: "transform 0.45s ease, filter 0.45s ease, opacity 0.3s ease",
-        willChange: "transform, filter, opacity",
       }}
     >
       <div style={getClockEntryStyle(0)}>
@@ -586,20 +581,28 @@ export default function Groups() {
                           ? "1px solid rgba(117,154,255,0.30)"
                           : "1px solid rgba(255,255,255,0.08)",
                         background: isHighlight
-                          ? "linear-gradient(180deg, rgba(91,140,255,0.32) 0%, rgba(255,255,255,0.05) 100%)"
+                          ? "linear-gradient(180deg, rgba(91,140,255,0.36) 0%, rgba(255,255,255,0.06) 100%)"
                           : active
                           ? "linear-gradient(180deg, rgba(92,132,255,0.16) 0%, rgba(255,255,255,0.03) 100%)"
                           : "rgba(255,255,255,0.02)",
                         color: "inherit",
                         boxShadow: isHighlight
-                          ? "0 0 0 2px rgba(91,140,255,0.20), 0 12px 38px rgba(91,140,255,0.28)"
+                          ? "0 0 0 2px rgba(91,140,255,0.35), 0 0 40px rgba(91,140,255,0.55), 0 20px 60px rgba(91,140,255,0.45)"
                           : active
                           ? "0 12px 28px rgba(47,84,235,0.12)"
                           : "none",
                         minWidth: 220,
                         flexShrink: 0,
-                        transform: isHighlight ? "scale(1.035)" : "scale(1)",
-                        transition: "border 0.35s ease, background 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease",
+                        transform: isHighlight
+                          ? "scale(1.04)"
+                          : active
+                          ? "scale(1.01)"
+                          : "scale(1)",
+                        animation: isHighlight
+                          ? "nuvcoin-group-pop 0.6s ease, nuvcoin-group-glow 1.8s ease-in-out infinite"
+                          : "none",
+                        transition:
+                          "border 0.35s ease, background 0.35s ease, box-shadow 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)",
                       }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -690,7 +693,7 @@ export default function Groups() {
                 ) : (
                   <div style={{ ...subtleText, fontSize: 13 }}>
                     {state.groups.length === 0
-                      ? "Crie seu primeiro grupo no botão do topo para começar."
+                      ? 'Crie seu primeiro grupo no botão do topo para começar.'
                       : "Escolha um grupo na barra superior para abrir o dashboard."}
                   </div>
                 )}
@@ -732,7 +735,7 @@ export default function Groups() {
                 <div style={panelTitle}>Comece por um grupo</div>
                 <div style={subtleText}>
                   {state.groups.length === 0
-                    ? "Use o botão “+ Novo grupo” no topo para criar seu primeiro grupo."
+                    ? 'Use o botão “+ Novo grupo” no topo para criar seu primeiro grupo.'
                     : "Selecione um grupo na barra superior para abrir o dashboard com pessoas, base do grupo, resumo do mês e histórico."}
                 </div>
               </div>
@@ -1081,14 +1084,14 @@ export default function Groups() {
             position: "fixed",
             inset: 0,
             zIndex: 1200,
-            background: "rgba(2,6,23,0.20)",
-            backdropFilter: "blur(6px)",
+            background: "rgba(2,6,23,0.14)",
+            backdropFilter: "blur(2px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             pointerEvents: "none",
             opacity: 1,
-            transition: "opacity 0.25s ease",
+            transition: "opacity 0.25s ease, background 0.25s ease, backdrop-filter 0.25s ease",
           }}
         >
           <div
@@ -1096,9 +1099,9 @@ export default function Groups() {
               minWidth: 280,
               maxWidth: 340,
               borderRadius: 24,
-              border: "1px solid rgba(255,255,255,0.10)",
-              background: "linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.82) 100%)",
-              boxShadow: "0 24px 80px rgba(0,0,0,0.38), 0 0 0 1px rgba(91,140,255,0.10)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              background: "linear-gradient(180deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.78) 100%)",
+              boxShadow: "0 18px 52px rgba(0,0,0,0.26), 0 0 0 1px rgba(91,140,255,0.08)",
               padding: "24px 22px",
               display: "grid",
               gap: 16,
@@ -1118,7 +1121,7 @@ export default function Groups() {
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50%",
-                  border: "4px solid rgba(255,255,255,0.10)",
+                  border: "4px solid rgba(255,255,255,0.08)",
                 }}
               />
               <div
@@ -1138,7 +1141,7 @@ export default function Groups() {
                   position: "absolute",
                   inset: 12,
                   borderRadius: "50%",
-                  border: "3px solid rgba(91,140,255,0.18)",
+                  border: "3px solid rgba(91,140,255,0.14)",
                   animation: "nuvcoin-groups-pulse 1.2s ease-in-out infinite",
                 }}
               />
@@ -1165,7 +1168,7 @@ export default function Groups() {
                 height: 6,
                 borderRadius: 999,
                 overflow: "hidden",
-                background: "rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.06)",
               }}
             >
               <div
@@ -1173,7 +1176,7 @@ export default function Groups() {
                   width: "42%",
                   height: "100%",
                   borderRadius: 999,
-                  background: "linear-gradient(90deg, rgba(91,140,255,0.45) 0%, rgba(91,140,255,1) 100%)",
+                  background: "linear-gradient(90deg, rgba(91,140,255,0.38) 0%, rgba(91,140,255,0.92) 100%)",
                   animation: "nuvcoin-groups-bar 1s ease-in-out infinite",
                 }}
               />
@@ -1191,21 +1194,27 @@ export default function Groups() {
         onChange={createGroup.setName}
         onClose={createGroup.close}
         onCreate={async () => {
+          if (isCreatingWithTransition) return; // Evita duplo clique
+
           const createdGroupName = createGroup.name.trim(); // Guarda o nome antes do hook limpar o input
 
           await startCreateTransition(async () => {
-            await createGroup.create();
+            try {
+              await createGroup.create();
 
-            if (createdGroupName) {
-              setPendingCreatedGroupName(createdGroupName);
+              if (createdGroupName) {
+                setPendingCreatedGroupName(createdGroupName);
+              }
+
+              setAnimate(false);
+
+              window.setTimeout(() => {
+                setAnimationKey((prev) => prev + 1);
+                setAnimate(true);
+              }, 60);
+            } catch (err) {
+              console.error("Erro ao criar grupo:", err);
             }
-
-            setAnimate(false);
-
-            window.setTimeout(() => {
-              setAnimationKey((prev) => prev + 1);
-              setAnimate(true);
-            }, 60);
           });
         }}
       />
@@ -1244,6 +1253,33 @@ export default function Groups() {
               transform: translateX(320%);
             }
           }
+
+          @keyframes nuvcoin-group-pop {
+            0% {
+              transform: scale(0.92);
+              opacity: 0.4;
+            }
+            50% {
+              transform: scale(1.08);
+              opacity: 1;
+            }
+            100% {
+              transform: scale(1.04);
+              opacity: 1;
+            }
+          }
+
+          @keyframes nuvcoin-group-glow {
+            0% {
+              box-shadow: 0 0 0 2px rgba(91,140,255,0.25), 0 0 10px rgba(91,140,255,0.2);
+            }
+            50% {
+              box-shadow: 0 0 0 2px rgba(91,140,255,0.45), 0 0 40px rgba(91,140,255,0.6);
+            }
+            100% {
+              box-shadow: 0 0 0 2px rgba(91,140,255,0.25), 0 0 10px rgba(91,140,255,0.2);
+            }
+          }
         `}
       </style>
     </div>
@@ -1258,12 +1294,9 @@ lucassousa@gmail.com
 
 Mudança feita nesta etapa:
 
-✔ Integrado isCreatingWithTransition no Groups.tsx
-✔ Botão de criar grupo agora respeita a transição visual
-✔ Modal recebe loading também durante a transição
-✔ Overlay visual ficou mais forte e mais profissional
-✔ Adicionado loading central com efeito de reloginho/spinner
-✔ Adicionada barra animada para reforçar feedback visual
-✔ Mantido highlight do grupo recém-criado
-✔ Mantido fluxo existente sem quebrar o restante da tela
+✔ Mantido o overlay leve na criação do grupo
+✔ Melhorado o destaque do grupo recém-criado
+✔ Adicionado glow animado no card recém-criado
+✔ Ajustado o scale do highlight para ficar mais premium
+✔ Mantido o restante do fluxo sem quebrar nada
 */
