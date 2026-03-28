@@ -56,7 +56,7 @@ export default function App() {
       <Route
         path="/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireActiveSubscription>
             <Layout>
               <AnimatedPage>
                 <Dashboard />
@@ -70,7 +70,7 @@ export default function App() {
       <Route
         path="/receitas"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireActiveSubscription>
             <Layout>
               <AnimatedPage>
                 <Receitas />
@@ -84,7 +84,7 @@ export default function App() {
       <Route
         path="/despesas"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireActiveSubscription>
             <Layout>
               <AnimatedPage>
                 <Despesas />

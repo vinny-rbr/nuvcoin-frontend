@@ -1,5 +1,10 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Link } from "react-router-dom"; // Links sem recarregar a página
+import {
+  getSubscriptionActiveState,
+  INACTIVE_SUBSCRIPTION_MESSAGE,
+  subscribeToSubscriptionState,
+} from "../lib/auth";
 
 import "./layout.css"; // Importa o CSS do layout premium
 
@@ -8,10 +13,10 @@ type Props = {
 };
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard" },
-  { to: "/receitas", label: "Receitas" },
-  { to: "/despesas", label: "Despesas" },
-  { to: "/groups", label: "Groups" },
+  { to: "/dashboard", label: "Dashboard", requiresActiveSubscription: true },
+  { to: "/receitas", label: "Receitas", requiresActiveSubscription: true },
+  { to: "/despesas", label: "Despesas", requiresActiveSubscription: true },
+  { to: "/groups", label: "Groups", requiresActiveSubscription: false },
 ];
 
 export default function Layout({ children }: Props) {
@@ -22,6 +27,7 @@ export default function Layout({ children }: Props) {
     return window.innerWidth < 768;
   });
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+  const [subscriptionState, setSubscriptionState] = useState<boolean | null>(() => getSubscriptionActiveState());
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -73,6 +79,10 @@ export default function Layout({ children }: Props) {
     };
   }, [isMobileMenuOpen]);
 
+  useEffect(() => {
+    return subscribeToSubscriptionState(setSubscriptionState);
+  }, []);
+
   function handleMobileMenuToggle(event: ReactMouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
     setIsMobileMenuOpen((current) => !current);
@@ -81,6 +91,15 @@ export default function Layout({ children }: Props) {
   function handleMobileMenuClose() {
     setIsMobileMenuOpen(false);
   }
+
+  function handleBlockedNavigation(event: ReactMouseEvent<HTMLElement>) {
+    event.preventDefault();
+    window.alert(INACTIVE_SUBSCRIPTION_MESSAGE);
+    handleMobileMenuClose();
+  }
+
+  const planBadgeLabel =
+    subscriptionState === true ? "Plano ativo" : subscriptionState === false ? "Conta inativa" : "Status do plano";
 
   return (
     <div className="app-shell">
@@ -93,13 +112,22 @@ export default function Layout({ children }: Props) {
               <span className="logo-dot" />
               <h1>NUVCOIN</h1>
             </div>
-            <span className="badge">Trial ativo</span>
+            <span className="badge">{planBadgeLabel}</span>
           </div>
 
           {/* Navegação */}
           <nav className="nav" aria-label="Navegação principal">
             {navItems.map((item) => (
-              <Link key={item.to} to={item.to}>
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-disabled={subscriptionState === false && item.requiresActiveSubscription}
+                onClick={
+                  subscriptionState === false && item.requiresActiveSubscription
+                    ? handleBlockedNavigation
+                    : undefined
+                }
+              >
                 {item.label}
               </Link>
             ))}
@@ -126,7 +154,16 @@ export default function Layout({ children }: Props) {
               className={`mobile-nav-menu${isMobileMenuOpen ? " is-open" : ""}`}
             >
               {navItems.map((item) => (
-                <Link key={item.to} to={item.to} onClick={handleMobileMenuClose}>
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-disabled={subscriptionState === false && item.requiresActiveSubscription}
+                  onClick={
+                    subscriptionState === false && item.requiresActiveSubscription
+                      ? handleBlockedNavigation
+                      : handleMobileMenuClose
+                  }
+                >
                   {item.label}
                 </Link>
               ))}

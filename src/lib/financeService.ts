@@ -1,4 +1,5 @@
 import type { FinanceItem } from "../types/finance"; // Tipos do app
+import { persistSubscriptionState } from "./auth";
 
 import {
   loadFinanceItems, // Lê itens do localStorage
@@ -129,7 +130,14 @@ const apiProvider: FinanceProvider = {
       headers: makeHeaders(), // Headers com Bearer
     });
 
+    if (res.status === 403) {
+      persistSubscriptionState(false); // Marca conta como inativa
+      throw new Error("Finance access forbidden: 403");
+    }
+
     if (!res.ok) throw new Error(`API list failed: ${res.status}`); // Erro
+
+    persistSubscriptionState(true); // Finance acessível -> plano ativo
 
     const raw = await res.json(); // JSON
     return normalizeApiList(raw); // Normaliza
@@ -152,7 +160,14 @@ const apiProvider: FinanceProvider = {
       body: JSON.stringify(payload), // Body
     });
 
+    if (res.status === 403) {
+      persistSubscriptionState(false); // Marca conta como inativa
+      throw new Error("Finance access forbidden: 403");
+    }
+
     if (!res.ok) throw new Error(`API add failed: ${res.status}`); // Erro
+
+    persistSubscriptionState(true); // Finance acessível -> plano ativo
 
     const rawCreated = await res.json(); // Retorno do backend
     const created = normalizeApiItem(rawCreated); // Normaliza item criado
@@ -166,7 +181,14 @@ const apiProvider: FinanceProvider = {
       headers: makeHeaders(), // Headers
     });
 
+    if (res.status === 403) {
+      persistSubscriptionState(false); // Marca conta como inativa
+      throw new Error("Finance access forbidden: 403");
+    }
+
     if (!res.ok) throw new Error(`API remove failed: ${res.status}`); // Erro
+
+    persistSubscriptionState(true); // Finance acessível -> plano ativo
 
     return; // 204 NoContent
   },

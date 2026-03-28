@@ -1,5 +1,6 @@
 import { useState } from "react"; // Hook para controlar estados (inputs)
 import { Link, useNavigate } from "react-router-dom"; // Link + navegação
+import { deriveSubscriptionActiveFromAuthData, persistSubscriptionState } from "../lib/auth";
 
 export default function Login() {
   const navigate = useNavigate(); // Permite redirecionar o usuário para outra rota
@@ -46,6 +47,12 @@ export default function Login() {
         userId: string;
         name: string;
         email: string;
+        subscriptionActive?: boolean | string;
+        hasActiveSubscription?: boolean | string;
+        isSubscriptionActive?: boolean | string;
+        subscriptionStatus?: string;
+        planStatus?: string;
+        isActive?: boolean | string;
       };
 
       if (!data.token) {
@@ -67,6 +74,7 @@ export default function Login() {
       localStorage.setItem("nuvcoin_email", data.email); // Email
       localStorage.setItem("nuvcoin_userId", data.userId); // UserId
       localStorage.setItem("nuvcoin_name", data.name ?? ""); // Nome
+      persistSubscriptionState(deriveSubscriptionActiveFromAuthData(data)); // Estado da assinatura
 
       // Depois de salvar, manda pro Dashboard
       navigate("/dashboard"); // Vai para a rota protegida
