@@ -47,6 +47,7 @@ export default function Login() {
         userId: string;
         name: string;
         email: string;
+        subscriptionEndDateUtc?: string | null;
         subscriptionActive?: boolean | string;
         hasActiveSubscription?: boolean | string;
         isSubscriptionActive?: boolean | string;
@@ -74,6 +75,11 @@ export default function Login() {
       localStorage.setItem("nuvcoin_email", data.email); // Email
       localStorage.setItem("nuvcoin_userId", data.userId); // UserId
       localStorage.setItem("nuvcoin_name", data.name ?? ""); // Nome
+      if (data.subscriptionEndDateUtc) {
+        localStorage.setItem("subscriptionEndDateUtc", data.subscriptionEndDateUtc);
+      } else {
+        localStorage.removeItem("subscriptionEndDateUtc");
+      }
       persistSubscriptionState(deriveSubscriptionActiveFromAuthData(data)); // Estado da assinatura
 
       // Depois de salvar, manda pro Dashboard

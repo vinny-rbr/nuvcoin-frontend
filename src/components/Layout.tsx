@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"; // Links sem recarregar a 
 import {
   getSubscriptionActiveState,
   INACTIVE_SUBSCRIPTION_MESSAGE,
+  persistSubscriptionState,
   subscribeToSubscriptionState,
 } from "../lib/auth";
 
@@ -19,6 +20,18 @@ const navItems = [
   { to: "/groups", label: "Groups", requiresActiveSubscription: false },
 ];
 
+function getRemainingDays(endDateRaw: string | null): number | null {
+  if (!endDateRaw) return null;
+
+  const endDate = new Date(endDateRaw);
+  const now = new Date();
+
+  const diff = endDate.getTime() - now.getTime();
+  const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)) - 1);
+
+  return days;
+}
+
 export default function Layout({ children }: Props) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -31,6 +44,8 @@ export default function Layout({ children }: Props) {
   });
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const [subscriptionState, setSubscriptionState] = useState<boolean | null>(() => getSubscriptionActiveState());
+  const endDateRaw = typeof window === "undefined" ? null : localStorage.getItem("subscriptionEndDateUtc");
+  const remainingDays = getRemainingDays(endDateRaw);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -112,16 +127,21 @@ export default function Layout({ children }: Props) {
       const response = await fetch("/api/subscriptions/start-trial", {
         method: "POST",
         headers: {
+          "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
+        body: JSON.stringify({
+          planId: "daeb0e00-df7d-4b24-8392-ef53fbac7e7c",
+        }),
       });
 
       if (!response.ok) {
         throw new Error("Nao foi possivel iniciar o trial.");
       }
 
-      setShowTrialModal(false);
+      persistSubscriptionState(true);
       setSubscriptionState(true);
+      setShowTrialModal(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nao foi possivel iniciar o trial.";
       window.alert(message);
@@ -172,6 +192,14 @@ export default function Layout({ children }: Props) {
 
   const planBadgeLabel =
     subscriptionState === true ? "Plano ativo" : subscriptionState === false ? "Conta inativa" : "Status do plano";
+  const trialBadgeLabel =
+    remainingDays === null
+      ? null
+      : remainingDays > 1
+        ? `💎 Trial ativo • ${remainingDays} dias restantes`
+        : remainingDays === 1
+          ? "⚠️ Termina amanhã"
+          : "❌ Trial expirado";
 
   return (
     <div className="app-shell">
@@ -195,6 +223,25 @@ export default function Layout({ children }: Props) {
               marginLeft: "auto",
             }}
           >
+            {trialBadgeLabel ? (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "6px 10px",
+                  borderRadius: "999px",
+                  background: "rgba(255, 255, 255, 0.12)",
+                  color: "var(--text-main)",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {trialBadgeLabel}
+              </span>
+            ) : null}
+
             {/* Navegação */}
             <nav className="nav" aria-label="Navegação principal">
               {navItems.map((item) => (
