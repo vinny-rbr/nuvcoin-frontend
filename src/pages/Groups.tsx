@@ -142,6 +142,7 @@ export default function Groups() {
   const [pendingCreatedGroupName, setPendingCreatedGroupName] = useState<string | null>(null); // Guarda o nome do grupo recém-criado até a lista atualizar
   const [isGroupsLaneAnimating, setIsGroupsLaneAnimating] = useState(false); // Faz a faixa dos grupos reagir quando um novo grupo entra
   const [isSwitchingGroup, setIsSwitchingGroup] = useState(false); // Faz a troca entre grupos ficar suave
+  const [isDeleteGroupConfirmOpen, setIsDeleteGroupConfirmOpen] = useState(false); // Controla o modal customizado de exclusão
   // ==============================
   // HOOK: despesas
   // ==============================
@@ -257,7 +258,6 @@ export default function Groups() {
     onDeleteExpenseFromHistory,
   } = useGroupsActions({
     selectedGroupId,
-    selectedGroupName,
     balances,
     handleCreateGroup,
     handleDeleteGroup,
@@ -329,6 +329,7 @@ export default function Groups() {
     clearExpenseFeedback();
     clearBaseFeedback();
     clearEditFeedback();
+    setIsDeleteGroupConfirmOpen(false);
   }, [selectedGroupId]);
 
   // ==============================
@@ -480,6 +481,20 @@ export default function Groups() {
     };
   }
 
+  function handleRequestDeleteGroup() {
+    if (!selectedGroupId || deletingGroupId === selectedGroupId) return;
+
+    setIsDeleteGroupConfirmOpen(true);
+  }
+
+  async function handleConfirmDeleteGroup() {
+    const deleted = await onDeleteGroup();
+
+    if (deleted) {
+      setIsDeleteGroupConfirmOpen(false);
+    }
+  }
+
   return (
     <div style={shellOuterStyle}>
       <div
@@ -545,7 +560,7 @@ export default function Groups() {
           monthSplitChartData={monthSplitChartData}
           monthSplitChartOptions={monthSplitChartOptions}
           historyItemsCount={historyItems.length}
-          onDeleteGroup={onDeleteGroup}
+          onDeleteGroup={handleRequestDeleteGroup}
           getClockEntryStyle={getClockEntryStyle}
           sectionCard={sectionCard}
           panelTitle={panelTitle}
@@ -614,6 +629,8 @@ export default function Groups() {
           createGroupLoading={createGroup.loading || isCreatingWithTransition || creatingGroup}
           createGroupError={createGroup.error}
           createGroupSuccess={createGroup.success}
+          deleteGroupConfirmOpen={isDeleteGroupConfirmOpen}
+          deleteGroupLoading={deletingGroupId === selectedGroupId}
           modalOverlay={modalOverlay}
           modalCard={modalCard}
           modalHeader={modalHeader}
@@ -737,6 +754,10 @@ export default function Groups() {
                 console.error("Erro ao criar grupo:", err);
               }
             });
+          }}
+          onCloseDeleteGroupConfirm={() => setIsDeleteGroupConfirmOpen(false)}
+          onConfirmDeleteGroup={() => {
+            void handleConfirmDeleteGroup();
           }}
         />
 

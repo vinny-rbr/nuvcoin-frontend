@@ -25,6 +25,12 @@ type UseGroupsCalculationsParams = {
   manualPercentInputByUserId: Record<string, string>; // Inputs manuais em texto por usuário
 }; // Parâmetros de entrada do hook
 
+type MonthSplitMember = {
+  userId: string;
+  name?: string | null;
+  email?: string | null;
+};
+
 export function useGroupsCalculations({
   balances,
   membersInfo,
@@ -33,13 +39,64 @@ export function useGroupsCalculations({
   salaryByUserId,
   manualPercentInputByUserId,
 }: UseGroupsCalculationsParams) {
-  const members = useMemo(() => {
-    return balances?.members ?? []; // Usa membros vindos de balances ou array vazio
-  }, [balances?.members]); // Recalcula quando balances.members mudar
+  const memberIdentityMap = useMemo(() => {
+    const map: Record<string, { name?: string | null; email?: string | null }> = {};
+
+    for (const member of balances?.members ?? []) {
+      map[member.userId] = {
+        name: member.name,
+        email: member.email,
+      };
+    }
+
+    for (const expense of expenses?.items ?? []) {
+      if (expense.paidByUserId) {
+        const current = map[expense.paidByUserId] ?? {};
+        map[expense.paidByUserId] = {
+          name: current.name ?? expense.paidByName ?? null,
+          email: current.email ?? expense.paidByEmail ?? null,
+        };
+      }
+
+      for (const participant of expense.participants ?? []) {
+        const current = map[participant.userId] ?? {};
+        map[participant.userId] = {
+          name: current.name ?? participant.name ?? null,
+          email: current.email ?? participant.email ?? null,
+        };
+      }
+    }
+
+    return map;
+  }, [balances?.members, expenses?.items]);
+
+  const members = useMemo<MonthSplitMember[]>(() => {
+    if ((balances?.members?.length ?? 0) > 0) {
+      return balances!.members.map((member) => ({
+        userId: member.userId,
+        name: member.name,
+        email: member.email,
+      }));
+    }
+
+    const uniqueMembers = new Map<string, MonthSplitMember>();
+
+    for (const member of membersInfo?.members ?? []) {
+      const identity = memberIdentityMap[member.userId];
+
+      uniqueMembers.set(member.userId, {
+        userId: member.userId,
+        name: identity?.name ?? null,
+        email: identity?.email ?? null,
+      });
+    }
+
+    return Array.from(uniqueMembers.values());
+  }, [balances?.members, memberIdentityMap, membersInfo?.members]); // Recalcula quando as fontes de membros mudarem
 
   const membersCount = useMemo(() => {
-    return membersInfo?.members?.length ?? 0; // Conta membros do payload de membersInfo
-  }, [membersInfo?.members?.length]); // Recalcula quando a quantidade mudar
+    return membersInfo?.members?.length ?? members.length; // Conta membros do payload de membersInfo
+  }, [members.length, membersInfo?.members?.length]); // Recalcula quando a quantidade mudar
 
   const currentMonthKey = useMemo(() => {
     return currentMonthKeyUTC(); // Gera chave do mês atual em UTC

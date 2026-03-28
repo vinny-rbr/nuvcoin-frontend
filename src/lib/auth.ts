@@ -98,10 +98,13 @@ export function deriveSubscriptionActiveFromAuthData(data: unknown): boolean | n
 }
 
 export function canAccessSubscriptionRoute(pathname: string): boolean {
-  if (pathname === "/groups") return true;
-
-  if (pathname === "/dashboard" || pathname === "/receitas" || pathname === "/despesas") {
-    return getSubscriptionActiveState() !== false;
+  if (
+    pathname === "/dashboard" ||
+    pathname === "/receitas" ||
+    pathname === "/despesas" ||
+    pathname === "/groups"
+  ) {
+    return true;
   }
 
   return true;

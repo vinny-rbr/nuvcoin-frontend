@@ -14,7 +14,6 @@ import {
 
 type UseGroupsActionsParams = {
   selectedGroupId: string | null; // Grupo atualmente selecionado
-  selectedGroupName: string | null; // Nome do grupo selecionado
   balances: {
     members?: Array<{
       userId: string; // Id do usuário membro
@@ -91,7 +90,7 @@ type SaveEditExpenseParams = {
 
 type UseGroupsActionsReturn = {
   onCreateGroup: (params: CreateGroupParams) => Promise<void>; // Cria grupo
-  onDeleteGroup: () => Promise<void>; // Exclui grupo
+  onDeleteGroup: () => Promise<boolean>; // Exclui grupo
   onAddMember: (params: AddMemberParams) => Promise<void>; // Adiciona membro
   onRemoveMember: (params: RemoveMemberParams) => Promise<void>; // Remove membro
   onCreateHouseExpense: (params: CreateHouseExpenseParams) => Promise<void>; // Cria conta do mês
@@ -102,7 +101,6 @@ type UseGroupsActionsReturn = {
 
 export default function useGroupsActions({
   selectedGroupId,
-  selectedGroupName,
   balances,
   handleCreateGroup,
   handleDeleteGroup,
@@ -157,26 +155,22 @@ export default function useGroupsActions({
     }
   }
 
-  async function onDeleteGroup(): Promise<void> {
+  async function onDeleteGroup(): Promise<boolean> {
     try {
-      if (!selectedGroupId) return; // Sai se não houver grupo selecionado
-
-      const confirmDelete = window.confirm(`Excluir o grupo "${selectedGroupName ?? ""}"?\n\nIsso arquiva o grupo (soft delete).`); // Confirma exclusão com o usuário
-      if (!confirmDelete) return; // Cancela se usuário negar
+      if (!selectedGroupId) return false; // Sai se não houver grupo selecionado
 
       const ok = await handleDeleteGroup(selectedGroupId); // Executa exclusão pelo hook central
 
       if (!ok) {
-        alert("Não foi possível excluir o grupo."); // Mostra erro amigável
-        return; // Interrompe fluxo
+        return false; // Interrompe fluxo
       }
 
       closeCreateExpenseModal(); // Fecha modal de despesas
       closeBaseConfigModal(); // Fecha modal da base
       closeEditExpenseModal(); // Fecha modal de edição
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido"; // Extrai mensagem de erro
-      alert(message); // Exibe erro
+      return true;
+    } catch {
+      return false;
     }
   }
 

@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 // useNavigate permite redirecionar após criar conta
 
 export default function Register() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   // Hook para redirecionamento
 
-  const [email, setEmail] = useState(""); 
+  const [email, setEmail] = useState("");
   // Guarda email digitado
 
-  const [password, setPassword] = useState(""); 
+  const [password, setPassword] = useState("");
   // Guarda senha digitada
 
-  function handleRegister() {
+  const [loading, setLoading] = useState(false);
+  // Controla estado de carregamento
+
+  async function handleRegister() {
     // Executado ao clicar em "Criar conta"
 
     if (!email || !password) {
@@ -20,14 +23,40 @@ export default function Register() {
       return;
     }
 
-    // Simulação de cadastro (mock)
-    localStorage.setItem("nuvcoin_email", email);
-    localStorage.setItem("nuvcoin_password_mock", password);
+    try {
+      setLoading(true);
 
-    alert("Conta criada com sucesso! Faça login.");
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password,
+        }),
+      });
 
-    // 🔥 Redireciona automaticamente para o Login
-    navigate("/login");
+      if (!res.ok) {
+        const text = await res.text();
+
+        if (res.status === 409) {
+          alert("Esse e-mail já está cadastrado.");
+          return;
+        }
+
+        throw new Error(`Erro ao criar conta: ${res.status} - ${text}`);
+      }
+
+      alert("Conta criada com sucesso! Faça login.");
+
+      // 🔥 Redireciona automaticamente para o Login
+      navigate("/login");
+    } catch (err: any) {
+      alert(err?.message ?? "Erro ao criar conta.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -72,17 +101,18 @@ export default function Register() {
 
         <button
           onClick={handleRegister}
+          disabled={loading}
           style={{
             padding: 10,
             borderRadius: 6,
             border: "none",
-            backgroundColor: "#22c55e",
+            backgroundColor: loading ? "#64748b" : "#22c55e",
             color: "white",
             fontWeight: "bold",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
           }}
         >
-          Criar conta
+          {loading ? "Criando conta..." : "Criar conta"}
         </button>
       </div>
     </div>

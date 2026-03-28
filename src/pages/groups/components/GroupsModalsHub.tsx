@@ -9,6 +9,7 @@ import type {
 import GroupsBaseModal from "./GroupsBaseModal";
 import GroupsCreateModal from "./GroupsCreateModal";
 import GroupsCreateTransitionOverlay from "./GroupsCreateTransitionOverlay";
+import GroupsDeleteGroupModal from "./GroupsDeleteGroupModal";
 import GroupsEditExpenseModal from "./GroupsEditExpenseModal";
 import GroupsExpensesModal from "./GroupsExpensesModal";
 import GroupsHeaderActionModal from "./GroupsHeaderActionModal";
@@ -87,6 +88,8 @@ type GroupsModalsHubProps = {
   createGroupLoading: boolean;
   createGroupError: string | null;
   createGroupSuccess: string | null;
+  deleteGroupConfirmOpen: boolean;
+  deleteGroupLoading: boolean;
   modalOverlay: CSSProperties;
   modalCard: CSSProperties;
   modalHeader: CSSProperties;
@@ -149,6 +152,8 @@ type GroupsModalsHubProps = {
   onSetCreateGroupName: (value: string) => void;
   onCloseCreateGroup: () => void;
   onCreateGroup: () => Promise<void>;
+  onCloseDeleteGroupConfirm: () => void;
+  onConfirmDeleteGroup: () => void;
 };
 
 export default function GroupsModalsHub({
@@ -209,6 +214,8 @@ export default function GroupsModalsHub({
   createGroupLoading,
   createGroupError,
   createGroupSuccess,
+  deleteGroupConfirmOpen,
+  deleteGroupLoading,
   modalOverlay,
   modalCard,
   modalHeader,
@@ -271,6 +278,8 @@ export default function GroupsModalsHub({
   onSetCreateGroupName,
   onCloseCreateGroup,
   onCreateGroup,
+  onCloseDeleteGroupConfirm,
+  onConfirmDeleteGroup,
 }: GroupsModalsHubProps) {
   return (
     <>
@@ -444,6 +453,20 @@ export default function GroupsModalsHub({
         onChange={onSetCreateGroupName}
         onClose={onCloseCreateGroup}
         onCreate={onCreateGroup}
+      />
+
+      <GroupsDeleteGroupModal
+        open={deleteGroupConfirmOpen}
+        loading={deleteGroupLoading}
+        onClose={onCloseDeleteGroupConfirm}
+        onConfirm={onConfirmDeleteGroup}
+        modalOverlay={modalOverlay}
+        modalCard={modalCard}
+        modalHeader={modalHeader}
+        modalBody={modalBody}
+        subtleText={subtleText}
+        softButton={softButton}
+        dangerButtonSmall={dangerButtonSmall}
       />
     </>
   );

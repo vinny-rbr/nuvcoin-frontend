@@ -6,7 +6,7 @@ export default function Login() {
   const navigate = useNavigate(); // Permite redirecionar o usuário para outra rota
 
   const [email, setEmail] = useState(""); // Estado que guarda o e-mail digitado
-  const [name, setName] = useState(""); // Estado que guarda o nome digitado (opcional)
+  const [password, setPassword] = useState(""); // Estado que guarda a senha digitada
   const [loading, setLoading] = useState(false); // Estado de carregamento
 
   async function handleLogin() {
@@ -25,21 +25,21 @@ export default function Login() {
       // ✅ Chama backend pra gerar JWT válido
       // =========================
 
-      const res = await fetch("/api/auth/token", {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: email.trim(), // Email do usuário
-          name: name.trim() || undefined, // Nome opcional
+          password: password, // Senha do usuário
         }),
       });
 
       if (!res.ok) {
-        // Se backend retornar erro
-        const text = await res.text(); // Lê resposta
-        throw new Error(`Erro no login: ${res.status} - ${text}`); // Dispara erro
+        // Se backend retornar erro, informa credenciais inválidas
+        alert("Email ou senha inválidos");
+        return;
       }
 
       const data = (await res.json()) as {
@@ -129,9 +129,10 @@ export default function Login() {
         />
 
         <input
-          placeholder="Seu nome (opcional)"
-          value={name}
-          onChange={(e) => setName(e.target.value)} // Atualiza estado name
+          type="password"
+          placeholder="Sua senha"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)} // Atualiza estado password
           style={{
             padding: 10,
             borderRadius: 8,

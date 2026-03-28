@@ -21,7 +21,9 @@ const navItems = [
 
 export default function Layout({ children }: Props) {
   const navigate = useNavigate();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showTrialModal, setShowTrialModal] = useState(false);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") return false;
 
@@ -84,6 +86,12 @@ export default function Layout({ children }: Props) {
     return subscribeToSubscriptionState(setSubscriptionState);
   }, []);
 
+  useEffect(() => {
+    if (subscriptionState === false) {
+      setShowTrialModal(true);
+    }
+  }, [subscriptionState]);
+
   function handleMobileMenuToggle(event: ReactMouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
     setIsMobileMenuOpen((current) => !current);
@@ -99,42 +107,67 @@ export default function Layout({ children }: Props) {
     handleMobileMenuClose();
   }
 
+  async function handleStartTrial() {
+    try {
+      const response = await fetch("/api/subscriptions/start-trial", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Nao foi possivel iniciar o trial.");
+      }
+
+      setShowTrialModal(false);
+      setSubscriptionState(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Nao foi possivel iniciar o trial.";
+      window.alert(message);
+    }
+  }
+
   function handleLogout() {
-    const localStorageKeysToRemove = [
-      "token",
-      "nuvcoin_token",
-      "auth_token",
-      "accessToken",
-      "jwt",
-      "auth",
-      "logged",
-      "user",
-      "session",
-      "sessionId",
-      "refreshToken",
-      "nuvcoin_email",
-      "nuvcoin_userId",
-      "nuvcoin_name",
-      "nuvcoin_subscription_active",
-      "subscriptionActive",
-      "subscriptionStatus",
-      "subscription_status",
-      "hasActiveSubscription",
-      "isSubscriptionActive",
-      "planStatus",
-      "plan_status",
-      "planActive",
-      "plan_active",
-      "isActive",
-    ];
-
-    localStorageKeysToRemove.forEach((key) => {
-      window.localStorage.removeItem(key);
-    });
-
-    setSubscriptionState(null);
+    setIsLoggingOut(true);
     handleMobileMenuClose();
-    navigate("/login");
+
+    window.setTimeout(() => {
+      const localStorageKeysToRemove = [
+        "token",
+        "nuvcoin_token",
+        "auth_token",
+        "accessToken",
+        "jwt",
+        "auth",
+        "logged",
+        "user",
+        "session",
+        "sessionId",
+        "refreshToken",
+        "nuvcoin_email",
+        "nuvcoin_userId",
+        "nuvcoin_name",
+        "nuvcoin_subscription_active",
+        "subscriptionActive",
+        "subscriptionStatus",
+        "subscription_status",
+        "hasActiveSubscription",
+        "isSubscriptionActive",
+        "planStatus",
+        "plan_status",
+        "planActive",
+        "plan_active",
+        "isActive",
+      ];
+
+      localStorageKeysToRemove.forEach((key) => {
+        window.localStorage.removeItem(key);
+      });
+
+      setSubscriptionState(null);
+      navigate("/login");
+    }, 1500);
   }
 
   const planBadgeLabel =
@@ -275,8 +308,171 @@ export default function Layout({ children }: Props) {
         />
       ) : null}
 
+      {isLoggingOut ? (
+        <div
+          aria-live="polite"
+          aria-label="Saindo da conta"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            background: "rgba(0, 0, 0, 0.82)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            pointerEvents: "all",
+            animation: "fadeInLogoutOverlay 0.25s ease-out",
+          }}
+        >
+          <div
+            style={{
+              display: "grid",
+              gap: "10px",
+              justifyItems: "center",
+              textAlign: "center",
+              color: "var(--text-main)",
+              padding: "28px 32px",
+              borderRadius: "20px",
+              border: "1px solid rgba(148, 163, 184, 0.16)",
+              background: "rgba(15, 23, 42, 0.9)",
+              boxShadow: "0 24px 60px rgba(0, 0, 0, 0.35)",
+              animation: "logoutPulse 1.2s ease-in-out infinite",
+            }}
+          >
+            <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>Saindo...</h2>
+            <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)" }}>Volte sempre 👋</p>
+          </div>
+        </div>
+      ) : null}
+
+      {showTrialModal ? (
+        <div
+          aria-live="polite"
+          aria-modal="true"
+          role="dialog"
+          aria-label="Iniciar teste gratis"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "24px",
+            background: "rgba(0, 0, 0, 0.72)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            animation: "fadeInTrialModal 0.25s ease-out",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              display: "grid",
+              gap: "18px",
+              padding: "28px",
+              borderRadius: "20px",
+              border: "1px solid rgba(148, 163, 184, 0.18)",
+              background: "linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.96))",
+              boxShadow: "0 30px 80px rgba(0, 0, 0, 0.45)",
+              color: "var(--text-main)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ display: "grid", gap: "10px" }}>
+              <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>Iniciar teste gratis?</h2>
+              <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                Voce pode usar todas as funcionalidades por 15 dias gratis.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: "12px",
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleStartTrial}
+                style={{
+                  flex: 1,
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "none",
+                  background: "#3b82f6",
+                  color: "#ffffff",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "opacity 0.2s ease",
+                }}
+              >
+                Iniciar trial
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowTrialModal(false)}
+                style={{
+                  flex: 1,
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(148, 163, 184, 0.18)",
+                  background: "rgba(30, 41, 59, 0.7)",
+                  color: "var(--text-main)",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "opacity 0.2s ease",
+                }}
+              >
+                Agora nao
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Conteúdo da página */}
       <main className="page">{children}</main>
+
+      <style>
+        {`
+          @keyframes fadeInLogoutOverlay {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+
+          @keyframes logoutPulse {
+            0%,
+            100% {
+              transform: scale(1);
+            }
+
+            50% {
+              transform: scale(1.02);
+            }
+          }
+
+          @keyframes fadeInTrialModal {
+            from {
+              opacity: 0;
+            }
+
+            to {
+              opacity: 1;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }

@@ -48,6 +48,12 @@ export default function GroupsDivisionChart({
   panelTitle,
   subtleText,
 }: GroupsDivisionChartProps) {
+  const hasRenderableChart =
+    canCalculateMonthSplit &&
+    monthTotalCents > 0 &&
+    monthSplit.length > 0 &&
+    monthSplitChartData.datasets.some((dataset) => dataset.data.some((value) => Number(value) > 0));
+
   return (
     <div style={sectionCard}>
       <div style={{ display: "grid", gap: 16 }}>
@@ -66,7 +72,11 @@ export default function GroupsDivisionChart({
 
         {canCalculateMonthSplit && monthTotalCents === 0 && <div style={subtleText}>Sem despesas no mês atual ainda.</div>}
 
-        {canCalculateMonthSplit && monthTotalCents > 0 && monthSplit.length > 0 && (
+        {canCalculateMonthSplit && monthTotalCents > 0 && !hasRenderableChart && (
+          <div style={subtleText}>Não há dados suficientes de participantes para montar a divisão deste mês.</div>
+        )}
+
+        {hasRenderableChart && (
           <div
             style={{
               display: "grid",
