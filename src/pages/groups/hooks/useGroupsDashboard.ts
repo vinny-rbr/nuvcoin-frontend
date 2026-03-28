@@ -30,8 +30,6 @@ type CreateGroupRequest = {
 
 type AddGroupMemberRequest = {
   email?: string; // E-mail do membro a ser adicionado
-  userId?: string; // Id do usuário, se o backend aceitar por id
-  name?: string; // Nome, se o backend aceitar esse formato
 };
 
 type UseGroupsDashboardReturn = {

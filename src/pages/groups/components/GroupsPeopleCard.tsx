@@ -12,13 +12,13 @@ type GroupsPeopleCardProps = {
   balancesError: string | null;
   removeMemberError: string | null;
   addMemberOpen: boolean;
-  addMemberUserId: string;
+  addMemberEmail: string;
   addMemberLoading: boolean;
   addMemberError: string | null;
   addMemberSuccess: string | null;
   removeMemberLoadingId: string | null;
   onToggleAddMember: () => void;
-  onAddMemberUserIdChange: (value: string) => void;
+  onAddMemberEmailChange: (value: string) => void;
   onAddMember: () => void;
   onRemoveMember: (memberId: string, role: string) => void;
   sectionCard: CSSProperties;
@@ -40,13 +40,13 @@ export default function GroupsPeopleCard({
   balancesError,
   removeMemberError,
   addMemberOpen,
-  addMemberUserId,
+  addMemberEmail,
   addMemberLoading,
   addMemberError,
   addMemberSuccess,
   removeMemberLoadingId,
   onToggleAddMember,
-  onAddMemberUserIdChange,
+  onAddMemberEmailChange,
   onAddMember,
   onRemoveMember,
   sectionCard,
@@ -149,8 +149,8 @@ export default function GroupsPeopleCard({
         <div style={{ display: "grid", gap: 10, marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "grid", gap: 6 }}>
             <div style={{ fontWeight: 800, opacity: 0.95 }}>Adicionar pessoa</div>
-            <div style={subtleText}>Por enquanto: cole o UserId (GUID). Depois vamos trocar por e-mail.</div>
-            <input value={addMemberUserId} onChange={(e) => onAddMemberUserIdChange(e.target.value)} placeholder="UserId (GUID)" style={inputStyle} />
+            <div style={subtleText}>Digite o e-mail da pessoa para adicionar ao grupo.</div>
+            <input value={addMemberEmail} onChange={(e) => onAddMemberEmailChange(e.target.value)} placeholder="E-mail" style={inputStyle} />
           </div>
 
           {addMemberError && (

@@ -51,6 +51,11 @@ export function isGuid(value: string): boolean {
   return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(v); // Regex GUID
 }
 
+export function isEmail(value: string): boolean {
+  const v = (value ?? "").trim(); // Trim
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); // Regex simples de e-mail
+}
+
 export function shortGuid(value: string): string {
   const v = (value ?? "").trim(); // Trim
   if (v.length < 8) return v; // Curto

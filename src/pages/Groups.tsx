@@ -1,16 +1,10 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react"; // Hooks do React
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js"; // Elementos principais do Chart.js
 
-import GroupsBaseModal from "./groups/components/GroupsBaseModal"; // Modal da base do grupo
-import GroupsCreateModal from "./groups/components/GroupsCreateModal"; // Modal profissional de criação de grupo
-import GroupsCreateTransitionOverlay from "./groups/components/GroupsCreateTransitionOverlay";
-import GroupsDivisionChart from "./groups/components/GroupsDivisionChart"; // Gráfico de divisão
-import GroupsEditExpenseModal from "./groups/components/GroupsEditExpenseModal"; // Modal de editar despesa
-import GroupsExpensesModal from "./groups/components/GroupsExpensesModal"; // Modal de adicionar despesa
+import GroupsDashboardContent from "./groups/components/GroupsDashboardContent";
 import GroupsGroupsLane from "./groups/components/GroupsGroupsLane";
-import GroupsHeaderActionModal from "./groups/components/GroupsHeaderActionModal";
 import GroupsHeaderActions from "./groups/components/GroupsHeaderActions";
-import GroupsMetrics from "./groups/components/GroupsMetrics"; // Cards de métricas
+import GroupsModalsHub from "./groups/components/GroupsModalsHub";
 
 import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de ações do módulo
 import useGroupsBaseConfig from "./groups/hooks/useGroupsBaseConfig"; // Hook da base salarial / percentual
@@ -21,6 +15,7 @@ import { useGroupsDashboard } from "./groups/hooks/useGroupsDashboard"; // Hook 
 import useGroupsEditExpense from "./groups/hooks/useGroupsEditExpense"; // Hook da edição de despesa
 import useGroupsExpenses from "./groups/hooks/useGroupsExpenses"; // Hook das despesas do módulo
 import useGroupsForms from "./groups/hooks/useGroupsForms"; // Hook de formulários do módulo
+import useGroupsHeaderActions from "./groups/hooks/useGroupsHeaderActions";
 import useGroupsModals from "./groups/hooks/useGroupsModals"; // Hook de modais do módulo
 
 import type {
@@ -45,6 +40,7 @@ import {
   pillStyle,
   primaryButton,
   sectionCard,
+  shellOuterStyle,
   shellStyle,
   softButton,
   subtleText,
@@ -53,24 +49,6 @@ import {
 } from "./groups/styles/groups.styles"; // Estilos centralizados do módulo
 
 ChartJS.register(ArcElement, Tooltip, Legend); // Registra componentes do Chart.js
-
-type HeaderQuickActionId =
-  | "refresh"
-  | "create"
-  | "people"
-  | "base"
-  | "expense"
-  | "summary"
-  | "history"; // Ações quadradas do topo
-
-type HeaderQuickAction = {
-  id: HeaderQuickActionId; // Identificador da ação
-  icon: string; // Símbolo visual dentro do quadrado
-  label: string; // Nome que aparece no hover
-  disabled?: boolean; // Controla bloqueio quando necessário
-  loading?: boolean; // Controla estado visual de carregamento
-  onClick: () => void; // Clique da ação
-};
 
 export default function Groups() {
   // ==============================
@@ -154,7 +132,7 @@ export default function Groups() {
   // ==============================
 
   const [addMemberOpen, setAddMemberOpen] = useState(false);
-  const [addMemberUserId, setAddMemberUserId] = useState("");
+  const [addMemberEmail, setAddMemberEmail] = useState("");
   const [addMemberError, setAddMemberError] = useState<string | null>(null);
   const [addMemberSuccess, setAddMemberSuccess] = useState<string | null>(null);
   const [removeMemberError, setRemoveMemberError] = useState<string | null>(null);
@@ -438,79 +416,22 @@ export default function Groups() {
     manualPercentInputByUserId,
   });
 
-  const headerQuickActions: HeaderQuickAction[] = [
-    {
-      id: "refresh",
-      icon: "↻",
-      label: state.loading ? "Atualizando grupos..." : "Atualizar grupos",
-      disabled: state.loading || isCreatingWithTransition,
-      loading: state.loading,
-      onClick: () => {
-        reloadGroups();
-      },
+  const headerQuickActions = useGroupsHeaderActions({
+    isGroupsLoading: state.loading,
+    isCreateGroupLoading: createGroup.loading,
+    isCreatingGroup: creatingGroup,
+    isCreatingWithTransition,
+    selectedGroupId,
+    onReloadGroups: reloadGroups,
+    onOpenCreateGroup: createGroup.open,
+    onOpenHeaderActionModal: openHeaderActionModal,
+    onResetMemberFeedback: () => {
+      setAddMemberError(null);
+      setAddMemberSuccess(null);
     },
-    {
-      id: "create",
-      icon: "+",
-      label:
-        createGroup.loading || creatingGroup || isCreatingWithTransition
-          ? "Criando grupo..."
-          : "Novo grupo",
-      disabled: createGroup.loading || creatingGroup || isCreatingWithTransition,
-      loading: createGroup.loading || creatingGroup || isCreatingWithTransition,
-      onClick: () => {
-        createGroup.open();
-      },
-    },
-    {
-      id: "people",
-      icon: "👥",
-      label: "Pessoas",
-      disabled: !selectedGroupId,
-      onClick: () => {
-        openHeaderActionModal("people");
-        setAddMemberError(null);
-        setAddMemberSuccess(null);
-      },
-    },
-    {
-      id: "base",
-      icon: "%",
-      label: "Base do grupo",
-      disabled: !selectedGroupId,
-      onClick: () => {
-        openHeaderActionModal("base");
-        clearBaseFeedback();
-      },
-    },
-    {
-      id: "expense",
-      icon: "R$",
-      label: "Lançar despesa",
-      disabled: !selectedGroupId,
-      onClick: () => {
-        openHeaderActionModal("expense");
-      },
-    },
-    {
-      id: "summary",
-      icon: "Σ",
-      label: "Resumo do mês",
-      disabled: !selectedGroupId,
-      onClick: () => {
-        openHeaderActionModal("summary");
-      },
-    },
-    {
-      id: "history",
-      icon: "⏱",
-      label: "Histórico",
-      disabled: !selectedGroupId,
-      onClick: () => {
-        openHeaderActionModal("history");
-      },
-    },
-  ]; // Quadrados do topo que substituem os cards inferiores
+    onClearBaseFeedback: clearBaseFeedback,
+  });
+
 
   function handleSelectGroup(group: GroupDto) {
     if (group.id === selectedGroupId) return;
@@ -560,484 +481,268 @@ export default function Groups() {
   }
 
   return (
-    <div
-      key={animationKey}
-      style={{
-        ...shellStyle,
-      }}
-    >
-      <div style={getClockEntryStyle(0)}>
-        <GroupsHeaderActions
-          actions={headerQuickActions}
-          pageHeroStyle={pageHeroStyle}
-          pillStyle={pillStyle}
-          subtleText={subtleText}
-        />
-      </div>
-      {state.groups.length > 0 && (
-        <div style={getClockEntryStyle(1)}>
-          <GroupsGroupsLane
-            groups={state.groups}
-            selectedGroupId={selectedGroupId}
-            highlightGroupId={highlightGroupId}
-            isGroupsLaneAnimating={isGroupsLaneAnimating}
-            onSelectGroup={handleSelectGroup}
-            sectionCard={sectionCard}
-            panelTitle={panelTitle}
+    <div style={shellOuterStyle}>
+      <div
+        key={animationKey}
+        style={{
+          ...shellStyle,
+        }}
+      >
+        <div style={getClockEntryStyle(0)}>
+          <GroupsHeaderActions
+            actions={headerQuickActions}
+            pageHeroStyle={pageHeroStyle}
+            pillStyle={pillStyle}
             subtleText={subtleText}
-            memberAvatarStyle={memberAvatarStyle}
           />
         </div>
-      )}
-      {state.error && (
-        <div style={getClockEntryStyle(2)}>
-          <div
-            style={{
-              ...sectionCard,
-              border: "1px solid rgba(255,120,120,0.20)",
-              background: "rgba(255,0,0,0.05)",
-            }}
-          >
-            <strong>Falha:</strong> {state.error}
+        {state.groups.length > 0 && (
+          <div style={getClockEntryStyle(1)}>
+            <GroupsGroupsLane
+              groups={state.groups}
+              selectedGroupId={selectedGroupId}
+              highlightGroupId={highlightGroupId}
+              isGroupsLaneAnimating={isGroupsLaneAnimating}
+              onSelectGroup={handleSelectGroup}
+              sectionCard={sectionCard}
+              panelTitle={panelTitle}
+              subtleText={subtleText}
+              memberAvatarStyle={memberAvatarStyle}
+            />
           </div>
-        </div>
-      )}
-
-      <div style={getClockEntryStyle(3)}>
-        <div
-          style={{
-            display: "grid",
-            gap: 18,
-            opacity: isSwitchingGroup ? 0 : 1,
-            transform: isSwitchingGroup ? "translateY(6px)" : "translateY(0px)",
-            transition: "opacity 0.25s ease, transform 0.25s ease",
-          }}
-        >
-          <div style={sectionCard}>
+        )}
+        {state.error && (
+          <div style={getClockEntryStyle(2)}>
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: 16,
-                flexWrap: "wrap",
+                ...sectionCard,
+                border: "1px solid rgba(255,120,120,0.20)",
+                background: "rgba(255,0,0,0.05)",
               }}
             >
-              <div style={{ display: "grid", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <div style={{ fontWeight: 900, fontSize: 26, letterSpacing: -0.5 }}>
-                    {selectedGroupName ?? "Selecione um grupo"}
-                  </div>
-
-                  {selectedGroupId && (
-                    <div style={pillStyle}>
-                      <span
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: 999,
-                          background: "#3ddc84",
-                          display: "inline-block",
-                        }}
-                      />
-                      Grupo ativo
-                    </div>
-                  )}
-                </div>
-
-                {selectedGroupId ? (
-                  <div style={{ ...subtleText, fontSize: 13 }}>
-                    {membersCount} pessoa(s) • mês atual {currentMonthKey} • modo{" "}
-                    {splitMode === "SALARY" ? "automático por salário" : "manual por percentual"}
-                  </div>
-                ) : (
-                  <div style={{ ...subtleText, fontSize: 13 }}>
-                    {state.groups.length === 0
-                      ? 'Crie seu primeiro grupo no botão do topo para começar.'
-                      : "Escolha um grupo na barra superior para abrir o dashboard."}
-                  </div>
-                )}
-              </div>
-
-              {selectedGroupId && (
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
-                    type="button"
-                    onClick={onDeleteGroup}
-                    disabled={deletingGroupId === selectedGroupId}
-                    style={{
-                      ...dangerButtonSmall,
-                      cursor: deletingGroupId === selectedGroupId ? "not-allowed" : "pointer",
-                      opacity: deletingGroupId === selectedGroupId ? 0.7 : 1,
-                    }}
-                  >
-                    {deletingGroupId === selectedGroupId ? "Excluindo..." : "Excluir grupo"}
-                  </button>
-                </div>
-              )}
+              <strong>Falha:</strong> {state.error}
             </div>
           </div>
+        )}
 
-          {!selectedGroupId && (
-            <div style={sectionCard}>
-              <div style={{ display: "grid", gap: 6 }}>
-                <div style={panelTitle}>Comece por um grupo</div>
-                <div style={subtleText}>
-                  {state.groups.length === 0
-                    ? 'Use o botão quadrado “+” no topo para criar seu primeiro grupo.'
-                    : "Selecione um grupo na barra superior para abrir o dashboard."}
-                </div>
-              </div>
-            </div>
-          )}
+        <GroupsDashboardContent
+          selectedGroupId={selectedGroupId}
+          selectedGroupName={selectedGroupName}
+          groupsCount={state.groups.length}
+          isSwitchingGroup={isSwitchingGroup}
+          membersCount={membersCount}
+          currentMonthKey={currentMonthKey}
+          splitMode={splitMode}
+          deletingGroupId={deletingGroupId}
+          monthTotalCents={monthTotalCents}
+          monthExpensesCount={monthExpenses.length}
+          averagePerPersonCents={averagePerPersonCents}
+          highestBurden={highestBurden}
+          recommendedLimitPercent={RECOMMENDED_LIMIT_PERCENT}
+          canCalculateMonthSplit={canCalculateMonthSplit}
+          monthSplit={monthSplit}
+          monthSplitChartColors={monthSplitChartColors}
+          monthSplitChartData={monthSplitChartData}
+          monthSplitChartOptions={monthSplitChartOptions}
+          historyItemsCount={historyItems.length}
+          onDeleteGroup={onDeleteGroup}
+          getClockEntryStyle={getClockEntryStyle}
+          sectionCard={sectionCard}
+          panelTitle={panelTitle}
+          subtleText={subtleText}
+          pillStyle={pillStyle}
+          dangerButtonSmall={dangerButtonSmall}
+          metricCard={metricCard}
+        />
 
-          {selectedGroupId && (
-            <>
-              <div style={getClockEntryStyle(4)}>
-                <GroupsMetrics
-                  monthTotalCents={monthTotalCents}
-                  monthExpensesCount={monthExpenses.length}
-                  membersCount={membersCount}
-                  averagePerPersonCents={averagePerPersonCents}
-                  highestBurden={highestBurden}
-                  recommendedLimitPercent={RECOMMENDED_LIMIT_PERCENT}
-                  subtleText={subtleText}
-                  metricCard={metricCard}
-                />
-              </div>
 
-              <div style={getClockEntryStyle(5)}>
-                <GroupsDivisionChart
-                  splitMode={splitMode}
-                  canCalculateMonthSplit={canCalculateMonthSplit}
-                  monthTotalCents={monthTotalCents}
-                  monthSplit={monthSplit}
-                  monthSplitChartColors={monthSplitChartColors}
-                  monthSplitChartData={monthSplitChartData}
-                  monthSplitChartOptions={monthSplitChartOptions}
-                  sectionCard={sectionCard}
-                  panelTitle={panelTitle}
-                  subtleText={subtleText}
-                />
-              </div>
+        <GroupsModalsHub
+          isCreateExpenseModalOpen={isCreateExpenseModalOpen}
+          isEditExpenseModalOpen={isEditExpenseModalOpen}
+          isBaseConfigModalOpen={isBaseConfigModalOpen}
+          activeHeaderAction={activeHeaderAction}
+          isTransitionVisible={isTransitionVisible}
+          selectedGroupId={selectedGroupId}
+          selectedGroupName={selectedGroupName}
+          splitMode={splitMode}
+          balances={balances}
+          membersInfo={membersInfo}
+          loadingDetails={loadingDetails}
+          removeMemberError={removeMemberError}
+          addMemberOpen={addMemberOpen}
+          addMemberEmail={addMemberEmail}
+          submittingMember={submittingMember}
+          addMemberError={addMemberError}
+          addMemberSuccess={addMemberSuccess}
+          removingMemberId={removingMemberId}
+          salaryFilledCount={salaryFilledCount}
+          membersCount={membersCount}
+          salaryTotal={salaryTotal}
+          manualPercentInputByUserId={manualPercentInputByUserId}
+          salaryByUserId={salaryByUserId}
+          manualPercentTotal={manualPercentTotal}
+          isManualConfigValid={isManualConfigValid}
+          currentMonthKey={currentMonthKey}
+          canCalculateMonthSplit={canCalculateMonthSplit}
+          monthTotalCents={monthTotalCents}
+          monthSplit={monthSplit}
+          historyItems={historyItems}
+          deletingExpenseId={deletingExpenseId}
+          recommendedLimitPercent={RECOMMENDED_LIMIT_PERCENT}
+          expensesTab={expensesTab}
+          houseName={houseName}
+          houseAmountBRL={houseAmountBRL}
+          houseDate={houseDate}
+          houseLoading={houseLoading}
+          houseError={houseError}
+          houseSuccess={houseSuccess}
+          quickDesc={quickDesc}
+          quickAmountBRL={quickAmountBRL}
+          quickDate={quickDate}
+          quickLoading={quickLoading}
+          quickError={quickError}
+          quickSuccess={quickSuccess}
+          editingExpense={editingExpense}
+          editingExpenseTitle={editingExpenseTitle}
+          editingExpenseAmount={editingExpenseAmount}
+          editingExpenseDate={editingExpenseDate}
+          editLoading={editLoading}
+          editError={editError}
+          editSuccess={editSuccess}
+          createGroupOpen={createGroup.isOpen}
+          createGroupName={createGroup.name}
+          createGroupLoading={createGroup.loading || isCreatingWithTransition || creatingGroup}
+          createGroupError={createGroup.error}
+          createGroupSuccess={createGroup.success}
+          modalOverlay={modalOverlay}
+          modalCard={modalCard}
+          modalHeader={modalHeader}
+          modalBody={modalBody}
+          sectionCard={sectionCard}
+          panelTitle={panelTitle}
+          subtleText={subtleText}
+          softButton={softButton}
+          ghostButton={ghostButton}
+          primaryButton={primaryButton}
+          dangerButtonSmall={dangerButtonSmall}
+          inputStyle={inputStyle}
+          memberAvatarStyle={memberAvatarStyle}
+          timelineCard={timelineCard}
+          tabButton={tabButton}
+          onCloseCreateExpenseModal={closeCreateExpenseModal}
+          onSetExpensesTab={setExpensesTab}
+          onSetHouseName={setHouseName}
+          onSetHouseAmountBRL={setHouseAmountBRL}
+          onSetHouseDate={setHouseDate}
+          onHandleHouseAmountFocus={handleHouseAmountFocus}
+          onHandleHouseAmountBlur={handleHouseAmountBlur}
+          onCreateHouseExpense={() =>
+            onCreateHouseExpense({
+              houseName,
+              houseAmountBRL,
+              houseDate,
+              housePaidByUserId,
+            })
+          }
+          onSetQuickDesc={setQuickDesc}
+          onSetQuickAmountBRL={setQuickAmountBRL}
+          onSetQuickDate={setQuickDate}
+          onHandleQuickAmountFocus={handleQuickAmountFocus}
+          onHandleQuickAmountBlur={handleQuickAmountBlur}
+          onCreateQuickExpense={() =>
+            onCreateQuickExpense({
+              quickDesc,
+              quickAmountBRL,
+              quickDate,
+              quickPaidByUserId,
+            })
+          }
+          onCloseEditExpenseModal={handleCloseEditExpenseModal}
+          onSetEditingExpenseTitle={setEditingExpenseTitle}
+          onSetEditingExpenseAmount={setEditingExpenseAmount}
+          onSetEditingExpenseDate={setEditingExpenseDate}
+          onHandleEditAmountFocus={() => handleEditAmountFocus(editingExpenseAmount, setEditingExpenseAmount)}
+          onHandleEditAmountBlur={() => handleEditAmountBlur(editingExpenseAmount, setEditingExpenseAmount)}
+          onSaveEditExpense={() =>
+            onSaveEditExpense({
+              editingExpense,
+              editingExpenseTitle,
+              editingExpenseAmount,
+              editingExpenseDate,
+            })
+          }
+          onCloseBaseConfigModal={closeBaseConfigModal}
+          onSplitModeChange={onSplitModeChange}
+          onSalaryChange={onSalaryChange}
+          onSalaryBlur={onSalaryBlur}
+          onManualPercentChange={onManualPercentChange}
+          onManualPercentBlur={onManualPercentBlur}
+          onResetSalaries={onResetSalaries}
+          onSplitEqual={onSplitEqual}
+          onSaveBaseConfig={() =>
+            onSaveBaseConfig(() => {
+              closeBaseConfigModal();
+            })
+          }
+          safeName={safeName}
+          salaryError={salaryError}
+          salarySuccess={salarySuccess}
+          onCloseHeaderActionModal={closeHeaderActionModal}
+          onToggleAddMember={() => setAddMemberOpen((value) => !value)}
+          onSetAddMemberEmail={setAddMemberEmail}
+          onAddMember={() =>
+            onAddMember({
+              addMemberEmail,
+              onSuccess: () => {
+                setAddMemberEmail("");
+                setAddMemberOpen(false);
+              },
+            })
+          }
+          onRemoveMember={(memberId, role) => onRemoveMember({ memberId, role })}
+          onOpenBaseConfigFromHeaderAction={() => {
+            closeHeaderActionModal();
+            openBaseConfigModal();
+          }}
+          onOpenHouseExpenseFlow={() => {
+            closeHeaderActionModal();
+            prepareHouseExpenseFlow();
+            openCreateExpenseModal();
+          }}
+          onOpenQuickExpenseFlow={() => {
+            closeHeaderActionModal();
+            prepareQuickExpenseFlow();
+            openCreateExpenseModal();
+          }}
+          onRefreshSelectedGroupData={() => {
+            reloadSelectedGroupData();
+          }}
+          onOpenEditExpense={handleOpenEditExpenseModal}
+          onDeleteExpenseFromHistory={onDeleteExpenseFromHistory}
+          onSetCreateGroupName={createGroup.setName}
+          onCloseCreateGroup={createGroup.close}
+          onCreateGroup={async () => {
+            if (isCreatingWithTransition) return; // Evita duplo clique
 
-              <div style={getClockEntryStyle(6)}>
-                <div style={sectionCard}>
-                  <div style={{ display: "grid", gap: 14 }}>
-                    <div style={{ display: "grid", gap: 4 }}>
-                      <div style={panelTitle}>Dashboard</div>
-                      <div style={subtleText}>
-                        Os atalhos de pessoas, base, despesas, resumo e histórico agora ficam no topo em formato quadrado.
-                      </div>
-                    </div>
+            const createdGroupName = createGroup.name.trim(); // Guarda o nome antes do hook limpar o input
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                        gap: 12,
-                      }}
-                    >
-                      <div
-                        style={{
-                          padding: 16,
-                          borderRadius: 18,
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          background: "rgba(255,255,255,0.02)",
-                          display: "grid",
-                          gap: 6,
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, fontSize: 15 }}>Grupo</div>
-                        <div style={subtleText}>{selectedGroupName ?? "Sem grupo selecionado"}</div>
-                      </div>
+            await startCreateTransition(async () => {
+              try {
+                await createGroup.create();
 
-                      <div
-                        style={{
-                          padding: 16,
-                          borderRadius: 18,
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          background: "rgba(255,255,255,0.02)",
-                          display: "grid",
-                          gap: 6,
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, fontSize: 15 }}>Membros</div>
-                        <div style={subtleText}>{membersCount} pessoa(s)</div>
-                      </div>
-
-                      <div
-                        style={{
-                          padding: 16,
-                          borderRadius: 18,
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          background: "rgba(255,255,255,0.02)",
-                          display: "grid",
-                          gap: 6,
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, fontSize: 15 }}>Modo</div>
-                        <div style={subtleText}>
-                          {splitMode === "SALARY" ? "Automático por salário" : "Manual por percentual"}
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          padding: 16,
-                          borderRadius: 18,
-                          border: "1px solid rgba(255,255,255,0.08)",
-                          background: "rgba(255,255,255,0.02)",
-                          display: "grid",
-                          gap: 6,
-                        }}
-                      >
-                        <div style={{ fontWeight: 800, fontSize: 15 }}>Últimas despesas</div>
-                        <div style={subtleText}>{historyItems.length} item(ns) no histórico</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      <GroupsExpensesModal
-        open={isCreateExpenseModalOpen}
-        selectedGroupId={selectedGroupId}
-        selectedGroupName={selectedGroupName}
-        splitMode={splitMode}
-        expensesTab={expensesTab}
-        houseName={houseName}
-        houseAmountBRL={houseAmountBRL}
-        houseDate={houseDate}
-        houseLoading={houseLoading}
-        houseError={houseError}
-        houseSuccess={houseSuccess}
-        quickDesc={quickDesc}
-        quickAmountBRL={quickAmountBRL}
-        quickDate={quickDate}
-        quickLoading={quickLoading}
-        quickError={quickError}
-        quickSuccess={quickSuccess}
-        onClose={closeCreateExpenseModal}
-        onChangeTab={setExpensesTab}
-        onHouseNameChange={setHouseName}
-        onHouseAmountChange={setHouseAmountBRL}
-        onHouseDateChange={setHouseDate}
-        onHouseAmountFocus={handleHouseAmountFocus}
-        onHouseAmountBlur={handleHouseAmountBlur}
-        onCreateHouseExpense={() =>
-          onCreateHouseExpense({
-            houseName,
-            houseAmountBRL,
-            houseDate,
-            housePaidByUserId,
-          })
-        }
-        onQuickDescChange={setQuickDesc}
-        onQuickAmountChange={setQuickAmountBRL}
-        onQuickDateChange={setQuickDate}
-        onQuickAmountFocus={handleQuickAmountFocus}
-        onQuickAmountBlur={handleQuickAmountBlur}
-        onCreateQuickExpense={() =>
-          onCreateQuickExpense({
-            quickDesc,
-            quickAmountBRL,
-            quickDate,
-            quickPaidByUserId,
-          })
-        }
-        modalOverlay={modalOverlay}
-        modalCard={modalCard}
-        modalHeader={modalHeader}
-        modalBody={modalBody}
-        subtleText={subtleText}
-        inputStyle={inputStyle}
-        softButton={softButton}
-        primaryButton={primaryButton}
-        tabButton={tabButton}
-      />
-
-      <GroupsEditExpenseModal
-        open={isEditExpenseModalOpen}
-        selectedGroupId={selectedGroupId}
-        editingExpense={editingExpense}
-        editDesc={editingExpenseTitle}
-        editAmountBRL={editingExpenseAmount}
-        editDate={editingExpenseDate}
-        editLoading={editLoading}
-        editError={editError}
-        editSuccess={editSuccess}
-        onClose={handleCloseEditExpenseModal}
-        onEditDescChange={setEditingExpenseTitle}
-        onEditAmountChange={setEditingExpenseAmount}
-        onEditDateChange={setEditingExpenseDate}
-        onEditAmountFocus={() => handleEditAmountFocus(editingExpenseAmount, setEditingExpenseAmount)}
-        onEditAmountBlur={() => handleEditAmountBlur(editingExpenseAmount, setEditingExpenseAmount)}
-        onSave={() =>
-          onSaveEditExpense({
-            editingExpense,
-            editingExpenseTitle,
-            editingExpenseAmount,
-            editingExpenseDate,
-          })
-        }
-        modalOverlay={modalOverlay}
-        modalCard={modalCard}
-        modalHeader={modalHeader}
-        modalBody={modalBody}
-        subtleText={subtleText}
-        inputStyle={inputStyle}
-        softButton={softButton}
-        ghostButton={ghostButton}
-      />
-
-      <GroupsBaseModal
-        open={isBaseConfigModalOpen}
-        selectedGroupId={selectedGroupId}
-        balances={balances}
-        splitMode={splitMode}
-        salaryByUserId={salaryByUserId}
-        manualPercentInputByUserId={manualPercentInputByUserId}
-        manualPercentTotal={manualPercentTotal}
-        recommendedLimitPercent={RECOMMENDED_LIMIT_PERCENT}
-        onClose={closeBaseConfigModal}
-        onSplitModeChange={onSplitModeChange}
-        onSalaryChange={onSalaryChange}
-        onSalaryBlur={onSalaryBlur}
-        onManualPercentChange={onManualPercentChange}
-        onManualPercentBlur={onManualPercentBlur}
-        onResetSalaries={onResetSalaries}
-        onSplitEqual={onSplitEqual}
-        onSave={() =>
-          onSaveBaseConfig(() => {
-            closeBaseConfigModal();
-          })
-        }
-        safeName={safeName}
-        salaryError={salaryError}
-        salarySuccess={salarySuccess}
-        modalOverlay={modalOverlay}
-        modalCard={modalCard}
-        modalHeader={modalHeader}
-        modalBody={modalBody}
-        subtleText={subtleText}
-        inputStyle={inputStyle}
-        softButton={softButton}
-        ghostButton={ghostButton}
-        tabButton={tabButton}
-      />
-
-      <GroupsHeaderActionModal
-        activeHeaderAction={activeHeaderAction}
-        selectedGroupId={selectedGroupId}
-        selectedGroupName={selectedGroupName}
-        splitMode={splitMode}
-        membersInfo={membersInfo}
-        balances={balances}
-        loadingDetails={loadingDetails}
-        removeMemberError={removeMemberError}
-        addMemberOpen={addMemberOpen}
-        addMemberUserId={addMemberUserId}
-        submittingMember={submittingMember}
-        addMemberError={addMemberError}
-        addMemberSuccess={addMemberSuccess}
-        removingMemberId={removingMemberId}
-        salaryFilledCount={salaryFilledCount}
-        membersCount={membersCount}
-        salaryTotal={salaryTotal}
-        manualPercentTotal={manualPercentTotal}
-        isManualConfigValid={isManualConfigValid}
-        currentMonthKey={currentMonthKey}
-        canCalculateMonthSplit={canCalculateMonthSplit}
-        monthTotalCents={monthTotalCents}
-        monthSplit={monthSplit}
-        historyItems={historyItems}
-        deletingExpenseId={deletingExpenseId}
-        recommendedLimitPercent={RECOMMENDED_LIMIT_PERCENT}
-        onClose={closeHeaderActionModal}
-        onToggleAddMember={() => setAddMemberOpen((value) => !value)}
-        onAddMemberUserIdChange={setAddMemberUserId}
-        onAddMember={() =>
-          onAddMember({
-            addMemberUserId,
-            onSuccess: () => {
-              setAddMemberUserId("");
-              setAddMemberOpen(false);
-            },
-          })
-        }
-        onRemoveMember={(memberId, role) => onRemoveMember({ memberId, role })}
-        onOpenBaseConfigModal={() => {
-          closeHeaderActionModal();
-          openBaseConfigModal();
-        }}
-        onOpenHouseExpenseFlow={() => {
-          closeHeaderActionModal();
-          prepareHouseExpenseFlow();
-          openCreateExpenseModal();
-        }}
-        onOpenQuickExpenseFlow={() => {
-          closeHeaderActionModal();
-          prepareQuickExpenseFlow();
-          openCreateExpenseModal();
-        }}
-        onRefreshSelectedGroupData={() => {
-          reloadSelectedGroupData();
-        }}
-        onOpenEditExpense={handleOpenEditExpenseModal}
-        onDeleteExpenseFromHistory={onDeleteExpenseFromHistory}
-        modalOverlay={modalOverlay}
-        modalCard={modalCard}
-        modalHeader={modalHeader}
-        modalBody={modalBody}
-        sectionCard={sectionCard}
-        panelTitle={panelTitle}
-        subtleText={subtleText}
-        softButton={softButton}
-        ghostButton={ghostButton}
-        primaryButton={primaryButton}
-        dangerButtonSmall={dangerButtonSmall}
-        inputStyle={inputStyle}
-        memberAvatarStyle={memberAvatarStyle}
-        timelineCard={timelineCard}
-      />
-      <GroupsCreateTransitionOverlay
-        isVisible={isTransitionVisible}
-        subtleText={subtleText}
-      />
-      <GroupsCreateModal
-        open={createGroup.isOpen}
-        value={createGroup.name}
-        loading={createGroup.loading || isCreatingWithTransition || creatingGroup}
-        error={createGroup.error}
-        success={createGroup.success}
-        onChange={createGroup.setName}
-        onClose={createGroup.close}
-        onCreate={async () => {
-          if (isCreatingWithTransition) return; // Evita duplo clique
-
-          const createdGroupName = createGroup.name.trim(); // Guarda o nome antes do hook limpar o input
-
-          await startCreateTransition(async () => {
-            try {
-              await createGroup.create();
-
-              if (createdGroupName) {
-                setPendingCreatedGroupName(createdGroupName);
+                if (createdGroupName) {
+                  setPendingCreatedGroupName(createdGroupName);
+                }
+              } catch (err) {
+                console.error("Erro ao criar grupo:", err);
               }
-            } catch (err) {
-              console.error("Erro ao criar grupo:", err);
-            }
-          });
-        }}
-      />
+            });
+          }}
+        />
 
-      <style>
-        {`
+
+        <style>
+          {`
           @keyframes nuvcoin-groups-spin {
             from {
               transform: rotate(0deg);
@@ -1140,7 +845,8 @@ export default function Groups() {
             }
           }
         `}
-      </style>
+        </style>
+      </div>
     </div>
   );
 }
@@ -1161,6 +867,8 @@ Mudança feita nesta etapa:
 ✔ Mantive os modais já existentes do projeto sem quebrar o fluxo
 ✔ Mantive criação de grupo, atualização e seleção funcionando
 */
+
+
 
 
 

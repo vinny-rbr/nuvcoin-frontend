@@ -1,8 +1,26 @@
 import type { CSSProperties } from "react"; // Tipo de estilo do React
 
+export const shellOuterStyle: CSSProperties = {
+  width: "100%",
+  display: "flex",
+  justifyContent: "center",
+  padding: "0 16px",
+  boxSizing: "border-box",
+  overflowX: "hidden",
+};
+
 export const shellStyle: CSSProperties = {
+  width: "100%",
+  minWidth: 0,
+  maxWidth: 1280,
+  margin: "0 auto",
+  padding: "18px 0 28px",
+  boxSizing: "border-box",
   display: "grid",
   gap: 20,
+  justifyItems: "stretch",
+  alignItems: "start",
+  overflowX: "hidden",
 };
 
 export const subtleText: CSSProperties = {

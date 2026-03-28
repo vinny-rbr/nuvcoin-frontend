@@ -6,7 +6,7 @@ import type {
 
 import {
   formatBRLFromCents, // Formata centavos para BRL
-  isGuid, // Valida se string é GUID
+  isEmail, // Valida se string é e-mail
   monthLabelBR, // Gera rótulo do mês em pt-BR
   toCentsFromBRLInput, // Converte texto BRL em centavos
   toIsoForBackend, // Converte data para ISO aceito pelo backend
@@ -23,7 +23,7 @@ type UseGroupsActionsParams = {
 
   handleCreateGroup: (payload: { name: string }) => Promise<boolean>; // Função central de criar grupo
   handleDeleteGroup: (groupId: string) => Promise<boolean>; // Função central de deletar grupo
-  handleAddMember: (groupId: string, payload: { userId: string }) => Promise<boolean>; // Função central de adicionar membro
+  handleAddMember: (groupId: string, payload: { email: string }) => Promise<boolean>; // Função central de adicionar membro
   handleRemoveMember: (groupId: string, memberId: string) => Promise<boolean>; // Função central de remover membro
   handleCreateExpense: (payload: CreateGroupExpenseRequest) => Promise<boolean>; // Função central de criar despesa
   handleUpdateExpense: (expenseId: string, payload: UpdateGroupExpenseRequest) => Promise<boolean>; // Função central de editar despesa
@@ -59,7 +59,7 @@ type CreateGroupParams = {
 }; // Parâmetros da criação de grupo
 
 type AddMemberParams = {
-  addMemberUserId: string; // UserId digitado
+  addMemberEmail: string; // E-mail digitado
   onSuccess?: () => void; // Callback opcional para sucesso
 }; // Parâmetros de adicionar membro
 
@@ -180,7 +180,7 @@ export default function useGroupsActions({
     }
   }
 
-  async function onAddMember({ addMemberUserId, onSuccess }: AddMemberParams): Promise<void> {
+  async function onAddMember({ addMemberEmail, onSuccess }: AddMemberParams): Promise<void> {
     try {
       setAddMemberError(null); // Limpa erro anterior
       setAddMemberSuccess(null); // Limpa sucesso anterior
@@ -190,14 +190,14 @@ export default function useGroupsActions({
         return; // Interrompe fluxo
       }
 
-      const userId = addMemberUserId.trim(); // Limpa input
+      const email = addMemberEmail.trim(); // Limpa input
 
-      if (!isGuid(userId)) {
-        setAddMemberError("Cole um UserId válido (GUID)."); // Valida GUID
+      if (!isEmail(email)) {
+        setAddMemberError("Digite um e-mail válido."); // Valida e-mail
         return; // Interrompe fluxo
       }
 
-      const ok = await handleAddMember(selectedGroupId, { userId }); // Executa inclusão do membro
+      const ok = await handleAddMember(selectedGroupId, { email }); // Executa inclusão do membro
 
       if (!ok) {
         setAddMemberError("Não foi possível adicionar o membro."); // Erro amigável

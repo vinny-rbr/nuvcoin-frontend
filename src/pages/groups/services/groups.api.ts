@@ -16,8 +16,6 @@ type CreateGroupRequest = {
 
 type AddGroupMemberRequest = {
   email?: string;
-  userId?: string;
-  name?: string;
 };
 
 
@@ -322,5 +320,4 @@ export async function deleteExpense(expenseId: string): Promise<void> {
 //
 // Observação importante:
 // - Mantive os payloads de grupo/membro de forma segura e simples.
-// - Para addMember, deixei o payload flexível com email, userId ou name,
-//   porque o formato exato pode variar conforme o backend já implementado.
+// - Para addMember, o frontend envia apenas o e-mail.
