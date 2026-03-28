@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { Link } from "react-router-dom"; // Links sem recarregar a página
+import { Link, useNavigate } from "react-router-dom"; // Links sem recarregar a página
 import {
   getSubscriptionActiveState,
   INACTIVE_SUBSCRIPTION_MESSAGE,
@@ -20,6 +20,7 @@ const navItems = [
 ];
 
 export default function Layout({ children }: Props) {
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -98,6 +99,44 @@ export default function Layout({ children }: Props) {
     handleMobileMenuClose();
   }
 
+  function handleLogout() {
+    const localStorageKeysToRemove = [
+      "token",
+      "nuvcoin_token",
+      "auth_token",
+      "accessToken",
+      "jwt",
+      "auth",
+      "logged",
+      "user",
+      "session",
+      "sessionId",
+      "refreshToken",
+      "nuvcoin_email",
+      "nuvcoin_userId",
+      "nuvcoin_name",
+      "nuvcoin_subscription_active",
+      "subscriptionActive",
+      "subscriptionStatus",
+      "subscription_status",
+      "hasActiveSubscription",
+      "isSubscriptionActive",
+      "planStatus",
+      "plan_status",
+      "planActive",
+      "plan_active",
+      "isActive",
+    ];
+
+    localStorageKeysToRemove.forEach((key) => {
+      window.localStorage.removeItem(key);
+    });
+
+    setSubscriptionState(null);
+    handleMobileMenuClose();
+    navigate("/login");
+  }
+
   const planBadgeLabel =
     subscriptionState === true ? "Plano ativo" : subscriptionState === false ? "Conta inativa" : "Status do plano";
 
@@ -115,23 +154,52 @@ export default function Layout({ children }: Props) {
             <span className="badge">{planBadgeLabel}</span>
           </div>
 
-          {/* Navegação */}
-          <nav className="nav" aria-label="Navegação principal">
-            {navItems.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                aria-disabled={subscriptionState === false && item.requiresActiveSubscription}
-                onClick={
-                  subscriptionState === false && item.requiresActiveSubscription
-                    ? handleBlockedNavigation
-                    : undefined
-                }
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginLeft: "auto",
+            }}
+          >
+            {/* Navegação */}
+            <nav className="nav" aria-label="Navegação principal">
+              {navItems.map((item) => (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  aria-disabled={subscriptionState === false && item.requiresActiveSubscription}
+                  onClick={
+                    subscriptionState === false && item.requiresActiveSubscription
+                      ? handleBlockedNavigation
+                      : undefined
+                  }
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                display: isMobile ? "none" : "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "8px 14px",
+                borderRadius: "10px",
+                border: "1px solid rgba(148, 163, 184, 0.18)",
+                background: "rgba(30, 41, 59, 0.6)",
+                color: "var(--text-main)",
+                cursor: "pointer",
+                transition: "0.2s ease",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Sair
+            </button>
+          </div>
 
           <div className="mobile-nav-shell" ref={mobileMenuRef}>
             <button
@@ -167,6 +235,22 @@ export default function Layout({ children }: Props) {
                   {item.label}
                 </Link>
               ))}
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  borderRadius: "12px",
+                  border: "1px solid rgba(148, 163, 184, 0.18)",
+                  background: "rgba(30, 41, 59, 0.6)",
+                  color: "var(--text-main)",
+                  textAlign: "left",
+                  cursor: "pointer",
+                }}
+              >
+                Sair
+              </button>
             </div>
           </div>
         </div>
