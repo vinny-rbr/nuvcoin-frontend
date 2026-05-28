@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom"; // Redirecionamento de rota
 import type { ReactNode } from "react"; // Tipo do React para children
 import {
-  getSubscriptionActiveState,
+  deriveSubscriptionStatusFromAuthData,
+  getSubscriptionStatus,
   INACTIVE_SUBSCRIPTION_MESSAGE,
-  subscribeToSubscriptionState,
+  persistSubscriptionState,
+  subscribeToSubscriptionStatus,
+  type SubscriptionStatus,
 } from "../lib/auth";
 
 type Props = {
@@ -23,16 +26,71 @@ export default function ProtectedRoute({ children, requireActiveSubscription = f
   const isLoggedIn = hasToken || hasUser || hasAuth || hasLogged; // Se qualquer uma existir, entra
   const location = useLocation();
   const hasShownInactiveAlertRef = useRef(false);
-  const [subscriptionState, setSubscriptionState] = useState<boolean | null>(() =>
-    getSubscriptionActiveState(),
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(() =>
+    getSubscriptionStatus(),
+  );
+  const [isCheckingSubscriptionStatus, setIsCheckingSubscriptionStatus] = useState(
+    () => requireActiveSubscription && getSubscriptionStatus() === null,
   );
 
   useEffect(() => {
-    return subscribeToSubscriptionState(setSubscriptionState);
+    return subscribeToSubscriptionStatus(setSubscriptionStatus);
   }, []);
 
   useEffect(() => {
-    if (!requireActiveSubscription || subscriptionState !== false) {
+    if (!isLoggedIn || !requireActiveSubscription || subscriptionStatus !== null) {
+      setIsCheckingSubscriptionStatus(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    async function validateSubscription() {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        if (isMounted) setIsCheckingSubscriptionStatus(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/subscriptions/me", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          persistSubscriptionState("inactive");
+          if (isMounted) setSubscriptionStatus("inactive");
+          return;
+        }
+
+        const data = (await response.json()) as Record<string, unknown>;
+        const nextStatus = deriveSubscriptionStatusFromAuthData(data) ?? "inactive";
+
+        persistSubscriptionState(nextStatus);
+        if (isMounted) setSubscriptionStatus(nextStatus);
+      } catch {
+        persistSubscriptionState("inactive");
+        if (isMounted) setSubscriptionStatus("inactive");
+      } finally {
+        if (isMounted) setIsCheckingSubscriptionStatus(false);
+      }
+    }
+
+    setIsCheckingSubscriptionStatus(true);
+    void validateSubscription();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isLoggedIn, requireActiveSubscription, subscriptionStatus]);
+
+  useEffect(() => {
+    if (!requireActiveSubscription || subscriptionStatus !== "inactive") {
       hasShownInactiveAlertRef.current = false;
       return;
     }
@@ -41,14 +99,18 @@ export default function ProtectedRoute({ children, requireActiveSubscription = f
       hasShownInactiveAlertRef.current = true;
       window.alert(INACTIVE_SUBSCRIPTION_MESSAGE);
     }
-  }, [requireActiveSubscription, subscriptionState, location.pathname]);
+  }, [requireActiveSubscription, subscriptionStatus, location.pathname]);
 
   // ❌ Se não estiver logado, manda pro login
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />; // replace evita voltar pro protected pelo "voltar"
   }
 
-  if (requireActiveSubscription && subscriptionState === false) {
+  if (requireActiveSubscription && isCheckingSubscriptionStatus) {
+    return null;
+  }
+
+  if (requireActiveSubscription && subscriptionStatus === "inactive") {
     return <Navigate to="/groups" replace state={{ from: location }} />;
   }
 

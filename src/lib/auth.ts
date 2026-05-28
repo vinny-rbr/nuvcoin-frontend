@@ -3,6 +3,8 @@ export const INACTIVE_SUBSCRIPTION_MESSAGE =
 
 const SUBSCRIPTION_STATE_EVENT = "nuvcoin_subscription_state_changed";
 
+export type SubscriptionStatus = "active" | "trial" | "inactive";
+
 const SUBSCRIPTION_STORAGE_KEYS = [
   "nuvcoin_subscription_active",
   "subscriptionActive",
@@ -11,19 +13,20 @@ const SUBSCRIPTION_STORAGE_KEYS = [
 ];
 
 const API_RESPONSE_SUBSCRIPTION_KEYS = [
-  "subscriptionActive",
-  "hasActiveSubscription",
-  "isSubscriptionActive",
   "subscriptionStatus",
   "subscription_status",
   "planStatus",
   "plan_status",
+  "subscriptionActive",
+  "hasActiveSubscription",
+  "isSubscriptionActive",
   "planActive",
   "plan_active",
   "isActive",
 ];
 
-const ACTIVE_STATUS_VALUES = new Set(["active", "trialing", "trial", "paid"]);
+const PAID_ACTIVE_STATUS_VALUES = new Set(["active", "paid"]);
+const TRIAL_STATUS_VALUES = new Set(["trialing", "trial"]);
 const INACTIVE_STATUS_VALUES = new Set([
   "inactive",
   "canceled",
@@ -34,32 +37,53 @@ const INACTIVE_STATUS_VALUES = new Set([
   "blocked",
 ]);
 
-function coerceBoolean(value: unknown): boolean | null {
-  if (typeof value === "boolean") return value;
+function normalizeSubscriptionStatus(value: unknown): SubscriptionStatus | null {
+  if (typeof value === "boolean") {
+    return value ? "active" : "inactive";
+  }
 
   if (typeof value === "number") {
-    if (value === 1) return true;
-    if (value === 0) return false;
+    if (value === 1) return "active";
+    if (value === 0) return "inactive";
   }
 
   if (typeof value === "string") {
     const normalized = value.trim().toLowerCase();
 
-    if (normalized === "true" || normalized === "1" || normalized === "yes") return true;
-    if (normalized === "false" || normalized === "0" || normalized === "no") return false;
-    if (ACTIVE_STATUS_VALUES.has(normalized)) return true;
-    if (INACTIVE_STATUS_VALUES.has(normalized)) return false;
+    if (normalized === "true" || normalized === "1" || normalized === "yes") return "active";
+    if (normalized === "false" || normalized === "0" || normalized === "no") return "inactive";
+    if (PAID_ACTIVE_STATUS_VALUES.has(normalized)) return "active";
+    if (TRIAL_STATUS_VALUES.has(normalized)) return "trial";
+    if (INACTIVE_STATUS_VALUES.has(normalized)) return "inactive";
   }
 
   return null;
 }
 
-function readSubscriptionStateFromApiResponse(source: Record<string, unknown> | null): boolean | null {
+function readSubscriptionStatusFromApiResponse(source: Record<string, unknown> | null): SubscriptionStatus | null {
   if (!source) return null;
 
   for (const key of API_RESPONSE_SUBSCRIPTION_KEYS) {
     const value = source[key];
-    const parsed = coerceBoolean(value);
+    const parsed = normalizeSubscriptionStatus(value);
+    if (parsed !== null) return parsed;
+  }
+
+  return null;
+}
+
+function isActiveSubscriptionStatus(status: SubscriptionStatus | null): boolean | null {
+  if (status === null) return null;
+
+  return status === "active" || status === "trial";
+}
+
+export function getSubscriptionStatus(): SubscriptionStatus | null {
+  if (typeof window === "undefined") return null;
+
+  for (const key of SUBSCRIPTION_STORAGE_KEYS) {
+    const storedValue = window.localStorage.getItem(key);
+    const parsed = normalizeSubscriptionStatus(storedValue);
     if (parsed !== null) return parsed;
   }
 
@@ -67,34 +91,39 @@ function readSubscriptionStateFromApiResponse(source: Record<string, unknown> | 
 }
 
 export function getSubscriptionActiveState(): boolean | null {
-  if (typeof window === "undefined") return null;
-
-  for (const key of SUBSCRIPTION_STORAGE_KEYS) {
-    const storedValue = window.localStorage.getItem(key);
-    const parsed = coerceBoolean(storedValue);
-    if (parsed !== null) return parsed;
-  }
-
-  return null;
+  return isActiveSubscriptionStatus(getSubscriptionStatus());
 }
 
-export function persistSubscriptionState(value: boolean | null): void {
+export function persistSubscriptionState(value: SubscriptionStatus | boolean | null): void {
   if (typeof window === "undefined") return;
+
+  const normalizedValue =
+    typeof value === "boolean"
+      ? value
+        ? "active"
+        : "inactive"
+      : value;
 
   if (value === null) {
     window.localStorage.removeItem("nuvcoin_subscription_active");
     return;
   }
 
-  window.localStorage.setItem("nuvcoin_subscription_active", value ? "true" : "false");
-  window.dispatchEvent(new CustomEvent<boolean | null>(SUBSCRIPTION_STATE_EVENT, { detail: value }));
+  if (normalizedValue === null) return;
+
+  window.localStorage.setItem("nuvcoin_subscription_active", normalizedValue);
+  window.dispatchEvent(new CustomEvent<SubscriptionStatus | null>(SUBSCRIPTION_STATE_EVENT, { detail: normalizedValue }));
 }
 
-export function deriveSubscriptionActiveFromAuthData(data: unknown): boolean | null {
+export function deriveSubscriptionStatusFromAuthData(data: unknown): SubscriptionStatus | null {
   if (!data || typeof data !== "object") return null;
 
   const source = data as Record<string, unknown>;
-  return readSubscriptionStateFromApiResponse(source);
+  return readSubscriptionStatusFromApiResponse(source);
+}
+
+export function deriveSubscriptionActiveFromAuthData(data: unknown): boolean | null {
+  return isActiveSubscriptionStatus(deriveSubscriptionStatusFromAuthData(data));
 }
 
 export function canAccessSubscriptionRoute(pathname: string): boolean {
@@ -111,18 +140,24 @@ export function canAccessSubscriptionRoute(pathname: string): boolean {
 }
 
 export function subscribeToSubscriptionState(listener: (value: boolean | null) => void): () => void {
+  return subscribeToSubscriptionStatus((status) => {
+    listener(isActiveSubscriptionStatus(status));
+  });
+}
+
+export function subscribeToSubscriptionStatus(listener: (value: SubscriptionStatus | null) => void): () => void {
   if (typeof window === "undefined") {
     return () => {};
   }
 
   const handleCustomEvent = (event: Event) => {
-    const customEvent = event as CustomEvent<boolean | null>;
-    listener(customEvent.detail ?? getSubscriptionActiveState());
+    const customEvent = event as CustomEvent<SubscriptionStatus | null>;
+    listener(customEvent.detail ?? getSubscriptionStatus());
   };
 
   const handleStorageEvent = (event: StorageEvent) => {
     if (event.key && !SUBSCRIPTION_STORAGE_KEYS.includes(event.key)) return;
-    listener(getSubscriptionActiveState());
+    listener(getSubscriptionStatus());
   };
 
   window.addEventListener(SUBSCRIPTION_STATE_EVENT, handleCustomEvent as EventListener);
@@ -168,8 +203,7 @@ export async function probeSubscriptionStateFromFinanceApi(): Promise<boolean | 
     }
 
     if (response.ok) {
-      persistSubscriptionState(true);
-      return true;
+      return null;
     }
 
     return null;

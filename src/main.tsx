@@ -1,4 +1,3 @@
-import React from "react"; // Importa React
 import ReactDOM from "react-dom/client"; // Render do React 18
 import { BrowserRouter } from "react-router-dom"; // Provider do Router (obrigatório para rotas)
 import App from "./App"; // Componente principal

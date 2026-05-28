@@ -1,16 +1,17 @@
-import { useState } from "react"; // Hook para controlar estados (inputs)
-import { Link, useNavigate } from "react-router-dom"; // Link + navegação
-import { deriveSubscriptionActiveFromAuthData, persistSubscriptionState } from "../lib/auth";
+﻿import { useState } from "react"; // Hook para controlar estados (inputs)
+import { Link, useNavigate } from "react-router-dom"; // Link + navegaÃ§Ã£o
+import { readApiErrorMessage } from "../lib/apiError";
+import { persistSubscriptionState } from "../lib/auth";
 
 export default function Login() {
-  const navigate = useNavigate(); // Permite redirecionar o usuário para outra rota
+  const navigate = useNavigate(); // Permite redirecionar o usuÃ¡rio para outra rota
 
   const [email, setEmail] = useState(""); // Estado que guarda o e-mail digitado
   const [password, setPassword] = useState(""); // Estado que guarda a senha digitada
   const [loading, setLoading] = useState(false); // Estado de carregamento
 
   async function handleLogin() {
-    // Função executada ao clicar no botão "Entrar"
+    // FunÃ§Ã£o executada ao clicar no botÃ£o "Entrar"
 
     if (!email) {
       // Valida se o e-mail foi preenchido
@@ -22,7 +23,7 @@ export default function Login() {
       setLoading(true); // Ativa loading
 
       // =========================
-      // ✅ Chama backend pra gerar JWT válido
+      // âœ… Chama backend pra gerar JWT vÃ¡lido
       // =========================
 
       const res = await fetch("/api/auth/login", {
@@ -31,14 +32,14 @@ export default function Login() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: email.trim(), // Email do usuário
-          password: password, // Senha do usuário
+          email: email.trim(), // Email do usuÃ¡rio
+          password: password, // Senha do usuÃ¡rio
         }),
       });
 
       if (!res.ok) {
-        // Se backend retornar erro, informa credenciais inválidas
-        alert("Email ou senha inválidos");
+        const message = await readApiErrorMessage(res, "Email ou senha invalidos.");
+        alert(message);
         return;
       }
 
@@ -57,19 +58,19 @@ export default function Login() {
       };
 
       if (!data.token) {
-        // Se não vier token, não dá pra continuar
-        throw new Error("Login falhou: token não retornou.");
+        // Se nÃ£o vier token, nÃ£o dÃ¡ pra continuar
+        throw new Error("Login falhou: token nÃ£o retornou.");
       }
 
       // =========================
-      // ✅ Chaves oficiais do app
+      // âœ… Chaves oficiais do app
       // =========================
 
-      localStorage.setItem("auth", "true"); // Marca como logado (compatível com ProtectedRoute)
-      localStorage.setItem("token", data.token); // ✅ JWT real (compatível com financeServices)
+      localStorage.setItem("auth", "true"); // Marca como logado (compatÃ­vel com ProtectedRoute)
+      localStorage.setItem("token", data.token); // âœ… JWT real (compatÃ­vel com financeServices)
 
       // =========================
-      // ✅ Chaves específicas do Nuvcoin
+      // âœ… Chaves especÃ­ficas do Nuvcoin
       // =========================
 
       localStorage.setItem("nuvcoin_email", data.email); // Email
@@ -80,12 +81,13 @@ export default function Login() {
       } else {
         localStorage.removeItem("subscriptionEndDateUtc");
       }
-      persistSubscriptionState(deriveSubscriptionActiveFromAuthData(data)); // Estado da assinatura
+      persistSubscriptionState(null); // Estado da assinatura sera validado pelo backend apos login
 
       // Depois de salvar, manda pro Dashboard
       navigate("/dashboard"); // Vai para a rota protegida
-    } catch (err: any) {
-      alert(err?.message ?? "Erro ao logar."); // Mostra erro pro usuário
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao logar.";
+      alert(message);
     } finally {
       setLoading(false); // Desativa loading
     }
@@ -105,12 +107,12 @@ export default function Login() {
       <div
         style={{
           backgroundColor: "#1e293b", // Card escuro
-          padding: 40, // Espaçamento interno
+          padding: 40, // EspaÃ§amento interno
           borderRadius: 12, // Bordas arredondadas
           width: 340, // Largura fixa do card
           display: "flex", // Flex
           flexDirection: "column", // Itens em coluna
-          gap: 16, // Espaço entre elementos
+          gap: 16, // EspaÃ§o entre elementos
           boxShadow: "0 10px 30px rgba(0,0,0,0.35)", // Sombra premium
         }}
       >
@@ -173,7 +175,7 @@ export default function Login() {
         </button>
 
         <p style={{ textAlign: "center", fontSize: 14 }}>
-          Não tem conta?{" "}
+          NÃ£o tem conta?{" "}
           <Link to="/register" style={{ color: "#60a5fa" }}>
             Criar conta
           </Link>
@@ -191,9 +193,9 @@ lucassousa@gmail.com
 
 O que foi feito:
 
-✔ Removido login por "dev token"
-✔ Agora chama POST /api/auth/token
-✔ Salva JWT real em localStorage.setItem("token", jwt)
-✔ Mantém "auth=true" para continuar compatível com ProtectedRoute
-✔ Salva dados úteis: nuvcoin_email, nuvcoin_userId, nuvcoin_name
+âœ” Removido login por "dev token"
+âœ” Agora chama POST /api/auth/token
+âœ” Salva JWT real em localStorage.setItem("token", jwt)
+âœ” MantÃ©m "auth=true" para continuar compatÃ­vel com ProtectedRoute
+âœ” Salva dados Ãºteis: nuvcoin_email, nuvcoin_userId, nuvcoin_name
 */

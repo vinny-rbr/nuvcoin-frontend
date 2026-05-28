@@ -142,7 +142,59 @@ export default function Despesas() {
           Adicionar Despesa
         </div>
 
-        {/* resto do seu código igual (não alterei UI) */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 0.8fr", gap: 12 }}>
+          <input
+            placeholder="Titulo (ex: Mercado)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as FinanceCategory)}
+          >
+            <option value="AlimentaÃ§Ã£o">Alimentacao</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Moradia">Moradia</option>
+            <option value="SaÃºde">Saude</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Outros">Outros</option>
+          </select>
+
+          <input
+            placeholder="Valor (ex: 150,00)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+
+          <input
+            type="date"
+            value={dateISO}
+            onChange={(e) => setDateISO(e.target.value)}
+          />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, marginTop: 12 }}>
+          <select
+            value={paymentType}
+            onChange={(e) => setPaymentType(e.target.value as PaymentType)}
+          >
+            <option value="pix">Pix</option>
+            <option value="debit">Debito</option>
+            <option value="cash">Dinheiro</option>
+            <option value="credit">Credito</option>
+          </select>
+
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as FinanceStatus)}
+          >
+            <option value="paid">Pago</option>
+            <option value="pending">Pendente</option>
+          </select>
+
+          <button onClick={onAdd}>Adicionar Despesa</button>
+        </div>
       </div>
 
       {/* Lista */}

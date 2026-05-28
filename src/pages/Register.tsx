@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { readApiErrorMessage } from "../lib/apiError";
 // useNavigate permite redirecionar após criar conta
 
 export default function Register() {
@@ -38,22 +39,23 @@ export default function Register() {
       });
 
       if (!res.ok) {
-        const text = await res.text();
+        const message = await readApiErrorMessage(res, "Nao foi possivel criar a conta agora.");
 
         if (res.status === 409) {
           alert("Esse e-mail já está cadastrado.");
           return;
         }
 
-        throw new Error(`Erro ao criar conta: ${res.status} - ${text}`);
+        throw new Error(message);
       }
 
       alert("Conta criada com sucesso! Faça login.");
 
       // 🔥 Redireciona automaticamente para o Login
       navigate("/login");
-    } catch (err: any) {
-      alert(err?.message ?? "Erro ao criar conta.");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao criar conta.";
+      alert(message);
     } finally {
       setLoading(false);
     }
