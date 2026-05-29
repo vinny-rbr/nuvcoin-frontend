@@ -1,12 +1,12 @@
-export const INACTIVE_SUBSCRIPTION_MESSAGE =
-  "Sua conta não está ativa. Ative seu plano para acessar este recurso.";
+﻿export const INACTIVE_SUBSCRIPTION_MESSAGE =
+  "Sua conta nÃ£o estÃ¡ ativa. Ative seu plano para acessar este recurso.";
 
-const SUBSCRIPTION_STATE_EVENT = "nuvcoin_subscription_state_changed";
+const SUBSCRIPTION_STATE_EVENT = "conciliaai_subscription_state_changed";
 
 export type SubscriptionStatus = "active" | "trial" | "inactive";
 
 const SUBSCRIPTION_STORAGE_KEYS = [
-  "nuvcoin_subscription_active",
+  "conciliaai_subscription_active",
   "subscriptionActive",
   "hasActiveSubscription",
   "isSubscriptionActive",
@@ -105,13 +105,13 @@ export function persistSubscriptionState(value: SubscriptionStatus | boolean | n
       : value;
 
   if (value === null) {
-    window.localStorage.removeItem("nuvcoin_subscription_active");
+    window.localStorage.removeItem("conciliaai_subscription_active");
     return;
   }
 
   if (normalizedValue === null) return;
 
-  window.localStorage.setItem("nuvcoin_subscription_active", normalizedValue);
+  window.localStorage.setItem("conciliaai_subscription_active", normalizedValue);
   window.dispatchEvent(new CustomEvent<SubscriptionStatus | null>(SUBSCRIPTION_STATE_EVENT, { detail: normalizedValue }));
 }
 
@@ -172,7 +172,7 @@ export function subscribeToSubscriptionStatus(listener: (value: SubscriptionStat
 function getAuthToken(): string | null {
   if (typeof window === "undefined") return null;
 
-  const candidates = ["token", "nuvcoin_token", "auth_token", "accessToken", "jwt"];
+  const candidates = ["token", "conciliaai_token", "auth_token", "accessToken", "jwt"];
 
   for (const key of candidates) {
     const value = window.localStorage.getItem(key);
@@ -211,3 +211,4 @@ export async function probeSubscriptionStateFromFinanceApi(): Promise<boolean | 
     return null;
   }
 }
+

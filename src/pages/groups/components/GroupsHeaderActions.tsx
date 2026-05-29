@@ -1,4 +1,4 @@
-import {
+﻿import {
   useEffect,
   useLayoutEffect,
   useRef,
@@ -191,10 +191,10 @@ export default function GroupsHeaderActions({
 
     return {
       position: "relative",
-      width: 52,
-      height: 52,
+      width: 58,
+      height: 58,
       padding: 0,
-      borderRadius: 18,
+      borderRadius: 20,
       border,
       background,
       color: "#f8fafc",
@@ -202,10 +202,17 @@ export default function GroupsHeaderActions({
       alignItems: "center",
       justifyContent: "center",
       fontWeight: 900,
-      fontSize: action.id === "expense" ? 16 : 20,
+      fontSize: action.id === "expense" ? 17 : 21,
       letterSpacing: -0.3,
       boxShadow,
       transform,
+      animation: isDisabled
+        ? "none"
+        : isPressed || isHovered
+          ? "none"
+          : isCreateAction
+            ? "conciliaai-groups-create-pulse 2.2s ease-in-out infinite"
+            : "conciliaai-groups-action-idle 3.4s ease-in-out infinite",
       transition:
         "transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background 0.22s ease, border 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease, filter 0.22s ease",
       cursor: isDisabled ? "not-allowed" : "pointer",
@@ -269,16 +276,16 @@ export default function GroupsHeaderActions({
   function getHamburgerButtonStyle(): CSSProperties {
     return {
       position: "relative",
-      width: 52,
-      height: 52,
-      padding: 0,
+      width: isMobile ? "100%" : 52,
+      height: isMobile ? 48 : 52,
+      padding: isMobile ? "0 14px" : 0,
       borderRadius: 18,
       border: "1px solid rgba(255,255,255,0.12)",
       background: "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 100%)",
       color: "#f8fafc",
       display: "inline-flex",
       alignItems: "center",
-      justifyContent: "center",
+      justifyContent: isMobile ? "space-between" : "center",
       boxShadow: isMenuOpen
         ? "0 18px 38px rgba(15,23,42,0.26), 0 10px 20px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.12)"
         : "0 12px 24px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
@@ -443,7 +450,7 @@ export default function GroupsHeaderActions({
                 action.id === "create"
                   ? "0 1px 10px rgba(109,156,255,0.34)"
                   : "0 1px 8px rgba(15,23,42,0.16)",
-              animation: action.loading ? "nuvcoin-groups-spin 0.9s linear infinite" : "none",
+              animation: action.loading ? "conciliaai-groups-spin 0.9s linear infinite" : "none",
             }}
           >
             {action.icon}
@@ -500,7 +507,7 @@ export default function GroupsHeaderActions({
               justifyContent: "center",
               fontSize: action.id === "expense" ? 15 : 18,
               flexShrink: 0,
-              animation: action.loading ? "nuvcoin-groups-spin 0.9s linear infinite" : "none",
+              animation: action.loading ? "conciliaai-groups-spin 0.9s linear infinite" : "none",
             }}
           >
             {action.icon}
@@ -542,6 +549,8 @@ export default function GroupsHeaderActions({
           position: "relative",
           width: "100%",
           boxSizing: "border-box",
+          backgroundSize: "180% 180%",
+          animation: "conciliaai-groups-hero-aura 5.5s ease-in-out infinite",
         }}
       >
       <div
@@ -583,16 +592,17 @@ export default function GroupsHeaderActions({
                 display: "inline-block",
               }}
             />
-            NUVCOIN Groups
+            Controle compartilhado
           </div>
 
           <div style={{ display: "grid", gap: 4 }}>
             <h2
               style={{
                 margin: 0,
-                fontSize: isMobile ? 26 : 30,
+                fontSize: isMobile ? 30 : 38,
                 lineHeight: 1.05,
-                letterSpacing: -0.6,
+                letterSpacing: -0.8,
+                overflowWrap: "anywhere",
               }}
             >
               Dashboard de grupos
@@ -600,10 +610,11 @@ export default function GroupsHeaderActions({
             <div
               style={{
                 ...subtleText,
-                fontSize: 13,
+                fontSize: isMobile ? 13 : 15,
+                maxWidth: isMobile ? "100%" : 780,
               }}
             >
-              Crie grupos, adicione pessoas, defina salarios ou percentuais e acompanhe tudo com um visual mais de produto SaaS.
+              Crie grupos, adicione pessoas, defina salários ou percentuais e acompanhe a divisão do mês com clareza.
             </div>
           </div>
         </div>
@@ -628,6 +639,17 @@ export default function GroupsHeaderActions({
               ref={hamburgerButtonRef}
               style={getHamburgerButtonStyle()}
             >
+              <span
+                style={{
+                  display: isMobile ? "inline-flex" : "none",
+                  alignItems: "center",
+                  gap: 8,
+                  fontWeight: 900,
+                  fontSize: 14,
+                }}
+              >
+                Acoes do grupo
+              </span>
               <span
                 aria-hidden="true"
                 style={{
@@ -675,3 +697,4 @@ export default function GroupsHeaderActions({
     </>
   );
 }
+

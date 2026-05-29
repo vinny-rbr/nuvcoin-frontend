@@ -1,5 +1,5 @@
-/* ========================= */
-/* NUVCOIN - TEMA OFICIAL   */
+﻿/* ========================= */
+/* CONCILIAAÍ - TEMA OFICIAL   */
 /* Minimalista Tech Dark    */
 /* ========================= */
 
@@ -25,7 +25,7 @@ body {
   color: var(--text-main);
 }
 
-/* Cards padrão */
+/* Cards padrÃ£o */
 .card {
   background-color: var(--bg-card);
   padding: 20px;
@@ -34,7 +34,7 @@ body {
   margin-bottom: 20px;
 }
 
-/* Botões */
+/* BotÃµes */
 .button-primary {
   background-color: var(--primary);
   border: none;

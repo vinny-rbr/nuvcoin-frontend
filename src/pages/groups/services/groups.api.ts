@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   GroupDto,
   GroupMembersResponse,
   GroupExpensesListResponse,
@@ -18,6 +18,57 @@ type AddGroupMemberRequest = {
   email?: string;
 };
 
+async function readApiError(response: Response, fallback: string): Promise<string> {
+  const text = await response.text();
+
+  if (!text) return fallback;
+
+  if (text.trim().startsWith("<!DOCTYPE") || text.includes("<html")) {
+    return fallback;
+  }
+
+  try {
+    const parsed = JSON.parse(text) as { message?: unknown; error?: unknown };
+    const message = parsed.message ?? parsed.error;
+
+    if (typeof message === "string" && message.trim()) {
+      return message;
+    }
+  } catch {
+    // Mantem o texto abaixo quando nao for JSON.
+  }
+
+  return text;
+}
+
+function emptyMembers(groupId: string): GroupMembersResponse {
+  return {
+    groupId,
+    groupName: "",
+    ownerUserId: "",
+    members: [],
+  };
+}
+
+function emptyExpenses(groupId: string): GroupExpensesListResponse {
+  return {
+    groupId,
+    totalCount: 0,
+    items: [],
+  };
+}
+
+function emptyBalances(groupId: string): GroupBalancesResponse {
+  return {
+    groupId,
+    asOfUtcDate: new Date().toISOString(),
+    consideredExpensesCount: 0,
+    consideredSettlementsCount: 0,
+    consideredGiftsCount: 0,
+    members: [],
+  };
+}
+
 
 // ==============================
 // GET GROUPS
@@ -36,8 +87,8 @@ export async function fetchGroups(): Promise<GroupDto[]> {
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erro ao buscar grupos: HTTP ${response.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(response, "Nao foi possivel carregar os grupos.");
+    throw new Error(`Erro ao buscar grupos: ${message}`);
   }
 
   return response.json();
@@ -65,8 +116,8 @@ export async function createGroup(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erro ao criar grupo: HTTP ${response.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(response, "Nao foi possivel criar o grupo.");
+    throw new Error(`Erro ao criar grupo: ${message}`);
   }
 
   return response.json();
@@ -81,7 +132,7 @@ export async function deleteGroup(groupId: string): Promise<void> {
 
   const token = getAuthTokenOrThrow();
 
-  const response = await fetch(`/api/groups/${groupId}`, {
+  let response = await fetch(`/api/groups/${groupId}`, {
     method: "DELETE",
     headers: {
       Accept: "application/json",
@@ -89,9 +140,19 @@ export async function deleteGroup(groupId: string): Promise<void> {
     },
   });
 
+  if (response.status === 404) {
+    response = await fetch(`/api/groups/${groupId}/archive`, {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erro ao excluir grupo: HTTP ${response.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(response, "Nao foi possivel excluir o grupo.");
+    throw new Error(`Erro ao excluir grupo: ${message}`);
   }
 }
 
@@ -113,8 +174,12 @@ export async function fetchMembers(groupId: string): Promise<GroupMembersRespons
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erro ao buscar membros: HTTP ${res.status} - ${text || "sem detalhes"}`);
+    if (res.status === 404) {
+      return emptyMembers(groupId);
+    }
+
+    const message = await readApiError(res, "Nao foi possivel carregar os membros.");
+    throw new Error(`Erro ao buscar membros: ${message}`);
   }
 
   return res.json();
@@ -143,8 +208,8 @@ export async function addMember(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erro ao adicionar membro: HTTP ${response.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(response, "Adicionar membros ainda nao esta disponivel nesta API.");
+    throw new Error(`Erro ao adicionar membro: ${message}`);
   }
 }
 
@@ -169,8 +234,8 @@ export async function removeMember(
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Erro ao remover membro: HTTP ${response.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(response, "Remover membros ainda nao esta disponivel nesta API.");
+    throw new Error(`Erro ao remover membro: ${message}`);
   }
 }
 
@@ -192,8 +257,12 @@ export async function fetchExpenses(groupId: string): Promise<GroupExpensesListR
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erro ao buscar despesas: HTTP ${res.status} - ${text || "sem detalhes"}`);
+    if (res.status === 404) {
+      return emptyExpenses(groupId);
+    }
+
+    const message = await readApiError(res, "Nao foi possivel carregar as despesas do grupo.");
+    throw new Error(`Erro ao buscar despesas: ${message}`);
   }
 
   return res.json();
@@ -217,8 +286,12 @@ export async function fetchBalances(groupId: string): Promise<GroupBalancesRespo
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erro ao buscar dados do grupo: HTTP ${res.status} - ${text || "sem detalhes"}`);
+    if (res.status === 404) {
+      return emptyBalances(groupId);
+    }
+
+    const message = await readApiError(res, "Nao foi possivel carregar os dados do grupo.");
+    throw new Error(`Erro ao buscar dados do grupo: ${message}`);
   }
 
   return res.json();
@@ -246,8 +319,8 @@ export async function createExpense(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erro ao criar despesa: HTTP ${res.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(res, "Lancamento de despesas de grupo ainda nao esta disponivel nesta API.");
+    throw new Error(`Erro ao criar despesa: ${message}`);
   }
 
   return res.json();
@@ -276,8 +349,8 @@ export async function updateExpense(
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erro ao editar despesa: HTTP ${res.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(res, "Edicao de despesas de grupo ainda nao esta disponivel nesta API.");
+    throw new Error(`Erro ao editar despesa: ${message}`);
   }
 }
 
@@ -299,8 +372,8 @@ export async function deleteExpense(expenseId: string): Promise<void> {
   });
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Erro ao excluir despesa: HTTP ${res.status} - ${text || "sem detalhes"}`);
+    const message = await readApiError(res, "Exclusao de despesas de grupo ainda nao esta disponivel nesta API.");
+    throw new Error(`Erro ao excluir despesa: ${message}`);
   }
 }
 
@@ -310,14 +383,15 @@ export async function deleteExpense(expenseId: string): Promise<void> {
 // lucassousa@gmail.com
 //
 // Este arquivo centraliza todas as chamadas de API
-// do módulo Groups do NUVCOIN.
+// do mÃ³dulo Groups do CONCILIAAÍ.
 //
-// Novas funções adicionadas nesta etapa:
+// Novas funÃ§Ãµes adicionadas nesta etapa:
 // - createGroup
 // - deleteGroup
 // - addMember
 // - removeMember
 //
-// Observação importante:
+// ObservaÃ§Ã£o importante:
 // - Mantive os payloads de grupo/membro de forma segura e simples.
 // - Para addMember, o frontend envia apenas o e-mail.
+

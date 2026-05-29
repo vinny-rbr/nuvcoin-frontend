@@ -9,7 +9,7 @@ export default defineConfig({
     port: 5173, // Porta do frontend
     proxy: {
       "/api": {
-        target: "http://localhost:5024", // ✅ Sua API .NET
+        target: "http://localhost:3000",
         changeOrigin: true,
         secure: false,
       },

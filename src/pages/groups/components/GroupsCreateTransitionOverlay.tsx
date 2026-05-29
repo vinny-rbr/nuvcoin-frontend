@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+﻿import type { CSSProperties } from "react";
 
 type GroupsCreateTransitionOverlayProps = {
   isVisible: boolean;
@@ -68,7 +68,7 @@ export default function GroupsCreateTransitionOverlay({
               borderRight: "4px solid transparent",
               borderBottom: "4px solid transparent",
               borderLeft: "4px solid transparent",
-              animation: "nuvcoin-groups-spin 0.9s linear infinite",
+              animation: "conciliaai-groups-spin 0.9s linear infinite",
             }}
           />
           <div
@@ -77,7 +77,7 @@ export default function GroupsCreateTransitionOverlay({
               inset: 12,
               borderRadius: "50%",
               border: "3px solid rgba(91,140,255,0.14)",
-              animation: "nuvcoin-groups-pulse 1.2s ease-in-out infinite",
+              animation: "conciliaai-groups-pulse 1.2s ease-in-out infinite",
             }}
           />
         </div>
@@ -112,7 +112,7 @@ export default function GroupsCreateTransitionOverlay({
               height: "100%",
               borderRadius: 999,
               background: "linear-gradient(90deg, rgba(91,140,255,0.38) 0%, rgba(91,140,255,0.92) 100%)",
-              animation: "nuvcoin-groups-bar 1s ease-in-out infinite",
+              animation: "conciliaai-groups-bar 1s ease-in-out infinite",
             }}
           />
         </div>
@@ -120,3 +120,4 @@ export default function GroupsCreateTransitionOverlay({
     </div>
   );
 }
+

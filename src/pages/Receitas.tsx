@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react"; // Hooks
-import type { FinanceCategory, FinanceItem } from "../types/finance"; // Tipos
+import { useEffect, useMemo, useState } from "react";
+import type { FinanceCategory, FinanceItem } from "../types/finance";
 import {
   financeAdd,
   financeList,
@@ -10,31 +10,31 @@ import {
 } from "../lib/financeService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
+import "./finance.css";
 
-// Formata centavos para BRL
 function formatBRLFromCents(valueCents: number): string {
   const value = valueCents / 100;
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-// Converte para centavos
 function parseBRLToCents(input: string): number {
   const normalized = input.replace(/\./g, "").replace(",", ".").replace(/[^\d.]/g, "");
   const value = Number(normalized || "0");
   return Math.round(value * 100);
 }
 
+function formatDateBR(dateISO: string): string {
+  return new Date(`${dateISO}T00:00:00`).toLocaleDateString("pt-BR");
+}
+
 export default function Receitas() {
   const [items, setItems] = useState<FinanceItem[]>([]);
-
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [dateISO, setDateISO] = useState(todayISO());
   const [category, setCategory] = useState<FinanceCategory>("Salário");
+  const [animate, setAnimate] = useState(false);
 
-  const [animate, setAnimate] = useState(false); // 🔥 animação
-
-  // Carrega + subscribe
   useEffect(() => {
     const load = () => {
       setItems(financeList());
@@ -49,24 +49,31 @@ export default function Receitas() {
     };
   }, []);
 
-  // 🔥 animação ao mudar dados
   useEffect(() => {
     setAnimate(false);
 
-    const t = setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
       setAnimate(true);
     }, 40);
 
-    return () => clearTimeout(t);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [items]);
 
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
-
   const receitas = useMemo(() => items.filter((x) => x.type === "RECEITA"), [items]);
 
   function handleAdd() {
-    if (!title || !amount) {
+    if (!title.trim() || !amount.trim()) {
       alert("Preencha título e valor.");
+      return;
+    }
+
+    const amountCents = parseBRLToCents(amount);
+
+    if (amountCents <= 0) {
+      alert("Informe um valor válido.");
       return;
     }
 
@@ -75,7 +82,7 @@ export default function Receitas() {
       type: "RECEITA",
       title: title.trim(),
       category,
-      amountCents: parseBRLToCents(amount),
+      amountCents,
       dateISO,
       createdAtISO: new Date().toISOString(),
       paymentType: "pix",
@@ -97,17 +104,16 @@ export default function Receitas() {
   }
 
   return (
-    <div
-      style={{
-        opacity: animate ? 1 : 0,
-        transform: animate ? "translateY(0px)" : "translateY(10px)",
-        transition: "all 0.35s ease",
-      }}
-    >
-      <h2 style={{ marginBottom: 14 }}>Receitas</h2>
+    <div className={`finance-view finance-income${animate ? " is-ready" : ""}`}>
+      <section className="finance-hero">
+        <div>
+          <span className="finance-kicker">Entradas</span>
+          <h2>Receitas</h2>
+        </div>
+        <p>Cadastre ganhos, acompanhe o saldo e mantenha suas entradas organizadas.</p>
+      </section>
 
-      {/* Cards */}
-      <div className="dashboard-grid" style={{ marginBottom: 20 }}>
+      <div className="dashboard-grid finance-summary-grid">
         <div className="stat-card">
           <div className="stat-title">Total Receitas</div>
           <div className="stat-value green">{formatBRLFromCents(summary.totalReceitasCents)}</div>
@@ -124,74 +130,101 @@ export default function Receitas() {
         </div>
       </div>
 
-      {/* Form */}
-      <div className="chart-card" style={{ marginBottom: 18 }}>
-        <div className="chart-title" style={{ fontSize: 22, fontWeight: 800, marginBottom: 14 }}>
+      <div className="chart-card finance-panel finance-form-panel">
+        <div className="finance-section-heading">
+          <div>
+            <span className="finance-kicker">Nova entrada</span>
+            <h3>Adicionar Receita</h3>
+          </div>
+        </div>
+
+        <div className="finance-form-grid">
+          <label className="finance-field finance-field-title">
+            <span>Título</span>
+            <input
+              className="finance-control"
+              placeholder="Ex: Salário"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+          </label>
+
+          <label className="finance-field">
+            <span>Categoria</span>
+            <select
+              className="finance-control"
+              value={category}
+              onChange={(e) => setCategory(e.target.value as FinanceCategory)}
+            >
+              <option value="Salário">Salário</option>
+              <option value="Freelance">Freelance</option>
+              <option value="Vendas">Vendas</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </label>
+
+          <label className="finance-field">
+            <span>Valor</span>
+            <input
+              className="finance-control"
+              inputMode="decimal"
+              placeholder="Ex: 2500,00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+          </label>
+
+          <label className="finance-field">
+            <span>Data</span>
+            <input
+              className="finance-control"
+              type="date"
+              value={dateISO}
+              onChange={(e) => setDateISO(e.target.value)}
+            />
+          </label>
+        </div>
+
+        <button className="finance-primary-button" onClick={handleAdd}>
           Adicionar Receita
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr 1fr 0.8fr", gap: 12 }}>
-          <input
-            placeholder="Título (ex: Salário)"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as FinanceCategory)}
-          >
-            <option value="Salário">Salário</option>
-            <option value="Freelance">Freelance</option>
-            <option value="Vendas">Vendas</option>
-            <option value="Outros">Outros</option>
-          </select>
-
-          <input
-            placeholder="Valor (ex: 2500,00)"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-
-          <input
-            type="date"
-            value={dateISO}
-            onChange={(e) => setDateISO(e.target.value)}
-          />
-        </div>
-
-        <div style={{ marginTop: 14 }}>
-          <button onClick={handleAdd}>Adicionar Receita</button>
-        </div>
+        </button>
       </div>
 
-      {/* Lista */}
-      <div className="chart-card">
-        <div className="chart-title" style={{ fontSize: 22, fontWeight: 800, marginBottom: 14 }}>
-          Lista de Receitas
+      <div className="chart-card finance-panel finance-list-panel">
+        <div className="finance-section-heading">
+          <div>
+            <span className="finance-kicker">Histórico</span>
+            <h3>Lista de Receitas</h3>
+          </div>
+          <span className="finance-count">{receitas.length} cadastrada(s)</span>
         </div>
 
         {receitas.length === 0 ? (
-          <div style={{ color: "var(--text-secondary)", padding: 10 }}>
-            Nenhuma receita cadastrada ainda.
+          <div className="finance-empty-state">
+            <div className="finance-empty-icon">+</div>
+            <strong>Nenhuma receita cadastrada ainda.</strong>
+            <span>Adicione sua primeira entrada pelo formulário acima.</span>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div className="finance-list">
             {receitas.map((item) => (
-              <div key={item.id} style={{ display: "flex", justifyContent: "space-between" }}>
-                <div>
-                  <div style={{ fontWeight: 800 }}>{item.title}</div>
-                  <div style={{ fontSize: 13 }}>
-                    {item.category} • {item.dateISO}
+              <div key={item.id} className="finance-row">
+                <div className="finance-row-main">
+                  <div className="finance-row-icon">R$</div>
+                  <div>
+                    <div className="finance-row-title">{item.title}</div>
+                    <div className="finance-row-meta">
+                      {item.category} <span>•</span> {formatDateBR(item.dateISO)}
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 12 }}>
-                  <div style={{ fontWeight: 900 }}>
+                <div className="finance-row-actions">
+                  <div className="finance-row-value green">
                     {formatBRLFromCents(item.amountCents)}
                   </div>
 
-                  <button onClick={() => handleRemove(item.id)}>
+                  <button className="finance-danger-button" onClick={() => handleRemove(item.id)}>
                     Remover
                   </button>
                 </div>
@@ -203,12 +236,3 @@ export default function Receitas() {
     </div>
   );
 }
-
-/*
-Desenvolvido por Lucas Vinicius
-lucassousa@gmail.com
-
-✔ Animação adicionada (fade + subida)
-✔ Dispara ao atualizar dados
-✔ Mesmo padrão do Dashboard e Despesas
-*/

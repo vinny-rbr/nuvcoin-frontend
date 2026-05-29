@@ -1,53 +1,55 @@
-import type { FinanceItem } from "../types/finance"; // Tipos do app
+﻿import type { FinanceItem } from "../types/finance"; // Tipos do app
 import { persistSubscriptionState } from "./auth";
 
 import {
-  loadFinanceItems, // Lê itens do localStorage
+  loadFinanceItems, // LÃª itens do localStorage
   addFinanceItem as addItemStorage, // Adiciona item no localStorage
   deleteFinanceItem as deleteItemStorage, // Remove item no localStorage
-  saveFinanceItems as saveItemsStorage, // Salva lista no localStorage (✅ já dispara evento interno)
-  todayISO, // Data ISO padrão
+  getFinanceStorageKey,
+  isFinanceStorageKey,
+  saveFinanceItems as saveItemsStorage, // Salva lista no localStorage (âœ… jÃ¡ dispara evento interno)
+  todayISO, // Data ISO padrÃ£o
   makeId, // ID seguro
-} from "./financeStorage"; // Implementação atual (localStorage)
+} from "./financeStorage"; // ImplementaÃ§Ã£o atual (localStorage)
 
 // =============================
 // CONFIG
 // =============================
 
-const USE_API = true; // ✅ Agora vamos usar a API real
-const API_BASE_URL = "/api/finance"; // ✅ Base da API
+const USE_API = true; // âœ… Agora vamos usar a API real
+const API_BASE_URL = "/api/finance"; // âœ… Base da API
 
-// ✅ Freio anti-loop (evita fetch infinito)
-const SYNC_MIN_INTERVAL_MS = 3000; // 3s entre syncs automáticos
+// âœ… Freio anti-loop (evita fetch infinito)
+const SYNC_MIN_INTERVAL_MS = 3000; // 3s entre syncs automÃ¡ticos
 
-let syncInFlight = false; // ✅ trava quando já tem sync rolando
-let lastSyncAt = 0; // ✅ último sync (timestamp)
+let syncInFlight = false; // âœ… trava quando jÃ¡ tem sync rolando
+let lastSyncAt = 0; // âœ… Ãºltimo sync (timestamp)
 
-// ✅ Controle pra evitar “sync em cascata” causado por evento/storage
-let hasHydratedFromApiThisSession = false; // ✅ já sincronizou 1x com a API nesta sessão
-let lastWriteFromApiAt = 0; // ✅ quando gravamos no storage vindo da API (para ignorar evento logo depois)
+// âœ… Controle pra evitar â€œsync em cascataâ€ causado por evento/storage
+let hasHydratedFromApiThisSession = false; // âœ… jÃ¡ sincronizou 1x com a API nesta sessÃ£o
+let lastWriteFromApiAt = 0; // âœ… quando gravamos no storage vindo da API (para ignorar evento logo depois)
 
 // =============================
 // AUTH HELPERS
 // =============================
 
-// Lê o token do localStorage
+// LÃª o token do localStorage
 function getAuthToken(): string | null {
-  const t1 = localStorage.getItem("nuvcoin_token"); // Padrão 1
+  const t1 = localStorage.getItem("conciliaai_token"); // PadrÃ£o 1
   if (t1) return t1; // Retorna se existir
 
-  const t2 = localStorage.getItem("token"); // Padrão 2 (o seu JWT está aqui)
+  const t2 = localStorage.getItem("token"); // PadrÃ£o 2 (o seu JWT estÃ¡ aqui)
   if (t2) return t2; // Retorna se existir
 
-  const t3 = localStorage.getItem("auth_token"); // Padrão 3
+  const t3 = localStorage.getItem("auth_token"); // PadrÃ£o 3
   if (t3) return t3; // Retorna se existir
 
   return null; // Sem token
 }
 
-// Monta headers padrão com Authorization: Bearer
+// Monta headers padrÃ£o com Authorization: Bearer
 function makeHeaders(): HeadersInit {
-  const token = getAuthToken(); // Lê token
+  const token = getAuthToken(); // LÃª token
 
   if (!token) {
     return { "Content-Type": "application/json" }; // Sem Authorization
@@ -60,27 +62,27 @@ function makeHeaders(): HeadersInit {
 }
 
 // =============================
-// NORMALIZAÇÃO (API -> Front)
+// NORMALIZAÃ‡ÃƒO (API -> Front)
 // =============================
 
 function normalizeApiItem(raw: any): FinanceItem {
   const dateISO: string =
-    raw?.dateISO ?? // Já veio pronto
+    raw?.dateISO ?? // JÃ¡ veio pronto
     raw?.date ?? // Backend pode mandar "date"
-    raw?.dateUtc ?? // Outras variações
-    raw?.dateTime ?? // Outras variações
+    raw?.dateUtc ?? // Outras variaÃ§Ãµes
+    raw?.dateTime ?? // Outras variaÃ§Ãµes
     todayISO(); // Fallback
 
   const createdAtISO: string =
-    raw?.createdAtISO ?? // Já veio pronto
+    raw?.createdAtISO ?? // JÃ¡ veio pronto
     raw?.createdAtUtc ?? // Backend pode mandar createdAtUtc
-    raw?.createdAt ?? // Outras variações
+    raw?.createdAt ?? // Outras variaÃ§Ãµes
     new Date().toISOString(); // Fallback
 
   return {
     id: raw?.id ?? makeId(), // Id
     type: raw?.type, // Tipo
-    title: raw?.title ?? "", // Título
+    title: raw?.title ?? "", // TÃ­tulo
     category: raw?.category ?? "Outros", // Categoria
     amountCents: Number(raw?.amountCents ?? 0), // Valor
     dateISO: dateISO, // Data ISO
@@ -91,7 +93,7 @@ function normalizeApiItem(raw: any): FinanceItem {
 }
 
 function normalizeApiList(rawList: any): FinanceItem[] {
-  if (!Array.isArray(rawList)) return []; // Se não for array, vazio
+  if (!Array.isArray(rawList)) return []; // Se nÃ£o for array, vazio
   return rawList.map((x) => normalizeApiItem(x)); // Normaliza cada item
 }
 
@@ -144,10 +146,10 @@ const apiProvider: FinanceProvider = {
   add: async (item) => {
     const payload = {
       type: item.type, // Tipo
-      title: item.title, // Título
+      title: item.title, // TÃ­tulo
       category: item.category ?? "Outros", // Categoria
       amountCents: item.amountCents, // Valor
-      date: item.dateISO, // ✅ Backend espera "date"
+      date: item.dateISO, // âœ… Backend espera "date"
       paymentType: item.paymentType ?? "pix", // Forma
       status: item.status ?? "paid", // Status
     };
@@ -168,7 +170,7 @@ const apiProvider: FinanceProvider = {
     const rawCreated = await res.json(); // Retorno do backend
     const created = normalizeApiItem(rawCreated); // Normaliza item criado
 
-    return created; // ✅ Sem GET depois
+    return created; // âœ… Sem GET depois
   },
 
   remove: async (id) => {
@@ -188,8 +190,8 @@ const apiProvider: FinanceProvider = {
   },
 
   saveAll: async (items) => {
-    // ✅ Ainda não existe bulk no backend.
-    // Por enquanto só salva local.
+    // âœ… Ainda nÃ£o existe bulk no backend.
+    // Por enquanto sÃ³ salva local.
     saveItemsStorage(items); // Salva local e dispara evento interno
   },
 };
@@ -210,18 +212,34 @@ async function safe<T>(fn: () => Promise<T>, fallback: () => Promise<T>): Promis
 }
 
 // =============================
-// CACHE EM MEMÓRIA
+// CACHE EM MEMÃ“RIA
 // =============================
 
-let inMemoryCache: FinanceItem[] | null = null; // Cache em memória
+let inMemoryCache: FinanceItem[] | null = null; // Cache em memÃ³ria
+let activeCacheStorageKey = getFinanceStorageKey();
+
+function ensureUserScopedCache(): void {
+  const currentStorageKey = getFinanceStorageKey();
+
+  if (currentStorageKey === activeCacheStorageKey) return;
+
+  activeCacheStorageKey = currentStorageKey;
+  inMemoryCache = null;
+  hasHydratedFromApiThisSession = false;
+  syncInFlight = false;
+  lastSyncAt = 0;
+  lastWriteFromApiAt = 0;
+}
 
 function setCache(items: FinanceItem[]): void {
+  ensureUserScopedCache();
   inMemoryCache = items; // Atualiza cache
 }
 
 function getCache(): FinanceItem[] {
+  ensureUserScopedCache();
   if (inMemoryCache) return inMemoryCache; // Se existe, usa
-  const local = loadFinanceItems(); // Senão, lê local
+  const local = loadFinanceItems(); // SenÃ£o, lÃª local
   inMemoryCache = local; // Guarda no cache
   return local; // Retorna
 }
@@ -229,7 +247,7 @@ function getCache(): FinanceItem[] {
 // Garante item no cache sem duplicar por id
 function upsertById(list: FinanceItem[], item: FinanceItem): FinanceItem[] {
   const idx = list.findIndex((x) => x.id === item.id); // Procura id
-  if (idx === -1) return [...list, item]; // Se não existe, adiciona
+  if (idx === -1) return [...list, item]; // Se nÃ£o existe, adiciona
   const copy = [...list]; // Copia
   copy[idx] = item; // Substitui
   return copy; // Retorna
@@ -244,42 +262,43 @@ function removeById(list: FinanceItem[], id: string): FinanceItem[] {
 // API DO SERVICE (usada pelas telas)
 // =============================
 
-// ✅ Lista rápida via cache/local + 1 “hidratação” da API por sessão (sem cascata de eventos)
+// âœ… Lista rÃ¡pida via cache/local + 1 â€œhidrataÃ§Ã£oâ€ da API por sessÃ£o (sem cascata de eventos)
 export function financeList(): FinanceItem[] {
-  const cached = getCache(); // Retorna cache imediato (UX rápida)
+  ensureUserScopedCache();
+  const cached = getCache(); // Retorna cache imediato (UX rÃ¡pida)
 
-  if (!USE_API) return cached; // Se não usa API, retorna
+  if (!USE_API) return cached; // Se nÃ£o usa API, retorna
 
   const now = Date.now(); // Agora
 
-  // ✅ Se já hidrataram 1x nesta sessão, não fica re-sincronizando a cada render/evento
+  // âœ… Se jÃ¡ hidrataram 1x nesta sessÃ£o, nÃ£o fica re-sincronizando a cada render/evento
   if (hasHydratedFromApiThisSession) return cached;
 
-  // ✅ Se já está sincronizando, não começa outro
+  // âœ… Se jÃ¡ estÃ¡ sincronizando, nÃ£o comeÃ§a outro
   if (syncInFlight) return cached;
 
-  // ✅ Se sincronizou há pouco, não sincroniza de novo
+  // âœ… Se sincronizou hÃ¡ pouco, nÃ£o sincroniza de novo
   if (now - lastSyncAt < SYNC_MIN_INTERVAL_MS) return cached;
 
-  // ✅ Marca sync ativo
+  // âœ… Marca sync ativo
   syncInFlight = true;
 
-  // ✅ Faz 1 sync em background (sem travar UI)
+  // âœ… Faz 1 sync em background (sem travar UI)
   void safe(
     async () => {
       const fromApi = await activeProvider.list(); // Busca na API
 
-      // ✅ Só grava se mudou (evita evento à toa)
+      // âœ… SÃ³ grava se mudou (evita evento Ã  toa)
       const a = JSON.stringify(fromApi); // API
       const b = JSON.stringify(cached); // Cache
 
       if (a !== b) {
-        lastWriteFromApiAt = Date.now(); // Marca que a gravação veio da API
+        lastWriteFromApiAt = Date.now(); // Marca que a gravaÃ§Ã£o veio da API
         saveItemsStorage(fromApi); // Salva local (dispara evento interno)
         setCache(fromApi); // Atualiza cache
       }
 
-      hasHydratedFromApiThisSession = true; // ✅ Pronto: não hidrata de novo até recarregar
+      hasHydratedFromApiThisSession = true; // âœ… Pronto: nÃ£o hidrata de novo atÃ© recarregar
       return fromApi; // Retorna
     },
     async () => {
@@ -290,43 +309,44 @@ export function financeList(): FinanceItem[] {
     syncInFlight = false; // Libera trava
   });
 
-  return cached; // Sempre retorna rápido
+  return cached; // Sempre retorna rÃ¡pido
 }
 
 export function financeAdd(item: FinanceItem): FinanceItem[] {
-  // ✅ Garantimos que o item tem um id temporário para o modo otimista
+  ensureUserScopedCache();
+  // âœ… Garantimos que o item tem um id temporÃ¡rio para o modo otimista
   const tempItem: FinanceItem = {
     ...item, // Copia campos
     id: item.id ?? makeId(), // Garante id
     createdAtISO: item.createdAtISO ?? new Date().toISOString(), // Garante createdAt
   };
 
-  // ✅ Add otimista local (rápido)
+  // âœ… Add otimista local (rÃ¡pido)
   const updatedLocal = addItemStorage(tempItem); // Salva no local (dispara evento interno)
   setCache(updatedLocal); // Atualiza cache
 
   if (USE_API) {
-    const tempId = tempItem.id; // Guarda id temporário (pra substituir depois)
+    const tempId = tempItem.id; // Guarda id temporÃ¡rio (pra substituir depois)
 
     void safe(
       async () => {
         const created = await activeProvider.add(tempItem); // POST e pega item criado (sem GET)
 
-        // ✅ Substitui o item temporário pelo item real do backend
+        // âœ… Substitui o item temporÃ¡rio pelo item real do backend
         const current = getCache(); // Cache atual
-        const withoutTemp = removeById(current, tempId); // Remove temporário
+        const withoutTemp = removeById(current, tempId); // Remove temporÃ¡rio
         const next = upsertById(withoutTemp, created); // Insere o real
 
         saveItemsStorage(next); // Sincroniza local (dispara evento interno)
         setCache(next); // Atualiza cache
 
-        // ✅ Como houve mudança real via API, marcamos que a sessão já hidratou
+        // âœ… Como houve mudanÃ§a real via API, marcamos que a sessÃ£o jÃ¡ hidratou
         hasHydratedFromApiThisSession = true;
 
         return created; // Retorna item criado
       },
       async () => {
-        return tempItem; // Fallback: mantém o otimista
+        return tempItem; // Fallback: mantÃ©m o otimista
       }
     );
   }
@@ -335,6 +355,7 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
 }
 
 export function financeRemove(id: string): FinanceItem[] {
+  ensureUserScopedCache();
   const updatedLocal = deleteItemStorage(id); // Remove local
   setCache(updatedLocal); // Atualiza cache
 
@@ -343,7 +364,7 @@ export function financeRemove(id: string): FinanceItem[] {
       async () => {
         await activeProvider.remove(id); // DELETE no backend (sem GET depois)
 
-        // ✅ Como houve mudança real via API, marcamos que a sessão já hidratou
+        // âœ… Como houve mudanÃ§a real via API, marcamos que a sessÃ£o jÃ¡ hidratou
         hasHydratedFromApiThisSession = true;
 
         return;
@@ -358,13 +379,14 @@ export function financeRemove(id: string): FinanceItem[] {
 }
 
 export function financeSaveAll(items: FinanceItem[]): void {
+  ensureUserScopedCache();
   saveItemsStorage(items); // Salva local
   setCache(items); // Atualiza cache
 
   if (USE_API) {
     void safe(
       async () => {
-        await activeProvider.saveAll(items); // Por enquanto só local
+        await activeProvider.saveAll(items); // Por enquanto sÃ³ local
         return;
       },
       async () => {
@@ -375,13 +397,17 @@ export function financeSaveAll(items: FinanceItem[]): void {
 }
 
 // =============================
-// EVENTOS (mantém atualização em tempo real)
+// EVENTOS (mantÃ©m atualizaÃ§Ã£o em tempo real)
 // =============================
 
 export function financeSubscribe(onChange: () => void): () => void {
   const onStorage = (e: StorageEvent) => {
-    if (e.key === "nuvcoin_finance_items_v1") {
-      // ✅ Se o próprio service acabou de gravar vindo da API, ignora o “rebote”
+    if (isFinanceStorageKey(e.key)) {
+      ensureUserScopedCache();
+
+      if (e.key !== getFinanceStorageKey()) return;
+
+      // âœ… Se o prÃ³prio service acabou de gravar vindo da API, ignora o â€œreboteâ€
       if (Date.now() - lastWriteFromApiAt < 500) return;
 
       setCache(loadFinanceItems()); // Atualiza cache
@@ -390,7 +416,9 @@ export function financeSubscribe(onChange: () => void): () => void {
   };
 
   const onUpdated = () => {
-    // ✅ Se o próprio service acabou de gravar vindo da API, ignora o “rebote”
+    ensureUserScopedCache();
+
+    // âœ… Se o prÃ³prio service acabou de gravar vindo da API, ignora o â€œreboteâ€
     if (Date.now() - lastWriteFromApiAt < 500) return;
 
     setCache(loadFinanceItems()); // Atualiza cache
@@ -398,11 +426,11 @@ export function financeSubscribe(onChange: () => void): () => void {
   };
 
   window.addEventListener("storage", onStorage); // Outra aba
-  window.addEventListener("nuvcoin_finance_updated", onUpdated as EventListener); // Mesma aba
+  window.addEventListener("conciliaai_finance_updated", onUpdated as EventListener); // Mesma aba
 
   return () => {
     window.removeEventListener("storage", onStorage); // Remove listener
-    window.removeEventListener("nuvcoin_finance_updated", onUpdated as EventListener); // Remove listener
+    window.removeEventListener("conciliaai_finance_updated", onUpdated as EventListener); // Remove listener
   };
 }
 
@@ -420,9 +448,10 @@ lucassousa@gmail.com
 
 O que foi corrigido agora:
 
-✔ Evitado “cascata” de GET: financeList() hidrata da API apenas 1x por sessão
-✔ Mantido freio anti-loop (inFlight + intervalo mínimo)
-✔ Ignorado “rebote” do evento/storage quando a gravação veio da API (500ms)
-✔ Mantido sem GET após POST/DELETE (usa retorno do backend e confirma DELETE)
-✔ Mantido cache híbrido (API + localStorage) e eventos
+âœ” Evitado â€œcascataâ€ de GET: financeList() hidrata da API apenas 1x por sessÃ£o
+âœ” Mantido freio anti-loop (inFlight + intervalo mÃ­nimo)
+âœ” Ignorado â€œreboteâ€ do evento/storage quando a gravaÃ§Ã£o veio da API (500ms)
+âœ” Mantido sem GET apÃ³s POST/DELETE (usa retorno do backend e confirma DELETE)
+âœ” Mantido cache hÃ­brido (API + localStorage) e eventos
 */
+

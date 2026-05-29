@@ -14,10 +14,10 @@ export const shellStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: 1280,
   margin: "0 auto",
-  padding: "18px 0 28px",
+  padding: "18px 0 34px",
   boxSizing: "border-box",
   display: "grid",
-  gap: 20,
+  gap: 22,
   justifyItems: "stretch",
   alignItems: "start",
   overflowX: "hidden",
@@ -30,21 +30,23 @@ export const subtleText: CSSProperties = {
 };
 
 export const pageHeroStyle: CSSProperties = {
-  padding: 24,
+  padding: 28,
   borderRadius: 24,
-  border: "1px solid rgba(255,255,255,0.08)",
+  border: "1px solid rgba(96,165,250,0.18)",
   background:
-    "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 45%, rgba(76,110,245,0.08) 100%)",
-  boxShadow: "0 18px 45px rgba(0,0,0,0.18)",
+    "radial-gradient(circle at 18% 0%, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0) 34%), linear-gradient(135deg, rgba(30,41,59,0.98) 0%, rgba(17,24,39,0.92) 50%, rgba(30,58,138,0.28) 100%)",
+  boxShadow: "0 24px 58px rgba(2,6,23,0.32), inset 0 1px 0 rgba(255,255,255,0.06)",
+  overflow: "hidden",
 };
 
 export const sectionCard: CSSProperties = {
-  padding: 18,
+  padding: 22,
   borderRadius: 22,
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.02) 100%)",
-  boxShadow: "0 16px 40px rgba(0,0,0,0.16)",
-  backdropFilter: "blur(8px)",
+  border: "1px solid rgba(148,163,184,0.12)",
+  background:
+    "linear-gradient(180deg, rgba(30,41,59,0.76) 0%, rgba(15,23,42,0.62) 100%)",
+  boxShadow: "0 18px 42px rgba(2,6,23,0.26), inset 0 1px 0 rgba(255,255,255,0.035)",
+  backdropFilter: "blur(12px)",
 };
 
 export const sidebarCard: CSSProperties = {
@@ -64,15 +66,15 @@ export function metricCard(accent?: "blue" | "green" | "red" | "purple"): CSSPro
   };
 
   return {
-    padding: 16,
+    padding: 18,
     borderRadius: 18,
-    border: "1px solid rgba(255,255,255,0.08)",
-    background: `linear-gradient(180deg, ${accentMap[accent ?? "blue"]} 0%, rgba(255,255,255,0.025) 100%)`,
+    border: "1px solid rgba(148,163,184,0.12)",
+    background: `radial-gradient(circle at top left, ${accentMap[accent ?? "blue"]} 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, rgba(30,41,59,0.74) 0%, rgba(15,23,42,0.58) 100%)`,
     minHeight: 102,
     display: "grid",
     alignContent: "space-between",
     gap: 10,
-    boxShadow: "0 14px 30px rgba(0,0,0,0.12)",
+    boxShadow: "0 16px 34px rgba(2,6,23,0.24), inset 0 1px 0 rgba(255,255,255,0.04)",
   };
 }
 
@@ -85,12 +87,12 @@ export const panelTitle: CSSProperties = {
 export const primaryButton: CSSProperties = {
   cursor: "pointer",
   borderRadius: 14,
-  border: "1px solid rgba(126,167,255,0.32)",
+  border: "1px solid rgba(96,165,250,0.42)",
   padding: "12px 14px",
-  background: "linear-gradient(180deg, rgba(92,132,255,0.28) 0%, rgba(67,108,255,0.18) 100%)",
+  background: "linear-gradient(135deg, rgba(59,130,246,0.96) 0%, rgba(37,99,235,0.78) 100%)",
   color: "inherit",
   fontWeight: 900,
-  boxShadow: "0 10px 24px rgba(47,84,235,0.18)",
+  boxShadow: "0 14px 30px rgba(37,99,235,0.26)",
 };
 
 export const ghostButton: CSSProperties = {
@@ -116,10 +118,10 @@ export const softButton: CSSProperties = {
 export const dangerButtonSmall: CSSProperties = {
   cursor: "pointer",
   borderRadius: 12,
-  border: "1px solid rgba(255,120,120,0.30)",
-  padding: "8px 12px",
-  background: "rgba(255,0,0,0.08)",
-  color: "#ffb4b4",
+  border: "1px solid rgba(248,113,113,0.30)",
+  padding: "10px 14px",
+  background: "linear-gradient(180deg, rgba(127,29,29,0.28), rgba(127,29,29,0.12))",
+  color: "#fecaca",
   fontWeight: 900,
 };
 
@@ -176,15 +178,16 @@ export function tabButton(active: boolean): CSSProperties {
 }
 
 export const memberAvatarStyle: CSSProperties = {
-  width: 40,
-  height: 40,
-  borderRadius: 999,
+  width: 46,
+  height: 46,
+  borderRadius: 16,
   display: "grid",
   placeItems: "center",
   fontWeight: 900,
-  fontSize: 13,
-  border: "1px solid rgba(255,255,255,0.10)",
-  background: "linear-gradient(180deg, rgba(87,125,255,0.22) 0%, rgba(255,255,255,0.04) 100%)",
+  fontSize: 14,
+  border: "1px solid rgba(96,165,250,0.22)",
+  background: "linear-gradient(180deg, rgba(59,130,246,0.30) 0%, rgba(30,41,59,0.58) 100%)",
+  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
   flexShrink: 0,
 };
 
@@ -203,8 +206,8 @@ export const pillStyle: CSSProperties = {
   gap: 6,
   padding: "6px 10px",
   borderRadius: 999,
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(148,163,184,0.14)",
+  background: "rgba(15,23,42,0.44)",
   fontSize: 12,
   opacity: 0.9,
 };

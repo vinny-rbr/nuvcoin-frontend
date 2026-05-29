@@ -33,7 +33,7 @@ export default function GroupsMetrics({
   }; // Fonte menor e mais proporcional para caber sem cortar
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 14 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
       <div style={{ ...metricCard("blue"), minWidth: 0 }}>
         <div style={subtleText}>Total do mês</div>
         <div style={valueStyle}>{formatBRLFromCents(monthTotalCents)}</div>

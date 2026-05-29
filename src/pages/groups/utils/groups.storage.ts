@@ -1,16 +1,16 @@
-import { percentNumberToInput } from "./groups.helpers";
+﻿import { percentNumberToInput } from "./groups.helpers";
 import type { GroupSplitMode } from "../types/groups.types";
 
 export function salaryStorageKey(groupId: string): string {
-  return `nuvcoin:group:${groupId}:salaryBase`; // Chave fixa para salários
+  return `conciliaai:group:${groupId}:salaryBase`; // Chave fixa para salÃ¡rios
 }
 
 export function splitModeStorageKey(groupId: string): string {
-  return `nuvcoin:group:${groupId}:splitMode`; // Chave fixa para modo de divisão
+  return `conciliaai:group:${groupId}:splitMode`; // Chave fixa para modo de divisÃ£o
 }
 
 export function manualPercentStorageKey(groupId: string): string {
-  return `nuvcoin:group:${groupId}:manualPercentBase`; // Chave fixa para percentuais manuais
+  return `conciliaai:group:${groupId}:manualPercentBase`; // Chave fixa para percentuais manuais
 }
 
 export function buildDefaultManualPercentBase(memberIds: string[]) {

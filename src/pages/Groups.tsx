@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react"; // Hooks do React
+﻿import { useEffect, useMemo, useState, type CSSProperties } from "react"; // Hooks do React
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js"; // Elementos principais do Chart.js
 
 import GroupsDashboardContent from "./groups/components/GroupsDashboardContent";
@@ -6,24 +6,24 @@ import GroupsGroupsLane from "./groups/components/GroupsGroupsLane";
 import GroupsHeaderActions from "./groups/components/GroupsHeaderActions";
 import GroupsModalsHub from "./groups/components/GroupsModalsHub";
 
-import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de ações do módulo
+import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de aÃ§Ãµes do mÃ³dulo
 import useGroupsBaseConfig from "./groups/hooks/useGroupsBaseConfig"; // Hook da base salarial / percentual
-import { useGroupsCalculations } from "./groups/hooks/useGroupsCalculations"; // Hook de cálculos do dashboard
-import { useGroupsCreateGroup } from "./groups/hooks/useGroupsCreateGroup"; // Hook dedicado à criação de grupo
-import useGroupsCreateTransition from "./groups/hooks/useGroupsCreateTransition"; // Hook da transição visual ao criar grupo
+import { useGroupsCalculations } from "./groups/hooks/useGroupsCalculations"; // Hook de cÃ¡lculos do dashboard
+import { useGroupsCreateGroup } from "./groups/hooks/useGroupsCreateGroup"; // Hook dedicado Ã  criaÃ§Ã£o de grupo
+import useGroupsCreateTransition from "./groups/hooks/useGroupsCreateTransition"; // Hook da transiÃ§Ã£o visual ao criar grupo
 import { useGroupsDashboard } from "./groups/hooks/useGroupsDashboard"; // Hook central do dashboard
-import useGroupsEditExpense from "./groups/hooks/useGroupsEditExpense"; // Hook da edição de despesa
-import useGroupsExpenses from "./groups/hooks/useGroupsExpenses"; // Hook das despesas do módulo
-import useGroupsForms from "./groups/hooks/useGroupsForms"; // Hook de formulários do módulo
+import useGroupsEditExpense from "./groups/hooks/useGroupsEditExpense"; // Hook da ediÃ§Ã£o de despesa
+import useGroupsExpenses from "./groups/hooks/useGroupsExpenses"; // Hook das despesas do mÃ³dulo
+import useGroupsForms from "./groups/hooks/useGroupsForms"; // Hook de formulÃ¡rios do mÃ³dulo
 import useGroupsHeaderActions from "./groups/hooks/useGroupsHeaderActions";
-import useGroupsModals from "./groups/hooks/useGroupsModals"; // Hook de modais do módulo
+import useGroupsModals from "./groups/hooks/useGroupsModals"; // Hook de modais do mÃ³dulo
 
 import type {
   GroupDto,
   GroupsApiState,
-} from "./groups/types/groups.types"; // Tipos do módulo
+} from "./groups/types/groups.types"; // Tipos do mÃ³dulo
 
-import { safeName } from "./groups/utils/groups.helpers"; // Helpers do módulo
+import { safeName } from "./groups/utils/groups.helpers"; // Helpers do mÃ³dulo
 
 import {
   dangerButtonSmall,
@@ -46,7 +46,7 @@ import {
   subtleText,
   tabButton,
   timelineCard,
-} from "./groups/styles/groups.styles"; // Estilos centralizados do módulo
+} from "./groups/styles/groups.styles"; // Estilos centralizados do mÃ³dulo
 
 ChartJS.register(ArcElement, Tooltip, Legend); // Registra componentes do Chart.js
 
@@ -137,12 +137,17 @@ export default function Groups() {
   const [addMemberSuccess, setAddMemberSuccess] = useState<string | null>(null);
   const [removeMemberError, setRemoveMemberError] = useState<string | null>(null);
   const [animate, setAnimate] = useState(false);
-  const [animationKey, setAnimationKey] = useState(0); // força nova execução visual
-  const [highlightGroupId, setHighlightGroupId] = useState<string | null>(null); // Destaca visualmente o grupo recém-criado
-  const [pendingCreatedGroupName, setPendingCreatedGroupName] = useState<string | null>(null); // Guarda o nome do grupo recém-criado até a lista atualizar
+  const [pageReady, setPageReady] = useState(false);
+  const [animationKey, setAnimationKey] = useState(0); // forÃ§a nova execuÃ§Ã£o visual
+  const [highlightGroupId, setHighlightGroupId] = useState<string | null>(null); // Destaca visualmente o grupo recÃ©m-criado
+  const [pendingCreatedGroupName, setPendingCreatedGroupName] = useState<string | null>(null); // Guarda o nome do grupo recÃ©m-criado atÃ© a lista atualizar
   const [isGroupsLaneAnimating, setIsGroupsLaneAnimating] = useState(false); // Faz a faixa dos grupos reagir quando um novo grupo entra
   const [isSwitchingGroup, setIsSwitchingGroup] = useState(false); // Faz a troca entre grupos ficar suave
-  const [isDeleteGroupConfirmOpen, setIsDeleteGroupConfirmOpen] = useState(false); // Controla o modal customizado de exclusão
+  const [isDeleteGroupConfirmOpen, setIsDeleteGroupConfirmOpen] = useState(false); // Controla o modal customizado de exclusÃ£o
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768;
+  });
   // ==============================
   // HOOK: despesas
   // ==============================
@@ -215,7 +220,7 @@ export default function Groups() {
   });
 
   // ==============================
-  // HOOK: edição de despesa
+  // HOOK: ediÃ§Ã£o de despesa
   // ==============================
 
   const {
@@ -316,6 +321,35 @@ export default function Groups() {
   // ==============================
 
   useEffect(() => {
+    setPageReady(false);
+
+    const timeoutId = window.setTimeout(() => {
+      setPageReady(true);
+    }, 60);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    function handleMediaChange(event: MediaQueryListEvent) {
+      setIsMobileViewport(event.matches);
+    }
+
+    setIsMobileViewport(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, []);
+
+  useEffect(() => {
     closeCreateExpenseModal();
     closeBaseConfigModal();
     handleCloseEditExpenseModal();
@@ -333,7 +367,7 @@ export default function Groups() {
   }, [selectedGroupId]);
 
   // ==============================
-  // EFFECT: animação ao entrar/trocar grupo
+  // EFFECT: animaÃ§Ã£o ao entrar/trocar grupo
   // ==============================
 
   useEffect(() => {
@@ -350,7 +384,7 @@ export default function Groups() {
   }, [selectedGroupId]);
 
   // ==============================
-  // EFFECT: encontra e destaca o grupo recém-criado
+  // EFFECT: encontra e destaca o grupo recÃ©m-criado
   // ==============================
 
   useEffect(() => {
@@ -433,6 +467,40 @@ export default function Groups() {
     onClearBaseFeedback: clearBaseFeedback,
   });
 
+  const responsiveShellOuterStyle: CSSProperties = {
+    ...shellOuterStyle,
+    padding: isMobileViewport ? "0 12px" : shellOuterStyle.padding,
+  };
+
+  const responsiveShellStyle: CSSProperties = {
+    ...shellStyle,
+    gap: isMobileViewport ? 14 : shellStyle.gap,
+    padding: isMobileViewport ? "12px 0 22px" : shellStyle.padding,
+  };
+
+  const responsivePageHeroStyle: CSSProperties = {
+    ...pageHeroStyle,
+    padding: isMobileViewport ? 16 : pageHeroStyle.padding,
+    borderRadius: isMobileViewport ? 18 : pageHeroStyle.borderRadius,
+  };
+
+  const responsiveSectionCard: CSSProperties = {
+    ...sectionCard,
+    padding: isMobileViewport ? 14 : sectionCard.padding,
+    borderRadius: isMobileViewport ? 18 : sectionCard.borderRadius,
+  };
+
+  const responsivePanelTitle: CSSProperties = {
+    ...panelTitle,
+    fontSize: isMobileViewport ? 16 : panelTitle.fontSize,
+  };
+
+  const responsivePillStyle: CSSProperties = {
+    ...pillStyle,
+    fontSize: isMobileViewport ? 11 : pillStyle.fontSize,
+    padding: isMobileViewport ? "5px 8px" : pillStyle.padding,
+  };
+
 
   function handleSelectGroup(group: GroupDto) {
     if (group.id === selectedGroupId) return;
@@ -467,16 +535,19 @@ export default function Groups() {
   }
 
   function getClockEntryStyle(order: number): CSSProperties {
-    const delay = order * 90;
+    const delay = 140 + order * 130;
 
     return {
       opacity: animate ? 1 : 0,
       transform: animate
         ? "perspective(1200px) rotateX(0deg) rotateZ(0deg) translateY(0px) scale(1)"
-        : "perspective(1200px) rotateX(14deg) rotateZ(-5deg) translateY(28px) scale(0.96)",
+        : "perspective(1200px) rotateX(18deg) rotateZ(-4deg) translateY(42px) scale(0.94)",
       transformOrigin: "top left",
-      filter: animate ? "blur(0px)" : "blur(8px)",
-      transition: `opacity 0.55s ease ${delay}ms, transform 0.78s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, filter 0.6s ease ${delay}ms`,
+      filter: animate ? "blur(0px)" : "blur(12px)",
+      transition: `opacity 0.72s ease ${delay}ms, transform 0.92s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, filter 0.72s ease ${delay}ms`,
+      animation: animate
+        ? `conciliaai-groups-section-breathe 5.4s ease-in-out ${delay + 1100}ms infinite`
+        : "none",
       willChange: "opacity, transform, filter",
     };
   }
@@ -496,18 +567,28 @@ export default function Groups() {
   }
 
   return (
-    <div style={shellOuterStyle}>
+    <div
+      style={{
+        ...responsiveShellOuterStyle,
+        opacity: pageReady ? 1 : 0,
+        transform: pageReady ? "translateY(0px) scale(1)" : "translateY(22px) scale(0.985)",
+        filter: pageReady ? "blur(0px)" : "blur(10px)",
+        transition:
+          "opacity 0.58s ease, transform 0.72s cubic-bezier(0.16, 1, 0.3, 1), filter 0.58s ease",
+        willChange: "opacity, transform, filter",
+      }}
+    >
       <div
         key={animationKey}
         style={{
-          ...shellStyle,
+          ...responsiveShellStyle,
         }}
       >
         <div style={getClockEntryStyle(0)}>
           <GroupsHeaderActions
             actions={headerQuickActions}
-            pageHeroStyle={pageHeroStyle}
-            pillStyle={pillStyle}
+            pageHeroStyle={responsivePageHeroStyle}
+            pillStyle={responsivePillStyle}
             subtleText={subtleText}
           />
         </div>
@@ -519,8 +600,8 @@ export default function Groups() {
               highlightGroupId={highlightGroupId}
               isGroupsLaneAnimating={isGroupsLaneAnimating}
               onSelectGroup={handleSelectGroup}
-              sectionCard={sectionCard}
-              panelTitle={panelTitle}
+              sectionCard={responsiveSectionCard}
+              panelTitle={responsivePanelTitle}
               subtleText={subtleText}
               memberAvatarStyle={memberAvatarStyle}
             />
@@ -530,12 +611,37 @@ export default function Groups() {
           <div style={getClockEntryStyle(2)}>
             <div
               style={{
-                ...sectionCard,
-                border: "1px solid rgba(255,120,120,0.20)",
-                background: "rgba(255,0,0,0.05)",
+                ...responsiveSectionCard,
+                display: "flex",
+                alignItems: isMobileViewport ? "flex-start" : "center",
+                gap: 12,
+                border: "1px solid rgba(248,113,113,0.20)",
+                background:
+                  "linear-gradient(135deg, rgba(127,29,29,0.22), rgba(15,23,42,0.62))",
+                color: "#fecaca",
               }}
             >
-              <strong>Falha:</strong> {state.error}
+              <div
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 14,
+                  display: "grid",
+                  placeItems: "center",
+                  background: "rgba(248,113,113,0.12)",
+                  border: "1px solid rgba(248,113,113,0.20)",
+                  fontWeight: 900,
+                  flexShrink: 0,
+                }}
+              >
+                !
+              </div>
+              <div style={{ display: "grid", gap: 3, minWidth: 0 }}>
+                <strong>Alguns dados do grupo ainda nao carregaram.</strong>
+                <span style={{ ...subtleText, fontSize: 13, color: "#fecaca", opacity: 0.82 }}>
+                  A tela continua funcionando com os dados disponiveis. Tente atualizar em alguns segundos.
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -562,10 +668,10 @@ export default function Groups() {
           historyItemsCount={historyItems.length}
           onDeleteGroup={handleRequestDeleteGroup}
           getClockEntryStyle={getClockEntryStyle}
-          sectionCard={sectionCard}
-          panelTitle={panelTitle}
+          sectionCard={responsiveSectionCard}
+          panelTitle={responsivePanelTitle}
           subtleText={subtleText}
-          pillStyle={pillStyle}
+          pillStyle={responsivePillStyle}
           dangerButtonSmall={dangerButtonSmall}
           metricCard={metricCard}
         />
@@ -635,8 +741,8 @@ export default function Groups() {
           modalCard={modalCard}
           modalHeader={modalHeader}
           modalBody={modalBody}
-          sectionCard={sectionCard}
-          panelTitle={panelTitle}
+          sectionCard={responsiveSectionCard}
+          panelTitle={responsivePanelTitle}
           subtleText={subtleText}
           softButton={softButton}
           ghostButton={ghostButton}
@@ -764,7 +870,7 @@ export default function Groups() {
 
         <style>
           {`
-          @keyframes nuvcoin-groups-spin {
+          @keyframes conciliaai-groups-spin {
             from {
               transform: rotate(0deg);
             }
@@ -773,7 +879,7 @@ export default function Groups() {
             }
           }
 
-          @keyframes nuvcoin-groups-pulse {
+          @keyframes conciliaai-groups-pulse {
             0% {
               transform: scale(0.92);
               opacity: 0.45;
@@ -788,7 +894,7 @@ export default function Groups() {
             }
           }
 
-          @keyframes nuvcoin-groups-bar {
+          @keyframes conciliaai-groups-bar {
             0% {
               transform: translateX(-120%);
             }
@@ -797,7 +903,7 @@ export default function Groups() {
             }
           }
 
-          @keyframes nuvcoin-groups-lane-reflow {
+          @keyframes conciliaai-groups-lane-reflow {
             0% {
               transform: translateX(-8px) scale(0.995);
               filter: saturate(0.96);
@@ -812,7 +918,7 @@ export default function Groups() {
             }
           }
 
-          @keyframes nuvcoin-group-enter {
+          @keyframes conciliaai-group-enter {
             0% {
               opacity: 0;
               transform: translateY(14px) scale(0.96);
@@ -827,7 +933,7 @@ export default function Groups() {
             }
           }
 
-          @keyframes nuvcoin-group-shift {
+          @keyframes conciliaai-group-shift {
             0% {
               transform: translateX(-4px) scale(0.992);
             }
@@ -839,7 +945,7 @@ export default function Groups() {
             }
           }
 
-          @keyframes nuvcoin-group-pop {
+          @keyframes conciliaai-group-pop {
             0% {
               transform: scale(0.92);
               opacity: 0.4;
@@ -854,7 +960,7 @@ export default function Groups() {
             }
           }
 
-          @keyframes nuvcoin-group-glow {
+          @keyframes conciliaai-group-glow {
             0% {
               box-shadow: 0 0 0 2px rgba(91,140,255,0.25), 0 0 10px rgba(91,140,255,0.2);
             }
@@ -863,6 +969,60 @@ export default function Groups() {
             }
             100% {
               box-shadow: 0 0 0 2px rgba(91,140,255,0.25), 0 0 10px rgba(91,140,255,0.2);
+            }
+          }
+
+          @keyframes conciliaai-groups-hero-aura {
+            0% {
+              background-position: 0% 50%;
+              box-shadow: 0 24px 58px rgba(2,6,23,0.32), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 rgba(59,130,246,0);
+            }
+            50% {
+              background-position: 100% 50%;
+              box-shadow: 0 28px 70px rgba(2,6,23,0.38), inset 0 1px 0 rgba(255,255,255,0.08), 0 0 42px rgba(59,130,246,0.16);
+            }
+            100% {
+              background-position: 0% 50%;
+              box-shadow: 0 24px 58px rgba(2,6,23,0.32), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 rgba(59,130,246,0);
+            }
+          }
+
+          @keyframes conciliaai-groups-section-breathe {
+            0%,
+            100% {
+              filter: saturate(1);
+            }
+            50% {
+              filter: saturate(1.08);
+            }
+          }
+
+          @keyframes conciliaai-groups-action-idle {
+            0%,
+            100% {
+              transform: translateY(0) scale(1);
+            }
+            50% {
+              transform: translateY(-4px) scale(1.025);
+            }
+          }
+
+          @keyframes conciliaai-groups-create-pulse {
+            0%,
+            100% {
+              box-shadow: 0 12px 28px rgba(46,78,166,0.22), 0 8px 18px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.14);
+            }
+            50% {
+              box-shadow: 0 18px 44px rgba(59,130,246,0.36), 0 10px 24px rgba(15,23,42,0.22), inset 0 1px 0 rgba(255,255,255,0.18);
+            }
+          }
+
+          @keyframes conciliaai-groups-card-shine {
+            0% {
+              background-position: -120% 0;
+            }
+            100% {
+              background-position: 220% 0;
             }
           }
         `}
@@ -878,16 +1038,17 @@ Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
 =====================================================
 
-Mudança feita nesta etapa:
+MudanÃ§a feita nesta etapa:
 
-✔ Subi os atalhos principais para o topo em formato quadrado
-✔ Adicionei hover com o nome de cada ação
-✔ Adicionei clique abrindo uma janela com as informações
-✔ Removi da área fixa de baixo os blocos de Pessoas, Base, Lançar despesa, Resumo e Histórico
-✔ No lugar deixei a área inferior mais limpa e focada no dashboard
-✔ Mantive os modais já existentes do projeto sem quebrar o fluxo
-✔ Mantive criação de grupo, atualização e seleção funcionando
+âœ” Subi os atalhos principais para o topo em formato quadrado
+âœ” Adicionei hover com o nome de cada aÃ§Ã£o
+âœ” Adicionei clique abrindo uma janela com as informaÃ§Ãµes
+âœ” Removi da Ã¡rea fixa de baixo os blocos de Pessoas, Base, LanÃ§ar despesa, Resumo e HistÃ³rico
+âœ” No lugar deixei a Ã¡rea inferior mais limpa e focada no dashboard
+âœ” Mantive os modais jÃ¡ existentes do projeto sem quebrar o fluxo
+âœ” Mantive criaÃ§Ã£o de grupo, atualizaÃ§Ã£o e seleÃ§Ã£o funcionando
 */
+
 
 
 

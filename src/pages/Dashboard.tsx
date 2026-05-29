@@ -1,185 +1,354 @@
-﻿import "./dashboard.css"; // CSS do dashboard
+import "./dashboard.css";
 
-import { useEffect, useMemo, useState } from "react"; // Hooks do React
-
-import {
-  ResponsiveContainer, // Container responsivo
-  LineChart, // Gráfico de linha
-  Line, // Linhas do gráfico
-  XAxis, // Eixo X
-  YAxis, // Eixo Y
-  Tooltip, // Tooltip
-  CartesianGrid, // Grade
-  PieChart, // Donut
-  Pie, // Donut
-  Cell, // Fatias
-} from "recharts"; // Biblioteca de gráficos
-
-import type { FinanceItem } from "../types/finance"; // Tipo dos itens financeiros
+import { useEffect, useMemo, useState } from "react";
 
 import {
-  financeList, // ✅ Lê itens via service
-  financeSubscribe, // ✅ Escuta mudanças via service
-} from "../lib/financeService"; // Camada única (hoje localStorage, amanhã API)
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+
+import type { FinanceItem, PaymentType } from "../types/finance";
 
 import {
-  calculateSummary, // Resumo (cards)
-  groupExpensesByCategory, // Agrupa despesas por categoria (donut)
-  calculateMonthComparison, // Comparação vs mês anterior
-} from "../lib/financeCalculations"; // Cálculos do dashboard
+  financeList,
+  financeSubscribe,
+} from "../lib/financeService";
 
-type PeriodKey = "MONTH" | "LAST_3" | "YEAR" | "ALL"; // Tipos de filtro
+import {
+  calculateMonthComparison,
+  calculateSummary,
+} from "../lib/financeCalculations";
 
-// Formata centavos para BRL (R$ 1.234,56)
+type PeriodKey = "MONTH" | "LAST_3" | "YEAR" | "ALL";
+type DashboardViewMode = "CONFRONTO" | "GASTOS" | "RECEITAS" | "PAGAMENTO";
+
+type DonutItem = {
+  name: string;
+  value: number;
+  valueCents: number;
+  percent: number;
+  detailItems: FinanceItem[];
+};
+
 function formatBRLFromCents(valueCents: number): string {
-  const value = valueCents / 100; // Converte centavos -> reais
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); // Formata BRL
+  const value = valueCents / 100;
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-// Converte Date para "YYYY-MM-DD"
+function formatDateBR(dateISO: string): string {
+  return new Date(`${dateISO}T00:00:00`).toLocaleDateString("pt-BR");
+}
+
 function toISODate(d: Date): string {
-  const yyyy = d.getFullYear(); // Ano
-  const mm = String(d.getMonth() + 1).padStart(2, "0"); // Mês 01-12
-  const dd = String(d.getDate()).padStart(2, "0"); // Dia 01-31
-  return `${yyyy}-${mm}-${dd}`; // ISO
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
-// Retorna "YYYY-MM" (para agrupar no gráfico)
 function getYearMonth(dateISO: string): string {
-  return dateISO.slice(0, 7); // Ex: "2026-02-20" -> "2026-02"
+  return dateISO.slice(0, 7);
 }
 
-// Converte "YYYY-MM" para label tipo "Fev/26"
 function ymToLabel(ym: string): string {
-  const [y, m] = ym.split("-"); // Separa ano e mês
-  const month = Number(m); // Mês numérico
-
-  const monthNames = [
-    "Jan",
-    "Fev",
-    "Mar",
-    "Abr",
-    "Mai",
-    "Jun",
-    "Jul",
-    "Ago",
-    "Set",
-    "Out",
-    "Nov",
-    "Dez",
-  ]; // Nomes
-
-  const yy = y.slice(2); // Dois últimos dígitos do ano
-
-  return `${monthNames[month - 1]}/${yy}`; // Label
+  const [y, m] = ym.split("-");
+  const month = Number(m);
+  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  return `${monthNames[month - 1]}/${y.slice(2)}`;
 }
 
-// Soma meses em um (ano, mês) e devolve "YYYY-MM"
 function addMonthsYM(ym: string, add: number): string {
-  const [y, m] = ym.split("-"); // Ano e mês
-  const year = Number(y); // Ano numérico
-  const month0 = Number(m) - 1; // Mês 0-based
-  const d = new Date(year, month0 + add, 1); // Vai para o mês somado
-  const yyyy = d.getFullYear(); // Ano final
-  const mm = String(d.getMonth() + 1).padStart(2, "0"); // Mês final
-  return `${yyyy}-${mm}`; // "YYYY-MM"
+  const [y, m] = ym.split("-");
+  const d = new Date(Number(y), Number(m) - 1 + add, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-// Lista de meses (YM) do início até o fim (inclui os dois)
 function listMonthsBetween(startYM: string, endYM: string): string[] {
-  const months: string[] = []; // Array final
-  let cur = startYM; // Começa no início
+  const months: string[] = [];
+  let cur = startYM;
 
   while (cur <= endYM) {
-    months.push(cur); // Adiciona
-    cur = addMonthsYM(cur, 1); // Próximo mês
+    months.push(cur);
+    cur = addMonthsYM(cur, 1);
   }
 
-  return months; // Retorna lista
+  return months;
 }
 
-// Calcula o "startISO" baseado no filtro escolhido
 function getStartISO(period: PeriodKey): string | null {
-  const now = new Date(); // Data atual
+  const now = new Date();
 
-  if (period === "ALL") return null; // Sem filtro
+  if (period === "ALL") return null;
+  if (period === "MONTH") return toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
+  if (period === "LAST_3") return toISODate(new Date(now.getFullYear(), now.getMonth() - 2, 1));
 
-  if (period === "MONTH") {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1); // Primeiro dia do mês atual
-    return toISODate(start); // ISO
-  }
-
-  if (period === "LAST_3") {
-    const start = new Date(now.getFullYear(), now.getMonth() - 2, 1); // Primeiro dia do mês de 2 meses atrás
-    return toISODate(start); // ISO
-  }
-
-  // YEAR
-  const start = new Date(now.getFullYear(), 0, 1); // 01/01 do ano atual
-  return toISODate(start); // ISO
+  return toISODate(new Date(now.getFullYear(), 0, 1));
 }
 
-// Label amigável do período
 function getPeriodLabel(period: PeriodKey): string {
-  if (period === "MONTH") return "Mês atual"; // Label
-  if (period === "LAST_3") return "Últimos 3 meses"; // Label
-  if (period === "YEAR") return "Ano"; // Label
-  return "Tudo"; // Label
+  if (period === "MONTH") return "Mês atual";
+  if (period === "LAST_3") return "Últimos 3 meses";
+  if (period === "YEAR") return "Ano";
+  return "Tudo";
+}
+
+function getPaymentLabel(paymentType: PaymentType): string {
+  if (paymentType === "pix") return "Pix";
+  if (paymentType === "debit") return "Débito";
+  if (paymentType === "cash") return "Dinheiro";
+  return "Crédito";
+}
+
+function toDonutData(entries: Array<{ name: string; valueCents: number; detailItems?: FinanceItem[] }>): DonutItem[] {
+  const total = entries.reduce((sum, item) => sum + item.valueCents, 0);
+
+  return entries
+    .filter((item) => item.valueCents > 0)
+    .sort((a, b) => b.valueCents - a.valueCents)
+    .map((item) => ({
+      name: item.name,
+      value: Math.max(1, Math.round(item.valueCents / 100)),
+      valueCents: item.valueCents,
+      percent: total > 0 ? (item.valueCents / total) * 100 : 0,
+      detailItems: item.detailItems ?? [],
+    }));
+}
+
+function groupByCategory(items: FinanceItem[], type: "RECEITA" | "DESPESA"): DonutItem[] {
+  const map = new Map<string, { valueCents: number; detailItems: FinanceItem[] }>();
+
+  for (const item of items) {
+    if (item.type !== type) continue;
+    const current = map.get(item.category) ?? { valueCents: 0, detailItems: [] };
+    current.valueCents += item.amountCents;
+    current.detailItems.push(item);
+    map.set(item.category, current);
+  }
+
+  return toDonutData(
+    Array.from(map.entries()).map(([name, value]) => ({
+      name,
+      valueCents: value.valueCents,
+      detailItems: value.detailItems,
+    }))
+  );
+}
+
+function groupByPayment(items: FinanceItem[]): DonutItem[] {
+  const map = new Map<string, { valueCents: number; detailItems: FinanceItem[] }>();
+
+  for (const item of items) {
+    if (item.type !== "DESPESA") continue;
+    const label = getPaymentLabel(item.paymentType);
+    const current = map.get(label) ?? { valueCents: 0, detailItems: [] };
+    current.valueCents += item.amountCents;
+    current.detailItems.push(item);
+    map.set(label, current);
+  }
+
+  return toDonutData(
+    Array.from(map.entries()).map(([name, value]) => ({
+      name,
+      valueCents: value.valueCents,
+      detailItems: value.detailItems,
+    }))
+  );
+}
+
+function DonutDashboardCard({
+  title,
+  subtitle,
+  data,
+  colors,
+  totalCents,
+  emptyText,
+}: {
+  title: string;
+  subtitle: string;
+  data: DonutItem[];
+  colors: string[];
+  totalCents: number;
+  emptyText: string;
+}) {
+  const [selectedName, setSelectedName] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedName(null);
+  }, [title, subtitle, data]);
+
+  const selectedItem = selectedName ? data.find((item) => item.name === selectedName) ?? null : null;
+  const selectedDetails = selectedItem?.detailItems ?? [];
+
+  return (
+    <div className="chart-card dashboard-panel dashboard-donut-card">
+      <div className="dashboard-card-head">
+        <div>
+          <div className="chart-title">{title}</div>
+          <div className="dashboard-card-subtitle">{subtitle}</div>
+        </div>
+        <span className="dashboard-total-pill">{formatBRLFromCents(totalCents)}</span>
+      </div>
+
+      {data.length === 0 ? (
+        <div className="dashboard-empty-panel">{emptyText}</div>
+      ) : (
+        <div className="dashboard-donut-layout">
+          <div className="dashboard-donut-wrap">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius="58%"
+                  outerRadius="86%"
+                  paddingAngle={2}
+                  stroke="rgba(241,245,249,0.8)"
+                  strokeWidth={2}
+                >
+                  {data.map((_, index) => (
+                    <Cell key={index} fill={colors[index % colors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(_, name, props) => {
+                    const item = props.payload as DonutItem;
+                    return [formatBRLFromCents(item.valueCents), name];
+                  }}
+                  contentStyle={{
+                    backgroundColor: "#0b1220",
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    borderRadius: 12,
+                    color: "#F1F5F9",
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+
+            <div className="dashboard-donut-center">
+              <span>Total</span>
+              <strong>{formatBRLFromCents(totalCents)}</strong>
+              <small>{subtitle}</small>
+            </div>
+          </div>
+
+          <div className="dashboard-donut-legend">
+            {data.map((item, index) => (
+              <button
+                key={item.name}
+                type="button"
+                className={`dashboard-donut-legend-row${selectedName === item.name ? " is-selected" : ""}`}
+                onClick={() => setSelectedName((current) => (current === item.name ? null : item.name))}
+              >
+                <span
+                  className="dashboard-dot"
+                  style={{ background: colors[index % colors.length] }}
+                />
+                <span className="dashboard-legend-name">{item.name}</span>
+                <strong>{formatBRLFromCents(item.valueCents)}</strong>
+                <span className="dashboard-legend-percent">{item.percent.toFixed(1)}%</span>
+              </button>
+            ))}
+          </div>
+
+          {selectedItem ? (
+            <div className="dashboard-drilldown">
+              <div className="dashboard-drilldown-head">
+                <div>
+                  <span>Detalhes</span>
+                  <strong>{selectedItem.name}</strong>
+                </div>
+                <button type="button" onClick={() => setSelectedName(null)}>
+                  Fechar
+                </button>
+              </div>
+
+              {selectedDetails.length === 0 ? (
+                <div className="dashboard-drilldown-empty">
+                  Essa fatia é um resumo calculado e não possui lançamentos individuais.
+                </div>
+              ) : (
+                <div className="dashboard-drilldown-list">
+                  {selectedDetails
+                    .slice()
+                    .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+                    .map((detail) => (
+                      <div key={detail.id} className="dashboard-drilldown-row">
+                        <div>
+                          <strong>{detail.title}</strong>
+                          <span>
+                            {detail.category} • {formatDateBR(detail.dateISO)}
+                          </span>
+                        </div>
+                        <strong className={detail.type === "RECEITA" ? "green" : "red"}>
+                          {detail.type === "RECEITA" ? "+ " : "- "}
+                          {formatBRLFromCents(detail.amountCents)}
+                        </strong>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Dashboard() {
-  const [items, setItems] = useState<FinanceItem[]>([]); // Estado com itens
-  const [period, setPeriod] = useState<PeriodKey>("LAST_3"); // Filtro padrão
-  const [animate, setAnimate] = useState(false); // Controla animação suave de entrada/atualização
+  const [items, setItems] = useState<FinanceItem[]>([]);
+  const [period, setPeriod] = useState<PeriodKey>("LAST_3");
+  const [viewMode, setViewMode] = useState<DashboardViewMode>("CONFRONTO");
+  const [animate, setAnimate] = useState(false);
 
-  // Carrega itens na entrada + escuta mudanças via service (entre abas + mesma aba)
   useEffect(() => {
     const load = () => {
-      setItems(financeList()); // ✅ Lê via service
+      setItems(financeList());
     };
 
-    load(); // Carrega ao abrir
-
-    const unsubscribe = financeSubscribe(load); // ✅ Assina mudanças
+    load();
+    const unsubscribe = financeSubscribe(load);
 
     return () => {
-      unsubscribe(); // ✅ Remove listeners
+      unsubscribe();
     };
   }, []);
 
-  // Dispara animação sempre que período ou dados mudarem
   useEffect(() => {
-    setAnimate(false); // Reseta antes de animar de novo
+    setAnimate(false);
 
     const timeoutId = window.setTimeout(() => {
-      setAnimate(true); // Ativa a animação depois de um pequeno intervalo
+      setAnimate(true);
     }, 40);
 
     return () => {
-      window.clearTimeout(timeoutId); // Limpa timeout ao desmontar ou mudar dependência
+      window.clearTimeout(timeoutId);
     };
-  }, [period, items]);
+  }, [period, viewMode, items]);
 
-  // Filtra itens conforme o período
   const filteredItems = useMemo(() => {
-    const startISO = getStartISO(period); // Pega startISO ou null
-    if (!startISO) return items; // ALL: retorna tudo
-    return items.filter((x) => x.dateISO >= startISO); // Filtra por data (string ISO)
+    const startISO = getStartISO(period);
+    if (!startISO) return items;
+    return items.filter((x) => x.dateISO >= startISO);
   }, [items, period]);
 
-  // Cards respeitam período (com crédito)
   const summary = useMemo(() => calculateSummary(filteredItems), [filteredItems]);
+  const saldoClass = summary.saldoCents >= 0 ? "green" : "red";
 
-  // Saldo com cor (verde se >= 0, vermelho se < 0)
-  const saldoClass = summary.saldoCents >= 0 ? "green" : "red"; // Classe pra cor do saldo
-
-  // Comparação mês atual vs mês anterior (baseado em "hoje")
   const monthCmp = useMemo(() => {
-    const referenceISO = toISODate(new Date()); // Hoje (mês atual)
-    return calculateMonthComparison(items, referenceISO); // Compara mês atual vs anterior
+    const referenceISO = toISODate(new Date());
+    return calculateMonthComparison(items, referenceISO);
   }, [items]);
 
-  // Texto curto “vs mês anterior”
   const cmpLine = useMemo(() => {
     const arrow = (dir: "UP" | "DOWN" | "FLAT") => {
       if (dir === "UP") return "↑";
@@ -199,317 +368,301 @@ export default function Dashboard() {
     };
   }, [monthCmp]);
 
-  // Gráfico respeita período e inclui meses vazios
   const chartData = useMemo(() => {
-    const map = new Map<string, { receitasCents: number; despesasCents: number }>(); // Buckets por mês
+    const map = new Map<string, { receitasCents: number; despesasCents: number }>();
 
     for (const item of filteredItems) {
-      const ym = getYearMonth(item.dateISO); // "YYYY-MM"
+      const ym = getYearMonth(item.dateISO);
 
       if (!map.has(ym)) {
-        map.set(ym, { receitasCents: 0, despesasCents: 0 }); // Bucket do mês
+        map.set(ym, { receitasCents: 0, despesasCents: 0 });
       }
 
-      const bucket = map.get(ym)!; // Bucket
+      const bucket = map.get(ym)!;
 
-      if (item.type === "RECEITA") bucket.receitasCents += item.amountCents; // Soma receita
-      if (item.type === "DESPESA") bucket.despesasCents += item.amountCents; // Soma despesa
+      if (item.type === "RECEITA") bucket.receitasCents += item.amountCents;
+      if (item.type === "DESPESA") bucket.despesasCents += item.amountCents;
     }
 
-    const now = new Date(); // Hoje
-    const endYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`; // "YYYY-MM" do mês atual
+    const now = new Date();
+    const endYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
-    let startYM = endYM; // Default
+    let startYM = endYM;
 
-    if (period === "MONTH") {
-      startYM = endYM; // Só mês atual
-    } else if (period === "LAST_3") {
-      startYM = addMonthsYM(endYM, -2); // 3 meses incluindo atual
-    } else if (period === "YEAR") {
-      startYM = `${now.getFullYear()}-01`; // Janeiro do ano
-    } else {
-      const monthsWithData = Array.from(map.keys()).sort(); // Meses existentes
-      startYM = monthsWithData.length > 0 ? monthsWithData[0] : endYM; // Primeiro mês com dado
+    if (period === "LAST_3") startYM = addMonthsYM(endYM, -2);
+    if (period === "YEAR") startYM = `${now.getFullYear()}-01`;
+    if (period === "ALL") {
+      const monthsWithData = Array.from(map.keys()).sort();
+      startYM = monthsWithData.length > 0 ? monthsWithData[0] : endYM;
     }
 
-    const monthsToShow = listMonthsBetween(startYM, endYM); // Meses no período
+    return listMonthsBetween(startYM, endYM).map((ym) => {
+      const bucket = map.get(ym) ?? { receitasCents: 0, despesasCents: 0 };
 
-    return monthsToShow.map((ym) => {
-      const bucket = map.get(ym) ?? { receitasCents: 0, despesasCents: 0 }; // Se não existir, zera
       return {
-        mes: ymToLabel(ym), // Label
-        receitas: Math.round(bucket.receitasCents / 100), // Reais número
-        despesas: Math.round(bucket.despesasCents / 100), // Reais número
+        mes: ymToLabel(ym),
+        receitas: Math.round(bucket.receitasCents / 100),
+        despesas: Math.round(bucket.despesasCents / 100),
       };
     });
   }, [filteredItems, period]);
 
-  // Donut: despesas por categoria (respeita período)
-  const donutData = useMemo(() => {
-    const grouped = groupExpensesByCategory(filteredItems); // Agrupa em centavos
-
-    return grouped.map((x) => ({
-      name: x.category, // Label
-      value: Math.round(x.totalCents / 100), // Reais (número)
-      valueCents: x.totalCents, // Mantém centavos pra tooltip e lista
-    }));
+  const expensesByCategory = useMemo(() => {
+    return groupByCategory(filteredItems, "DESPESA");
   }, [filteredItems]);
 
-  // Paleta simples (9 cores)
-  const donutColors = [
-    "#60A5FA",
-    "#22C55E",
-    "#F97316",
-    "#A78BFA",
-    "#EF4444",
-    "#14B8A6",
-    "#EAB308",
-    "#F472B6",
-    "#94A3B8",
-  ]; // Cores do donut
+  const receitasByCategory = useMemo(() => groupByCategory(filteredItems, "RECEITA"), [filteredItems]);
+  const paymentData = useMemo(() => groupByPayment(filteredItems), [filteredItems]);
 
-  // Últimas transações (ordena por data desc e pega 8)
+  const confrontationData = useMemo(() => {
+    return toDonutData([
+      {
+        name: "Receitas",
+        valueCents: summary.totalReceitasCents,
+        detailItems: filteredItems.filter((item) => item.type === "RECEITA"),
+      },
+      {
+        name: "Despesas",
+        valueCents: summary.totalDespesasCents,
+        detailItems: filteredItems.filter((item) => item.type === "DESPESA"),
+      },
+      {
+        name: "Crédito",
+        valueCents: summary.totalCreditoCents,
+        detailItems: filteredItems.filter((item) => item.type === "DESPESA" && item.paymentType === "credit"),
+      },
+    ]);
+  }, [filteredItems, summary]);
+
+  const selectedAnalytics = useMemo(() => {
+    if (viewMode === "GASTOS") {
+      return {
+        primary: {
+          title: "Gastos por categoria",
+          subtitle: getPeriodLabel(period),
+          data: expensesByCategory,
+          totalCents: summary.totalDespesasCents,
+          emptyText: "Ainda não há despesas nesse período.",
+        },
+        secondary: {
+          title: "Formas de pagamento",
+          subtitle: "Somente despesas",
+          data: paymentData,
+          totalCents: summary.totalDespesasCents,
+          emptyText: "Sem pagamentos para analisar.",
+        },
+      };
+    }
+
+    if (viewMode === "RECEITAS") {
+      return {
+        primary: {
+          title: "Receitas por categoria",
+          subtitle: getPeriodLabel(period),
+          data: receitasByCategory,
+          totalCents: summary.totalReceitasCents,
+          emptyText: "Ainda não há receitas nesse período.",
+        },
+        secondary: {
+          title: "Confronto financeiro",
+          subtitle: "Receitas, despesas e crédito",
+          data: confrontationData,
+          totalCents: summary.totalReceitasCents + summary.totalDespesasCents,
+          emptyText: "Sem dados para comparar.",
+        },
+      };
+    }
+
+    if (viewMode === "PAGAMENTO") {
+      return {
+        primary: {
+          title: "Formas de pagamento",
+          subtitle: getPeriodLabel(period),
+          data: paymentData,
+          totalCents: summary.totalDespesasCents,
+          emptyText: "Sem pagamentos para analisar.",
+        },
+        secondary: {
+          title: "Gastos por categoria",
+          subtitle: "Detalhe dos gastos",
+          data: expensesByCategory,
+          totalCents: summary.totalDespesasCents,
+          emptyText: "Ainda não há despesas nesse período.",
+        },
+      };
+    }
+
+    return {
+      primary: {
+        title: "Confronto de receitas e despesas",
+        subtitle: getPeriodLabel(period),
+        data: confrontationData,
+        totalCents: summary.totalReceitasCents + summary.totalDespesasCents,
+        emptyText: "Cadastre receitas ou despesas para montar o confronto.",
+      },
+      secondary: {
+        title: "Gastos por categoria",
+        subtitle: "Onde o dinheiro saiu",
+        data: expensesByCategory,
+        totalCents: summary.totalDespesasCents,
+        emptyText: "Ainda não há despesas nesse período.",
+      },
+    };
+  }, [confrontationData, expensesByCategory, paymentData, period, receitasByCategory, summary, viewMode]);
+
+  const donutColors = ["#60A5FA", "#22C55E", "#F97316", "#A78BFA", "#EF4444", "#14B8A6", "#EAB308", "#F472B6"];
+
   const latestItems = useMemo(() => {
     return filteredItems
-      .slice() // Cria cópia
-      .sort((a, b) => b.dateISO.localeCompare(a.dateISO)) // Ordena desc
-      .slice(0, 8); // Pega 8
+      .slice()
+      .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+      .slice(0, 8);
   }, [filteredItems]);
 
   return (
-    <div
-      style={{
-        opacity: animate ? 1 : 0,
-        transform: animate ? "translateY(0px)" : "translateY(10px)",
-        transition: "opacity 0.35s ease, transform 0.35s ease",
-        willChange: "opacity, transform",
-      }}
-    >
-      {/* Cabeçalho + filtro */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 16,
-          marginBottom: 20,
-        }}
-      >
-        <h2 style={{ margin: 0 }}>Visão Geral</h2>
+    <div className={`dashboard-view${animate ? " is-ready" : ""}`}>
+      <div className="dashboard-hero dashboard-hero-panel">
+        <div>
+          <span className="dashboard-kicker">Painel financeiro</span>
+          <h2>Visão Geral</h2>
+          <p>Compare receitas, despesas, formas de pagamento e categorias por período.</p>
+        </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ color: "var(--text-secondary)" }}>Período:</div>
-
-          <select
-            className="period-select"
-            value={period}
-            onChange={(e) => setPeriod(e.target.value as PeriodKey)}
-          >
-            <option value="MONTH">Mês atual</option>
-            <option value="LAST_3">Últimos 3 meses</option>
-            <option value="YEAR">Ano</option>
-            <option value="ALL">Tudo</option>
-          </select>
+        <div className="dashboard-filter-cluster">
+          <label>
+            <span>Período</span>
+            <select
+              className="period-select"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value as PeriodKey)}
+            >
+              <option value="MONTH">Mês atual</option>
+              <option value="LAST_3">Últimos 3 meses</option>
+              <option value="YEAR">Ano</option>
+              <option value="ALL">Tudo</option>
+            </select>
+          </label>
         </div>
       </div>
 
-      {/* Cards */}
       <div className="dashboard-grid">
         <div className="stat-card">
           <div className="stat-title">Receitas</div>
-          <div className="stat-value green">
-            {formatBRLFromCents(summary.totalReceitasCents)}
-          </div>
-
-          <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-secondary)" }}>
-            {cmpLine.receitas}
-          </div>
+          <div className="stat-value green">{formatBRLFromCents(summary.totalReceitasCents)}</div>
+          <div className="stat-caption">{cmpLine.receitas}</div>
         </div>
 
         <div className="stat-card">
           <div className="stat-title">Despesas</div>
-          <div className="stat-value red">
-            {formatBRLFromCents(summary.totalDespesasCents)}
-          </div>
-
-          <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-secondary)" }}>
-            {cmpLine.despesas}
-          </div>
+          <div className="stat-value red">{formatBRLFromCents(summary.totalDespesasCents)}</div>
+          <div className="stat-caption">{cmpLine.despesas}</div>
         </div>
 
         <div className="stat-card">
           <div className="stat-title">Crédito</div>
-          <div className="stat-value red">
-            {formatBRLFromCents(summary.totalCreditoCents)}
-          </div>
+          <div className="stat-value red">{formatBRLFromCents(summary.totalCreditoCents)}</div>
+          <div className="stat-caption">gastos no crédito</div>
         </div>
 
         <div className="stat-card">
           <div className="stat-title">Saldo</div>
-
-          <div className={`stat-value ${saldoClass}`}>
-            {formatBRLFromCents(summary.saldoCents)}
-          </div>
-
-          <div style={{ marginTop: 6, fontSize: 12, color: "var(--text-secondary)" }}>
-            {cmpLine.saldo}
-          </div>
+          <div className={`stat-value ${saldoClass}`}>{formatBRLFromCents(summary.saldoCents)}</div>
+          <div className="stat-caption">{cmpLine.saldo}</div>
         </div>
       </div>
 
-      {/* Layout 2 colunas: linha à esquerda + donut à direita */}
+      <section className="dashboard-analytics-shell dashboard-panel">
+        <div className="dashboard-analytics-head">
+          <div>
+            <span className="dashboard-kicker">Análise</span>
+            <h3>Escolha o tipo de visão</h3>
+          </div>
+
+          <div className="dashboard-segmented" aria-label="Tipo de visão do dashboard">
+            {[
+              ["CONFRONTO", "Confronto"],
+              ["GASTOS", "Gastos"],
+              ["RECEITAS", "Receitas"],
+              ["PAGAMENTO", "Pagamento"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={viewMode === value ? "is-active" : ""}
+                onClick={() => setViewMode(value as DashboardViewMode)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="dashboard-donut-grid">
+          <DonutDashboardCard
+            {...selectedAnalytics.primary}
+            colors={donutColors}
+          />
+          <DonutDashboardCard
+            {...selectedAnalytics.secondary}
+            colors={donutColors.slice(2).concat(donutColors.slice(0, 2))}
+          />
+        </div>
+      </section>
+
       <div className="dashboard-charts">
-        {/* Gráfico linha */}
-        <div className="chart-card">
-          <div className="chart-title">
-            Receitas x Despesas ({getPeriodLabel(period)})
-          </div>
+        <div className="chart-card dashboard-panel">
+          <div className="chart-title">Receitas x Despesas ({getPeriodLabel(period)})</div>
 
-          {chartData.length === 0 ? (
-            <div style={{ color: "var(--text-secondary)", padding: 10 }}>
-              Ainda não há lançamentos suficientes para montar o gráfico. Cadastre
-              uma receita e uma despesa.
-            </div>
-          ) : (
-            <div style={{ width: "100%", height: 320 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(148,163,184,0.15)"
-                  />
-                  <XAxis dataKey="mes" stroke="#94A3B8" />
-                  <YAxis stroke="#94A3B8" />
-                  <Tooltip
-                    formatter={(value: any) => {
-                      const n = typeof value === "number" ? value : Number(value);
-                      if (Number.isNaN(n)) return value;
-                      return n.toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      });
-                    }}
-                    contentStyle={{
-                      backgroundColor: "#0b1220",
-                      border: "1px solid rgba(148,163,184,0.2)",
-                      borderRadius: 10,
-                      color: "#F1F5F9",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="receitas"
-                    stroke="#22C55E"
-                    strokeWidth={3}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="despesas"
-                    stroke="#EF4444"
-                    strokeWidth={3}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          <div style={{ width: "100%", height: 320 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
+                <XAxis dataKey="mes" stroke="#94A3B8" />
+                <YAxis stroke="#94A3B8" />
+                <Tooltip
+                  formatter={(value: unknown) => {
+                    const n = typeof value === "number" ? value : Number(value);
+                    if (Number.isNaN(n)) return String(value);
+                    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+                  }}
+                  contentStyle={{
+                    backgroundColor: "#0b1220",
+                    border: "1px solid rgba(148,163,184,0.2)",
+                    borderRadius: 10,
+                    color: "#F1F5F9",
+                  }}
+                />
+                <Line type="monotone" dataKey="receitas" stroke="#22C55E" strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="despesas" stroke="#EF4444" strokeWidth={3} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Donut */}
-        <div className="chart-card">
-          <div className="chart-title">
-            Despesas por categoria ({getPeriodLabel(period)})
+        <div className="chart-card dashboard-panel dashboard-mini-summary">
+          <div className="chart-title">Resumo do período</div>
+          <div className="dashboard-mini-list">
+            <div>
+              <span>Receitas</span>
+              <strong className="green">{formatBRLFromCents(summary.totalReceitasCents)}</strong>
+            </div>
+            <div>
+              <span>Despesas</span>
+              <strong className="red">{formatBRLFromCents(summary.totalDespesasCents)}</strong>
+            </div>
+            <div>
+              <span>Saldo</span>
+              <strong className={saldoClass}>{formatBRLFromCents(summary.saldoCents)}</strong>
+            </div>
           </div>
-
-          {donutData.length === 0 ? (
-            <div style={{ color: "var(--text-secondary)", padding: 10 }}>
-              Ainda não há despesas suficientes para montar o gráfico.
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: 20, alignItems: "center" }}>
-              <div style={{ width: 240, height: 240, position: "relative" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={donutData}
-                      dataKey="value"
-                      nameKey="name"
-                      innerRadius={70}
-                      outerRadius={100}
-                      paddingAngle={2}
-                    >
-                      {donutData.map((_, index) => (
-                        <Cell
-                          key={index}
-                          fill={donutColors[index % donutColors.length]}
-                        />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    textAlign: "center",
-                    fontWeight: 700,
-                  }}
-                >
-                  <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>
-                    Total
-                  </div>
-                  <div style={{ fontSize: 18 }}>
-                    {formatBRLFromCents(summary.totalDespesasCents)}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ flex: 1 }}>
-                {donutData.map((item, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 8,
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <div
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: donutColors[index % donutColors.length],
-                        }}
-                      />
-                      <span style={{ fontSize: 13 }}>{item.name}</span>
-                    </div>
-
-                    <span style={{ fontWeight: 600 }}>
-                      {formatBRLFromCents(item.valueCents)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Últimas Transações */}
-      <div className="chart-card" style={{ marginTop: 18 }}>
+      <div className="chart-card dashboard-panel dashboard-transactions">
         <div className="chart-title">Últimas Transações</div>
 
         {latestItems.length === 0 ? (
-          <div style={{ color: "var(--text-secondary)", padding: 10 }}>
-            Ainda não há transações cadastradas.
-          </div>
+          <div className="dashboard-empty-panel">Ainda não há transações cadastradas.</div>
         ) : (
           <div className="transactions-table">
             <div className="transaction-head">
@@ -521,14 +674,9 @@ export default function Dashboard() {
 
             {latestItems.map((item) => (
               <div key={item.id} className="transaction-row">
-                <div className="t-date">
-                  {new Date(item.dateISO).toLocaleDateString("pt-BR")}
-                </div>
-
+                <div className="t-date">{new Date(`${item.dateISO}T00:00:00`).toLocaleDateString("pt-BR")}</div>
                 <div className="t-title">{item.title}</div>
-
                 <div className="t-category">{item.category}</div>
-
                 <div className={item.type === "RECEITA" ? "t-value green" : "t-value red"}>
                   {item.type === "RECEITA" ? "+ " : "- "}
                   {formatBRLFromCents(item.amountCents)}
@@ -541,19 +689,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
-/*
-=====================================================
-Desenvolvido por Lucas Vinicius
-lucassousa@gmail.com
-=====================================================
-
-Mudança feita:
-
-✔ Dashboard agora pega dados via financeService (hoje localStorage, amanhã API)
-✔ Não mexi em layout, gráficos, donut, tabela, nem filtro
-✔ Adicionei animação suave de fade + subida
-✔ A animação dispara quando o período muda
-✔ A animação dispara quando os dados mudam
-✔ Foi feita direto no componente, sem depender de mexer no dashboard.css
-*/

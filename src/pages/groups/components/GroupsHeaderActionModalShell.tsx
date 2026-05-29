@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
 type GroupsHeaderActionModalShellProps = {
   title: string;
@@ -25,12 +25,34 @@ export default function GroupsHeaderActionModalShell({
   ghostButton,
   children,
 }: GroupsHeaderActionModalShellProps) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    function handleMediaChange(event: MediaQueryListEvent) {
+      setIsMobile(event.matches);
+    }
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, []);
+
   return (
     <div
       style={{
         ...modalOverlay,
         zIndex: 1150,
-        padding: 24,
+        padding: isMobile ? 10 : 24,
       }}
       onClick={onClose}
     >
@@ -38,7 +60,8 @@ export default function GroupsHeaderActionModalShell({
         style={{
           ...modalCard,
           width: "min(980px, 100%)",
-          maxHeight: "88vh",
+          maxHeight: isMobile ? "92vh" : "88vh",
+          borderRadius: isMobile ? 18 : modalCard.borderRadius,
           overflow: "hidden",
           display: "grid",
           gridTemplateRows: "auto 1fr",
@@ -51,15 +74,17 @@ export default function GroupsHeaderActionModalShell({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: isMobile ? "wrap" : "nowrap",
             gap: 12,
+            padding: isMobile ? 14 : modalHeader.padding,
           }}
         >
-          <div style={{ display: "grid", gap: 4 }}>
-            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: -0.3 }}>{title}</div>
+          <div style={{ display: "grid", gap: 4, minWidth: 0, flex: "1 1 220px" }}>
+            <div style={{ fontSize: isMobile ? 16 : 18, fontWeight: 900, letterSpacing: -0.3 }}>{title}</div>
             <div style={{ ...subtleText, fontSize: 13 }}>{selectedGroupName} - acesso rapido pelo topo</div>
           </div>
 
-          <button type="button" onClick={onClose} style={ghostButton}>
+          <button type="button" onClick={onClose} style={{ ...ghostButton, flexShrink: 0 }}>
             Fechar
           </button>
         </div>
@@ -68,7 +93,8 @@ export default function GroupsHeaderActionModalShell({
           style={{
             ...modalBody,
             overflowY: "auto",
-            paddingTop: 18,
+            padding: isMobile ? 14 : modalBody.padding,
+            paddingTop: isMobile ? 14 : 18,
           }}
         >
           {children}

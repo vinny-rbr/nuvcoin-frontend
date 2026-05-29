@@ -232,6 +232,7 @@ const footer: CSSProperties = {
   display: "flex",
   justifyContent: "flex-end",
   gap: 10,
+  flexWrap: "wrap",
 };
 
 const subText: CSSProperties = {
@@ -255,6 +256,7 @@ const primaryBtn: CSSProperties = {
   color: "white",
   fontWeight: 700,
   minWidth: 132,
+  flex: "1 1 132px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -266,6 +268,7 @@ const cancelBtn: CSSProperties = {
   border: "1px solid rgba(255,255,255,0.15)",
   background: "transparent",
   color: "white",
+  flex: "1 1 120px",
 };
 
 const closeBtn: CSSProperties = {

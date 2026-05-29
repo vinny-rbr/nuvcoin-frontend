@@ -2,6 +2,7 @@
 import { Link, useNavigate } from "react-router-dom"; // Link + navegaÃ§Ã£o
 import { readApiErrorMessage } from "../lib/apiError";
 import { persistSubscriptionState } from "../lib/auth";
+import "./auth.css";
 
 export default function Login() {
   const navigate = useNavigate(); // Permite redirecionar o usuÃ¡rio para outra rota
@@ -70,12 +71,12 @@ export default function Login() {
       localStorage.setItem("token", data.token); // âœ… JWT real (compatÃ­vel com financeServices)
 
       // =========================
-      // âœ… Chaves especÃ­ficas do Nuvcoin
+      // âœ… Chaves especÃ­ficas do Conciliaaí
       // =========================
 
-      localStorage.setItem("nuvcoin_email", data.email); // Email
-      localStorage.setItem("nuvcoin_userId", data.userId); // UserId
-      localStorage.setItem("nuvcoin_name", data.name ?? ""); // Nome
+      localStorage.setItem("conciliaai_email", data.email); // Email
+      localStorage.setItem("conciliaai_userId", data.userId); // UserId
+      localStorage.setItem("conciliaai_name", data.name ?? ""); // Nome
       if (data.subscriptionEndDateUtc) {
         localStorage.setItem("subscriptionEndDateUtc", data.subscriptionEndDateUtc);
       } else {
@@ -94,89 +95,41 @@ export default function Login() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh", // Ocupa altura total da tela
-        display: "flex", // Usa flexbox
-        justifyContent: "center", // Centraliza horizontalmente
-        alignItems: "center", // Centraliza verticalmente
-        backgroundColor: "#0f172a", // Fundo escuro
-        color: "white", // Texto branco
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#1e293b", // Card escuro
-          padding: 40, // EspaÃ§amento interno
-          borderRadius: 12, // Bordas arredondadas
-          width: 340, // Largura fixa do card
-          display: "flex", // Flex
-          flexDirection: "column", // Itens em coluna
-          gap: 16, // EspaÃ§o entre elementos
-          boxShadow: "0 10px 30px rgba(0,0,0,0.35)", // Sombra premium
-        }}
-      >
-        <h1 style={{ textAlign: "center" }}>Nuvcoin</h1>
+    <div className="auth-scene">
+      <div className="auth-grid" />
+      <div className="auth-card">
+        <h1 className="auth-title">Conciliaaí</h1>
 
-        <p style={{ textAlign: "center", fontSize: 14, opacity: 0.85 }}>
+        <p className="auth-subtitle">
           Login (JWT real / API)
         </p>
 
         <input
+          className="auth-input"
           placeholder="Seu e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)} // Atualiza estado email
-          style={{
-            padding: 10,
-            borderRadius: 8,
-            border: "1px solid #334155",
-            backgroundColor: "#0b1220",
-            color: "white",
-            outline: "none",
-          }}
         />
 
         <input
+          className="auth-input"
           type="password"
           placeholder="Sua senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)} // Atualiza estado password
-          style={{
-            padding: 10,
-            borderRadius: 8,
-            border: "1px solid #334155",
-            backgroundColor: "#0b1220",
-            color: "white",
-            outline: "none",
-          }}
         />
 
         <button
+          className="auth-button auth-button-login"
           onClick={handleLogin} // Ao clicar, executa login
           disabled={loading} // Desabilita enquanto carrega
-          style={{
-            padding: 10,
-            borderRadius: 10,
-            border: "none",
-            backgroundColor: loading ? "#64748b" : "#3b82f6",
-            color: "white",
-            fontWeight: "bold",
-            cursor: loading ? "not-allowed" : "pointer",
-            transition: "0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            if (!loading) e.currentTarget.style.opacity = "0.9";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.opacity = "1";
-          }}
         >
           {loading ? "Entrando..." : "Entrar"}
         </button>
 
-        <p style={{ textAlign: "center", fontSize: 14 }}>
+        <p className="auth-footer">
           NÃ£o tem conta?{" "}
-          <Link to="/register" style={{ color: "#60a5fa" }}>
+          <Link to="/register">
             Criar conta
           </Link>
         </p>
@@ -197,5 +150,6 @@ O que foi feito:
 âœ” Agora chama POST /api/auth/token
 âœ” Salva JWT real em localStorage.setItem("token", jwt)
 âœ” MantÃ©m "auth=true" para continuar compatÃ­vel com ProtectedRoute
-âœ” Salva dados Ãºteis: nuvcoin_email, nuvcoin_userId, nuvcoin_name
+âœ” Salva dados Ãºteis: conciliaai_email, conciliaai_userId, conciliaai_name
 */
+

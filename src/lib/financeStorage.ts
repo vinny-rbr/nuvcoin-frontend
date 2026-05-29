@@ -1,44 +1,64 @@
-import type { FinanceItem, FinanceSummary } from "../types/finance"; // Tipos do app
+﻿import type { FinanceItem, FinanceSummary } from "../types/finance"; // Tipos do app
 
-const STORAGE_KEY = "nuvcoin_finance_items_v1"; // Chave do localStorage
+const STORAGE_KEY_PREFIX = "conciliaai_finance_items_v1"; // Prefixo do localStorage
+
+function getCurrentFinanceOwnerKey(): string {
+  if (typeof window === "undefined") return "anonymous";
+
+  const userId = window.localStorage.getItem("conciliaai_userId");
+  if (userId?.trim()) return userId.trim();
+
+  const email = window.localStorage.getItem("conciliaai_email");
+  if (email?.trim()) return email.trim().toLowerCase();
+
+  return "anonymous";
+}
+
+export function getFinanceStorageKey(): string {
+  return `${STORAGE_KEY_PREFIX}:${getCurrentFinanceOwnerKey()}`;
+}
+
+export function isFinanceStorageKey(key: string | null): boolean {
+  return Boolean(key && key.startsWith(`${STORAGE_KEY_PREFIX}:`));
+}
 
 /* =====================================================
-   EVENTO INTERNO PARA ATUALIZAÇÃO EM TEMPO REAL
+   EVENTO INTERNO PARA ATUALIZAÃ‡ÃƒO EM TEMPO REAL
    ===================================================== */
 
 export function notifyFinanceUpdated(): void {
   // Dispara evento interno na mesma aba
-  window.dispatchEvent(new Event("nuvcoin_finance_updated")); // Evento que o Dashboard escuta
+  window.dispatchEvent(new Event("conciliaai_finance_updated")); // Evento que o Dashboard escuta
 }
 
 /* =====================================================
-   NORMALIZAÇÃO (garante compatibilidade)
+   NORMALIZAÃ‡ÃƒO (garante compatibilidade)
    ===================================================== */
 
 function normalizeItem(raw: any): FinanceItem {
   // Garante ID (se vier faltando)
   const id: string = raw?.id ?? crypto.randomUUID(); // ID seguro
 
-  // Garante type/título básicos
+  // Garante type/tÃ­tulo bÃ¡sicos
   const type = raw?.type ?? "DESPESA"; // Default seguro
   const title = raw?.title ?? ""; // Default
 
   // Garante categoria
   const category = raw?.category ?? "Outros"; // Default
 
-  // Garante amount em número
+  // Garante amount em nÃºmero
   const amountCents = Number(raw?.amountCents ?? 0); // Default 0
 
-  // Garante datas no padrão do FRONT (dateISO / createdAtISO)
+  // Garante datas no padrÃ£o do FRONT (dateISO / createdAtISO)
   const dateISO: string =
     raw?.dateISO ??
-    raw?.date ?? // caso alguém salve "date"
+    raw?.date ?? // caso alguÃ©m salve "date"
     todayISO(); // fallback
 
   const createdAtISO: string =
     raw?.createdAtISO ??
     raw?.createdAtUtc ?? // caso venha do backend
-    raw?.createdAt ?? // variações
+    raw?.createdAt ?? // variaÃ§Ãµes
     new Date().toISOString(); // fallback
 
   // Garante paymentType/status
@@ -48,19 +68,19 @@ function normalizeItem(raw: any): FinanceItem {
   return {
     id, // id normalizado
     type, // type normalizado
-    title, // título normalizado
+    title, // tÃ­tulo normalizado
     category, // categoria normalizada
     amountCents, // valor normalizado
     dateISO, // data principal normalizada
-    createdAtISO, // data criação normalizada
+    createdAtISO, // data criaÃ§Ã£o normalizada
     paymentType, // forma pagamento normalizada
     status, // status normalizado
-  } as FinanceItem; // Força o tipo final
+  } as FinanceItem; // ForÃ§a o tipo final
 }
 
 function normalizeList(parsed: any): FinanceItem[] {
-  // Se não for array, volta vazio
-  if (!Array.isArray(parsed)) return []; // Proteção
+  // Se nÃ£o for array, volta vazio
+  if (!Array.isArray(parsed)) return []; // ProteÃ§Ã£o
 
   // Normaliza item a item (evita quebrar a UI por dados antigos)
   return parsed.map((x) => normalizeItem(x)); // Normaliza
@@ -72,8 +92,8 @@ function normalizeList(parsed: any): FinanceItem[] {
 
 export function loadFinanceItems(): FinanceItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY); // Lê do localStorage
-    if (!raw) return []; // Se não tiver nada, retorna vazio
+    const raw = localStorage.getItem(getFinanceStorageKey()); // LÃª do localStorage do usuario atual
+    if (!raw) return []; // Se nÃ£o tiver nada, retorna vazio
 
     const parsed = JSON.parse(raw); // Converte JSON -> qualquer coisa
 
@@ -93,9 +113,9 @@ export function saveFinanceItems(items: FinanceItem[]): void {
   // Normaliza antes de salvar (evita salvar lixo/forma antiga)
   const normalized = items.map((x) => normalizeItem(x)); // Normaliza lista
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized)); // Salva JSON
+  localStorage.setItem(getFinanceStorageKey(), JSON.stringify(normalized)); // Salva JSON por usuario
 
-  // 🔥 Notifica todas as telas da mesma aba
+  // ðŸ”¥ Notifica todas as telas da mesma aba
   notifyFinanceUpdated(); // Dispara evento interno
 }
 
@@ -136,7 +156,7 @@ export function deleteFinanceItem(id: string): FinanceItem[] {
 export function calcFinanceSummary(items: FinanceItem[]): FinanceSummary {
   let receitas = 0; // Acumulador receitas
   let despesas = 0; // Acumulador despesas
-  let credito = 0; // Acumulador crédito (DESPESA + paymentType=credit)
+  let credito = 0; // Acumulador crÃ©dito (DESPESA + paymentType=credit)
 
   for (const item of items) {
     // Soma receitas
@@ -144,13 +164,13 @@ export function calcFinanceSummary(items: FinanceItem[]): FinanceSummary {
       receitas += item.amountCents; // Soma em centavos
     }
 
-    // Soma despesas e crédito
+    // Soma despesas e crÃ©dito
     if (item.type === "DESPESA") {
       despesas += item.amountCents; // Soma despesas
 
-      // Crédito = DESPESA com paymentType = credit
+      // CrÃ©dito = DESPESA com paymentType = credit
       if (item.paymentType === "credit") {
-        credito += item.amountCents; // Soma crédito
+        credito += item.amountCents; // Soma crÃ©dito
       }
     }
   }
@@ -158,13 +178,13 @@ export function calcFinanceSummary(items: FinanceItem[]): FinanceSummary {
   return {
     totalReceitasCents: receitas, // Total receitas
     totalDespesasCents: despesas, // Total despesas
-    totalCreditoCents: credito, // Total crédito
+    totalCreditoCents: credito, // Total crÃ©dito
     saldoCents: receitas - despesas, // Saldo
   };
 }
 
 /* =====================================================
-   UTILITÁRIOS
+   UTILITÃRIOS
    ===================================================== */
 
 export function makeId(): string {
@@ -174,7 +194,7 @@ export function makeId(): string {
 export function todayISO(): string {
   const d = new Date(); // Data atual
   const yyyy = d.getFullYear(); // Ano
-  const mm = String(d.getMonth() + 1).padStart(2, "0"); // Mês
+  const mm = String(d.getMonth() + 1).padStart(2, "0"); // MÃªs
   const dd = String(d.getDate()).padStart(2, "0"); // Dia
 
   return `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
@@ -188,14 +208,14 @@ lucassousa@gmail.com
 
 O que este arquivo faz agora:
 
-✔ Armazena itens financeiros no localStorage
-✔ Atualiza automaticamente Dashboard/Receitas/Despesas
-✔ Dispara evento interno para atualização em tempo real
-✔ Calcula resumo financeiro (inclui crédito)
-✔ Gera ID seguro
-✔ Retorna data ISO padrão
-✔ Normaliza dados antigos (date -> dateISO / createdAtUtc -> createdAtISO)
+âœ” Armazena itens financeiros no localStorage
+âœ” Atualiza automaticamente Dashboard/Receitas/Despesas
+âœ” Dispara evento interno para atualizaÃ§Ã£o em tempo real
+âœ” Calcula resumo financeiro (inclui crÃ©dito)
+âœ” Gera ID seguro
+âœ” Retorna data ISO padrÃ£o
+âœ” Normaliza dados antigos (date -> dateISO / createdAtUtc -> createdAtISO)
 
-Crédito:
+CrÃ©dito:
 - totalCreditoCents = soma de DESPESA onde paymentType = "credit"
 */

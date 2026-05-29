@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"; // Hooks do React
+﻿import { useCallback, useEffect, useMemo, useState } from "react"; // Hooks do React
 
 import {
   addMember,
@@ -12,7 +12,7 @@ import {
   fetchMembers,
   removeMember,
   updateExpense,
-} from "../services/groups.api"; // Serviços de API já extraídos
+} from "../services/groups.api"; // ServiÃ§os de API jÃ¡ extraÃ­dos
 
 import type {
   CreateGroupExpenseRequest,
@@ -22,7 +22,7 @@ import type {
   GroupMembersResponse,
   GroupSplitMode,
   UpdateGroupExpenseRequest,
-} from "../types/groups.types"; // Tipos centralizados do módulo
+} from "../types/groups.types"; // Tipos centralizados do mÃ³dulo
 
 type CreateGroupRequest = {
   name: string; // Nome do grupo a ser criado
@@ -33,7 +33,7 @@ type AddGroupMemberRequest = {
 };
 
 type UseGroupsDashboardReturn = {
-  groups: GroupDto[]; // Lista de grupos disponíveis
+  groups: GroupDto[]; // Lista de grupos disponÃ­veis
   selectedGroupId: string | null; // Id do grupo atualmente selecionado
   selectedGroup: GroupDto | null; // Objeto completo do grupo selecionado
   members: GroupMembersResponse | null; // Resposta de membros do grupo
@@ -42,11 +42,11 @@ type UseGroupsDashboardReturn = {
   loadingGroups: boolean; // Loading da listagem de grupos
   loadingDetails: boolean; // Loading dos dados internos do grupo
   submittingExpense: boolean; // Loading para criar/editar despesa
-  deletingExpenseId: string | null; // Guarda qual despesa está sendo excluída
-  creatingGroup: boolean; // Loading para criação de grupo
-  deletingGroupId: string | null; // Guarda qual grupo está sendo excluído
+  deletingExpenseId: string | null; // Guarda qual despesa estÃ¡ sendo excluÃ­da
+  creatingGroup: boolean; // Loading para criaÃ§Ã£o de grupo
+  deletingGroupId: string | null; // Guarda qual grupo estÃ¡ sendo excluÃ­do
   submittingMember: boolean; // Loading para adicionar/remover membro
-  removingMemberId: string | null; // Guarda qual membro está sendo removido
+  removingMemberId: string | null; // Guarda qual membro estÃ¡ sendo removido
   error: string | null; // Erro geral do hook
   selectGroup: (groupId: string) => void; // Seleciona grupo ativo
   reloadGroups: () => Promise<void>; // Recarrega lista de grupos
@@ -61,13 +61,13 @@ type UseGroupsDashboardReturn = {
   hasGroups: boolean; // Indica se existe ao menos um grupo
   memberCount: number; // Quantidade de membros do grupo selecionado
   expenseCount: number; // Quantidade de despesas carregadas
-  selectedSplitMode: GroupSplitMode | null; // Modo de divisão predominante disponível no balance
+  selectedSplitMode: GroupSplitMode | null; // Modo de divisÃ£o predominante disponÃ­vel no balance
 };
 
-const GROUPS_STORAGE_KEY = "nuvcoin.groups.selectedGroupId"; // Chave para lembrar grupo selecionado
+const GROUPS_STORAGE_KEY = "conciliaai.groups.selectedGroupId"; // Chave para lembrar grupo selecionado
 
 function getStoredSelectedGroupId(): string | null {
-  // Lê do localStorage o grupo salvo anteriormente
+  // LÃª do localStorage o grupo salvo anteriormente
   if (typeof window === "undefined") {
     // Evita erro em ambiente sem window
     return null;
@@ -85,7 +85,7 @@ function setStoredSelectedGroupId(groupId: string | null) {
   }
 
   if (!groupId) {
-    // Remove quando não existir grupo selecionado
+    // Remove quando nÃ£o existir grupo selecionado
     window.localStorage.removeItem(GROUPS_STORAGE_KEY);
     return;
   }
@@ -119,19 +119,19 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
   // Loading para create/update de despesa
   const [submittingExpense, setSubmittingExpense] = useState<boolean>(false);
 
-  // Id da despesa em exclusão
+  // Id da despesa em exclusÃ£o
   const [deletingExpenseId, setDeletingExpenseId] = useState<string | null>(null);
 
-  // Loading para criação de grupo
+  // Loading para criaÃ§Ã£o de grupo
   const [creatingGroup, setCreatingGroup] = useState<boolean>(false);
 
-  // Id do grupo em exclusão
+  // Id do grupo em exclusÃ£o
   const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
 
   // Loading para adicionar/remover membro
   const [submittingMember, setSubmittingMember] = useState<boolean>(false);
 
-  // Id do membro em remoção
+  // Id do membro em remoÃ§Ã£o
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
   // Erro geral
@@ -143,13 +143,13 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
   }, [groups, selectedGroupId]);
 
   const selectedSplitMode = useMemo<GroupSplitMode | null>(() => {
-    // Tenta descobrir o modo de divisão a partir do balance se existir
+    // Tenta descobrir o modo de divisÃ£o a partir do balance se existir
     if (!balances) {
       // Sem balance ainda
       return null;
     }
 
-    // Cast defensivo para não quebrar caso o tipo ainda não exponha isso oficialmente
+    // Cast defensivo para nÃ£o quebrar caso o tipo ainda nÃ£o exponha isso oficialmente
     const maybeMode = (balances as unknown as { splitMode?: GroupSplitMode | null }).splitMode;
 
     // Retorna o modo encontrado ou null
@@ -171,7 +171,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
       // Atualiza estado
       setGroups(nextGroups);
 
-      // Se não existir grupos, limpa seleção e dados dependentes
+      // Se nÃ£o existir grupos, limpa seleÃ§Ã£o e dados dependentes
       if (nextGroups.length === 0) {
         setSelectedGroupId(null);
         setStoredSelectedGroupId(null);
@@ -185,16 +185,16 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
       const storedGroupId = getStoredSelectedGroupId();
       const hasStoredGroup = !!storedGroupId && nextGroups.some((group) => group.id === storedGroupId);
 
-      // Verifica se a seleção atual ainda existe
+      // Verifica se a seleÃ§Ã£o atual ainda existe
       const hasSelectedGroup = !!selectedGroupId && nextGroups.some((group) => group.id === selectedGroupId);
 
       if (hasSelectedGroup) {
-        // Mantém a seleção atual se ainda existir
+        // MantÃ©m a seleÃ§Ã£o atual se ainda existir
         return;
       }
 
       if (hasStoredGroup && storedGroupId) {
-        // Restaura seleção salva anteriormente
+        // Restaura seleÃ§Ã£o salva anteriormente
         setSelectedGroupId(storedGroupId);
         return;
       }
@@ -202,7 +202,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
       // Se nada existir, seleciona o primeiro grupo
       setSelectedGroupId(nextGroups[0].id);
     } catch (err) {
-      // Guarda erro amigável
+      // Guarda erro amigÃ¡vel
       setError(err instanceof Error ? err.message : "Erro ao carregar grupos.");
     } finally {
       // Finaliza loading
@@ -211,7 +211,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
   }, [selectedGroupId]);
 
   const loadSelectedGroupData = useCallback(async () => {
-    // Se não houver grupo selecionado, limpa dados derivados
+    // Se nÃ£o houver grupo selecionado, limpa dados derivados
     if (!selectedGroupId) {
       setMembers(null);
       setExpenses(null);
@@ -243,7 +243,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
       // Salva grupo atual no localStorage
       setStoredSelectedGroupId(selectedGroupId);
     } catch (err) {
-      // Guarda erro amigável
+      // Guarda erro amigÃ¡vel
       setError(err instanceof Error ? err.message : "Erro ao carregar dados do grupo.");
       setMembers(null);
       setExpenses(null);
@@ -274,7 +274,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
 
   const handleCreateGroup = useCallback(
     async (payload: CreateGroupRequest) => {
-      // Inicia loading da criação do grupo
+      // Inicia loading da criaÃ§Ã£o do grupo
       setCreatingGroup(true);
       setError(null);
 
@@ -294,7 +294,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         // Sucesso
         return true;
       } catch (err) {
-        // Guarda erro amigável
+        // Guarda erro amigÃ¡vel
         setError(err instanceof Error ? err.message : "Erro ao criar grupo.");
         return false;
       } finally {
@@ -307,7 +307,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
 
   const handleDeleteGroup = useCallback(
     async (groupId: string) => {
-      // Marca grupo em exclusão
+      // Marca grupo em exclusÃ£o
       setDeletingGroupId(groupId);
       setError(null);
 
@@ -319,10 +319,10 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         const nextGroups = await fetchGroups();
         const normalizedGroups = Array.isArray(nextGroups) ? nextGroups : [];
 
-        // Atualiza grupos manualmente para controlar a próxima seleção
+        // Atualiza grupos manualmente para controlar a prÃ³xima seleÃ§Ã£o
         setGroups(normalizedGroups);
 
-        // Se não sobrou grupo, limpa tudo
+        // Se nÃ£o sobrou grupo, limpa tudo
         if (normalizedGroups.length === 0) {
           setSelectedGroupId(null);
           setStoredSelectedGroupId(null);
@@ -332,7 +332,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
           return true;
         }
 
-        // Se o grupo apagado era o selecionado, troca para o primeiro disponível
+        // Se o grupo apagado era o selecionado, troca para o primeiro disponÃ­vel
         if (selectedGroupId === groupId) {
           const nextSelectedGroupId = normalizedGroups[0].id;
           setSelectedGroupId(nextSelectedGroupId);
@@ -342,11 +342,11 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         // Sucesso
         return true;
       } catch (err) {
-        // Guarda erro amigável
+        // Guarda erro amigÃ¡vel
         setError(err instanceof Error ? err.message : "Erro ao excluir grupo.");
         return false;
       } finally {
-        // Limpa marcação
+        // Limpa marcaÃ§Ã£o
         setDeletingGroupId(null);
       }
     },
@@ -355,7 +355,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
 
   const handleAddMember = useCallback(
     async (groupId: string, payload: AddGroupMemberRequest) => {
-      // Inicia loading da ação de membro
+      // Inicia loading da aÃ§Ã£o de membro
       setSubmittingMember(true);
       setError(null);
 
@@ -371,7 +371,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         // Sucesso
         return true;
       } catch (err) {
-        // Guarda erro amigável
+        // Guarda erro amigÃ¡vel
         setError(err instanceof Error ? err.message : "Erro ao adicionar membro.");
         return false;
       } finally {
@@ -384,7 +384,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
 
   const handleRemoveMember = useCallback(
     async (groupId: string, memberId: string) => {
-      // Inicia loading da ação de membro
+      // Inicia loading da aÃ§Ã£o de membro
       setSubmittingMember(true);
       setRemovingMemberId(memberId);
       setError(null);
@@ -401,7 +401,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         // Sucesso
         return true;
       } catch (err) {
-        // Guarda erro amigável
+        // Guarda erro amigÃ¡vel
         setError(err instanceof Error ? err.message : "Erro ao remover membro.");
         return false;
       } finally {
@@ -423,13 +423,13 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         // Cria nova despesa na API
         await createExpense(payload);
 
-        // Recarrega os dados do grupo para refletir no histórico, gráfico e balances
+        // Recarrega os dados do grupo para refletir no histÃ³rico, grÃ¡fico e balances
         await loadSelectedGroupData();
 
         // Sucesso
         return true;
       } catch (err) {
-        // Guarda erro amigável
+        // Guarda erro amigÃ¡vel
         setError(err instanceof Error ? err.message : "Erro ao criar despesa.");
         return false;
       } finally {
@@ -456,7 +456,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         // Sucesso
         return true;
       } catch (err) {
-        // Guarda erro amigável
+        // Guarda erro amigÃ¡vel
         setError(err instanceof Error ? err.message : "Erro ao atualizar despesa.");
         return false;
       } finally {
@@ -469,7 +469,7 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
 
   const handleDeleteExpense = useCallback(
     async (expenseId: string) => {
-      // Marca item em exclusão
+      // Marca item em exclusÃ£o
       setDeletingExpenseId(expenseId);
       setError(null);
 
@@ -483,11 +483,11 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
         // Sucesso
         return true;
       } catch (err) {
-        // Guarda erro amigável
+        // Guarda erro amigÃ¡vel
         setError(err instanceof Error ? err.message : "Erro ao excluir despesa.");
         return false;
       } finally {
-        // Limpa marcação do item
+        // Limpa marcaÃ§Ã£o do item
         setDeletingExpenseId(null);
       }
     },
@@ -543,11 +543,12 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
 // Este hook centraliza o estado e os handlers principais
 // do dashboard de Groups.
 //
-// Nesta etapa ele passou a assumir também:
+// Nesta etapa ele passou a assumir tambÃ©m:
 // - createGroup
 // - deleteGroup
 // - addMember
 // - removeMember
 //
 // Assim, o Groups.tsx fica cada vez mais focado em UI,
-// modais, formulários e cálculos visuais.
+// modais, formulÃ¡rios e cÃ¡lculos visuais.
+

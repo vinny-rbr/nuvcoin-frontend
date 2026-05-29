@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import type { ChartOptions } from "chart.js";
 
 import GroupsDivisionChart from "./GroupsDivisionChart";
@@ -82,6 +82,28 @@ export default function GroupsDashboardContent({
   dangerButtonSmall,
   metricCard,
 }: GroupsDashboardContentProps) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    function handleMediaChange(event: MediaQueryListEvent) {
+      setIsMobile(event.matches);
+    }
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, []);
+
   return (
     <div style={getClockEntryStyle(3)}>
       <div
@@ -93,24 +115,50 @@ export default function GroupsDashboardContent({
           transition: "opacity 0.25s ease, transform 0.25s ease",
         }}
       >
-        <div style={sectionCard}>
+        <div
+          style={{
+            ...sectionCard,
+            border: selectedGroupId
+              ? "1px solid rgba(96,165,250,0.16)"
+              : sectionCard.border,
+            background: selectedGroupId
+              ? "linear-gradient(135deg, rgba(30,41,59,0.82), rgba(15,23,42,0.62))"
+              : sectionCard.background,
+          }}
+        >
           <div
             style={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: 16,
+              alignItems: isMobile ? "stretch" : "flex-start",
+              flexDirection: isMobile ? "column" : "row",
+              gap: isMobile ? 12 : 16,
               flexWrap: "wrap",
             }}
           >
-            <div style={{ display: "grid", gap: 8 }}>
+            <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                <div style={{ fontWeight: 900, fontSize: 26, letterSpacing: -0.5 }}>
+                <div
+                  style={{
+                    fontWeight: 900,
+                    fontSize: isMobile ? 26 : 32,
+                    letterSpacing: -0.5,
+                    lineHeight: 1.12,
+                    overflowWrap: "anywhere",
+                  }}
+                >
                   {selectedGroupName ?? "Selecione um grupo"}
                 </div>
 
                 {selectedGroupId && (
-                  <div style={pillStyle}>
+                  <div
+                    style={{
+                      ...pillStyle,
+                      color: "#bbf7d0",
+                      border: "1px solid rgba(34,197,94,0.20)",
+                      background: "rgba(22,101,52,0.18)",
+                    }}
+                  >
                     <span
                       style={{
                         width: 8,
@@ -140,13 +188,14 @@ export default function GroupsDashboardContent({
             </div>
 
             {selectedGroupId && (
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", width: isMobile ? "100%" : undefined }}>
                 <button
                   type="button"
                   onClick={onDeleteGroup}
                   disabled={deletingGroupId === selectedGroupId}
                   style={{
                     ...dangerButtonSmall,
+                    width: isMobile ? "100%" : undefined,
                     cursor: deletingGroupId === selectedGroupId ? "not-allowed" : "pointer",
                     opacity: deletingGroupId === selectedGroupId ? 0.7 : 1,
                   }}
@@ -205,16 +254,16 @@ export default function GroupsDashboardContent({
               <div style={sectionCard}>
                 <div style={{ display: "grid", gap: 14 }}>
                   <div style={{ display: "grid", gap: 4 }}>
-                    <div style={panelTitle}>Dashboard</div>
+                    <div style={panelTitle}>Resumo rápido</div>
                     <div style={subtleText}>
-                      Os atalhos de pessoas, base, despesas, resumo e hist\u00f3rico agora ficam no topo em formato quadrado.
+                      Informações principais do grupo selecionado para você conferir antes de lançar ou dividir despesas.
                     </div>
                   </div>
 
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
                       gap: 12,
                     }}
                   >

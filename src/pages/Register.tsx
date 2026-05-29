@@ -1,7 +1,8 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { readApiErrorMessage } from "../lib/apiError";
-// useNavigate permite redirecionar após criar conta
+import "./auth.css";
+// useNavigate permite redirecionar apÃ³s criar conta
 
 export default function Register() {
   const navigate = useNavigate();
@@ -42,16 +43,16 @@ export default function Register() {
         const message = await readApiErrorMessage(res, "Nao foi possivel criar a conta agora.");
 
         if (res.status === 409) {
-          alert("Esse e-mail já está cadastrado.");
+          alert("Esse e-mail jÃ¡ estÃ¡ cadastrado.");
           return;
         }
 
         throw new Error(message);
       }
 
-      alert("Conta criada com sucesso! Faça login.");
+      alert("Conta criada com sucesso! FaÃ§a login.");
 
-      // 🔥 Redireciona automaticamente para o Login
+      // ðŸ”¥ Redireciona automaticamente para o Login
       navigate("/login");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao criar conta.";
@@ -62,57 +63,31 @@ export default function Register() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#0f172a",
-        color: "white",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#1e293b",
-          padding: 40,
-          borderRadius: 12,
-          width: 320,
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
-        <h1 style={{ textAlign: "center" }}>Nuvcoin</h1>
-        <p style={{ textAlign: "center", fontSize: 14 }}>Criar conta</p>
+    <div className="auth-scene">
+      <div className="auth-grid" />
+      <div className="auth-card">
+        <h1 className="auth-title">Conciliaaí</h1>
+        <p className="auth-subtitle">Criar conta</p>
 
         <input
+          className="auth-input"
           placeholder="Seu e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          style={{ padding: 10, borderRadius: 6, border: "none" }}
         />
 
         <input
+          className="auth-input"
           type="password"
           placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          style={{ padding: 10, borderRadius: 6, border: "none" }}
         />
 
         <button
+          className="auth-button auth-button-register"
           onClick={handleRegister}
           disabled={loading}
-          style={{
-            padding: 10,
-            borderRadius: 6,
-            border: "none",
-            backgroundColor: loading ? "#64748b" : "#22c55e",
-            color: "white",
-            fontWeight: "bold",
-            cursor: loading ? "not-allowed" : "pointer",
-          }}
         >
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
@@ -120,3 +95,4 @@ export default function Register() {
     </div>
   );
 }
+

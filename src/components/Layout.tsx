@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Links sem recarregar a página
+﻿import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent as ReactMouseEvent } from "react";
+import { Link, useNavigate } from "react-router-dom"; // Links sem recarregar a pÃ¡gina
 import {
   deriveSubscriptionStatusFromAuthData,
   INACTIVE_SUBSCRIPTION_MESSAGE,
@@ -12,7 +12,7 @@ import { readApiErrorMessage } from "../lib/apiError";
 import "./layout.css"; // Importa o CSS do layout premium
 
 type Props = {
-  children: React.ReactNode; // Tudo que vai dentro do layout (cada página)
+  children: React.ReactNode; // Tudo que vai dentro do layout (cada pÃ¡gina)
 };
 
 type Plan = {
@@ -47,6 +47,23 @@ function formatPriceCents(priceCents: number): string {
   }).format(priceCents / 100);
 }
 
+function getProfilePhotoStorageKey(userId: string | null): string {
+  return `conciliaai_profile_photo:${userId || "anonymous"}`;
+}
+
+function getInitials(nameOrEmail: string): string {
+  const cleaned = nameOrEmail.trim();
+  if (!cleaned) return "US";
+
+  const namePart = cleaned.includes("@") ? cleaned.split("@")[0] : cleaned;
+  const words = namePart.split(/\s+|[._-]+/).filter(Boolean);
+
+  if (words.length === 0) return "US";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+
+  return `${words[0][0]}${words[1][0]}`.toUpperCase();
+}
+
 export default function Layout({ children }: Props) {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -62,9 +79,77 @@ export default function Layout({ children }: Props) {
     return window.innerWidth < 768;
   });
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const profilePhotoInputRef = useRef<HTMLInputElement | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [profileName, setProfileName] = useState(() =>
+    typeof window === "undefined" ? "" : window.localStorage.getItem("conciliaai_name") ?? "",
+  );
+  const [profileEmail, setProfileEmail] = useState(() =>
+    typeof window === "undefined" ? "" : window.localStorage.getItem("conciliaai_email") ?? "",
+  );
+  const [profileUserId, setProfileUserId] = useState(() =>
+    typeof window === "undefined" ? "" : window.localStorage.getItem("conciliaai_userId") ?? "",
+  );
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    const userId = window.localStorage.getItem("conciliaai_userId");
+    return window.localStorage.getItem(getProfilePhotoStorageKey(userId));
+  });
   const endDateRaw = typeof window === "undefined" ? null : localStorage.getItem("subscriptionEndDateUtc");
   const remainingDays = getRemainingDays(endDateRaw);
+  const profileDisplayName = profileName || profileEmail.split("@")[0] || "Usuário";
+  const profileInitials = getInitials(profileDisplayName || profileEmail);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    function syncProfileFromStorage() {
+      const nextUserId = window.localStorage.getItem("conciliaai_userId") ?? "";
+      const nextEmail = window.localStorage.getItem("conciliaai_email") ?? "";
+      const nextName = window.localStorage.getItem("conciliaai_name") ?? "";
+
+      setProfileUserId(nextUserId);
+      setProfileEmail(nextEmail);
+      setProfileName(nextName);
+      setProfilePhoto(window.localStorage.getItem(getProfilePhotoStorageKey(nextUserId)));
+    }
+
+    syncProfileFromStorage();
+    window.addEventListener("storage", syncProfileFromStorage);
+
+    return () => {
+      window.removeEventListener("storage", syncProfileFromStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isProfileMenuOpen) return undefined;
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      if (!profileMenuRef.current) return;
+      if (profileMenuRef.current.contains(event.target as Node)) return;
+
+      setIsProfileMenuOpen(false);
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsProfileMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isProfileMenuOpen]);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
@@ -251,6 +336,45 @@ export default function Layout({ children }: Props) {
     setIsActivatePlanModalOpen(false);
   }
 
+  function handleProfilePhotoClick() {
+    profilePhotoInputRef.current?.click();
+  }
+
+  function handleProfilePhotoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      window.alert("Escolha uma imagem para usar como foto de perfil.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 1024 * 1024 * 2) {
+      window.alert("Escolha uma imagem com até 2MB.");
+      event.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+      if (!result) return;
+
+      window.localStorage.setItem(getProfilePhotoStorageKey(profileUserId), result);
+      setProfilePhoto(result);
+    };
+
+    reader.readAsDataURL(file);
+    event.target.value = "";
+  }
+
+  function handleRemoveProfilePhoto() {
+    window.localStorage.removeItem(getProfilePhotoStorageKey(profileUserId));
+    setProfilePhoto(null);
+  }
+
   async function handleSubscribe(planId: string) {
     const token = localStorage.getItem("token") ?? "";
 
@@ -361,7 +485,7 @@ export default function Layout({ children }: Props) {
     window.setTimeout(() => {
       const localStorageKeysToRemove = [
         "token",
-        "nuvcoin_token",
+        "conciliaai_token",
         "auth_token",
         "accessToken",
         "jwt",
@@ -371,10 +495,10 @@ export default function Layout({ children }: Props) {
         "session",
         "sessionId",
         "refreshToken",
-        "nuvcoin_email",
-        "nuvcoin_userId",
-        "nuvcoin_name",
-        "nuvcoin_subscription_active",
+        "conciliaai_email",
+        "conciliaai_userId",
+        "conciliaai_name",
+        "conciliaai_subscription_active",
         "subscriptionActive",
         "subscriptionStatus",
         "subscription_status",
@@ -409,10 +533,10 @@ export default function Layout({ children }: Props) {
     subscriptionStatus !== "trial" || remainingDays === null
       ? null
       : remainingDays > 1
-        ? `💎 Trial ativo • ${remainingDays} dias restantes`
+        ? `ðŸ’Ž Trial ativo â€¢ ${remainingDays} dias restantes`
         : remainingDays === 1
-          ? "⚠️ Termina amanhã"
-          : "❌ Trial expirado";
+          ? "âš ï¸ Termina amanhÃ£"
+          : "âŒ Trial expirado";
 
   return (
     <div className="app-shell">
@@ -423,7 +547,7 @@ export default function Layout({ children }: Props) {
           <div className="brand-cluster">
             <div className="brand">
               <span className="logo-dot" />
-              <h1>NUVCOIN</h1>
+              <h1>CONCILIAAÍ</h1>
             </div>
             <span className="badge">{planBadgeLabel}</span>
           </div>
@@ -478,8 +602,8 @@ export default function Layout({ children }: Props) {
               </button>
             ) : null}
 
-            {/* Navegação */}
-            <nav className="nav" aria-label="Navegação principal">
+            {/* NavegaÃ§Ã£o */}
+            <nav className="nav" aria-label="NavegaÃ§Ã£o principal">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
@@ -495,6 +619,58 @@ export default function Layout({ children }: Props) {
                 </Link>
               ))}
             </nav>
+
+            <div className="profile-menu-shell" ref={profileMenuRef}>
+              <button
+                type="button"
+                className="profile-button"
+                aria-label="Abrir perfil do usuario"
+                aria-expanded={isProfileMenuOpen}
+                onClick={() => setIsProfileMenuOpen((current) => !current)}
+              >
+                <span className="profile-avatar" aria-hidden="true">
+                  {profilePhoto ? <img src={profilePhoto} alt="" /> : profileInitials}
+                </span>
+                <span className="profile-button-text">
+                  <strong>{profileDisplayName}</strong>
+                  <small>{profileEmail || "Perfil"}</small>
+                </span>
+              </button>
+
+              <div className={`profile-panel${isProfileMenuOpen ? " is-open" : ""}`}>
+                <div className="profile-panel-head">
+                  <button
+                    type="button"
+                    className="profile-avatar profile-avatar-large"
+                    onClick={handleProfilePhotoClick}
+                    title="Trocar foto"
+                  >
+                    {profilePhoto ? <img src={profilePhoto} alt="Foto do perfil" /> : profileInitials}
+                  </button>
+                  <div>
+                    <strong>{profileDisplayName}</strong>
+                    <span>{profileEmail || "Sem e-mail salvo"}</span>
+                  </div>
+                </div>
+
+                <input
+                  ref={profilePhotoInputRef}
+                  className="profile-file-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePhotoChange}
+                />
+
+                <button type="button" className="profile-action" onClick={handleProfilePhotoClick}>
+                  Trocar foto
+                </button>
+                {profilePhoto ? (
+                  <button type="button" className="profile-action profile-action-danger" onClick={handleRemoveProfilePhoto}>
+                    Remover foto
+                  </button>
+                ) : null}
+              </div>
+            </div>
 
             <button
               type="button"
@@ -521,7 +697,7 @@ export default function Layout({ children }: Props) {
             <button
               type="button"
               className={`mobile-menu-button${isMobileMenuOpen ? " is-open" : ""}`}
-              aria-label={isMobileMenuOpen ? "Fechar menu de navegação" : "Abrir menu de navegação"}
+              aria-label={isMobileMenuOpen ? "Fechar menu de navegaÃ§Ã£o" : "Abrir menu de navegaÃ§Ã£o"}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-nav-panel"
               onClick={handleMobileMenuToggle}
@@ -626,7 +802,7 @@ export default function Layout({ children }: Props) {
             }}
           >
             <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>Saindo...</h2>
-            <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)" }}>Volte sempre 👋</p>
+            <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)" }}>Volte sempre ðŸ‘‹</p>
           </div>
         </div>
       ) : null}
@@ -686,10 +862,10 @@ export default function Layout({ children }: Props) {
                 Acesso premium
               </span>
               <h2 style={{ margin: 0, fontSize: "30px", fontWeight: 800, lineHeight: 1.1 }}>
-                Ative seu plano e libere toda a experiência
+                Ative seu plano e libere toda a experiÃªncia
               </h2>
               <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                Continue com um plano ativo para usar sem bloqueios, manter seu histórico sincronizado e acessar
+                Continue com um plano ativo para usar sem bloqueios, manter seu histÃ³rico sincronizado e acessar
                 todos os recursos da plataforma.
               </p>
             </div>
@@ -782,9 +958,9 @@ export default function Layout({ children }: Props) {
                           lineHeight: 1.6,
                         }}
                       >
-                        <li>Acesso completo ao dashboard e aos módulos financeiros</li>
-                        <li>Recursos premium liberados para controle e organização</li>
-                        <li>Continuidade do histórico e suporte ao crescimento da conta</li>
+                        <li>Acesso completo ao dashboard e aos mÃ³dulos financeiros</li>
+                        <li>Recursos premium liberados para controle e organizaÃ§Ã£o</li>
+                        <li>Continuidade do histÃ³rico e suporte ao crescimento da conta</li>
                       </ul>
                     </div>
 
@@ -822,7 +998,7 @@ export default function Layout({ children }: Props) {
                     textAlign: "center",
                   }}
                 >
-                  Nenhum plano disponível no momento.
+                  Nenhum plano disponÃ­vel no momento.
                 </div>
               ) : null}
             </div>
@@ -944,7 +1120,7 @@ export default function Layout({ children }: Props) {
         </div>
       ) : null}
 
-      {/* Conteúdo da página */}
+      {/* ConteÃºdo da pÃ¡gina */}
       <main className="page">{children}</main>
 
       <style>
@@ -1002,6 +1178,8 @@ lucassousa@gmail.com
 // O que esse Layout faz:
 // - Cria uma Topbar premium (sticky + blur)
 // - Centraliza tudo num container (max-width)
-// - Adiciona navegação real (Dashboard/Receitas/Despesas/Groups)
-// - Mantém o conteúdo das páginas dentro de <main className="page">
+// - Adiciona navegaÃ§Ã£o real (Dashboard/Receitas/Despesas/Groups)
+// - MantÃ©m o conteÃºdo das pÃ¡ginas dentro de <main className="page">
 */
+
+
