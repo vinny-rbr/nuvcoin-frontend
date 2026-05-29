@@ -2,6 +2,7 @@
 import { Link, useNavigate } from "react-router-dom"; // Link + navegaÃ§Ã£o
 import { readApiErrorMessage } from "../lib/apiError";
 import { persistSubscriptionState } from "../lib/auth";
+import { logClientEvent } from "../lib/clientLogger";
 import "./auth.css";
 
 export default function Login() {
@@ -13,6 +14,11 @@ export default function Login() {
 
   async function handleLogin() {
     // FunÃ§Ã£o executada ao clicar no botÃ£o "Entrar"
+    logClientEvent({
+      event: "auth.login.submit",
+      message: "Tentativa de login",
+      data: { email: email.trim() || null },
+    });
 
     if (!email) {
       // Valida se o e-mail foi preenchido
@@ -40,6 +46,11 @@ export default function Login() {
 
       if (!res.ok) {
         const message = await readApiErrorMessage(res, "Email ou senha invalidos.");
+        logClientEvent({
+          event: "auth.login.failed",
+          message: "Login falhou",
+          data: { email: email.trim(), status: res.status, error: message },
+        });
         alert(message);
         return;
       }
@@ -77,6 +88,11 @@ export default function Login() {
       localStorage.setItem("conciliaai_email", data.email); // Email
       localStorage.setItem("conciliaai_userId", data.userId); // UserId
       localStorage.setItem("conciliaai_name", data.name ?? ""); // Nome
+      logClientEvent({
+        event: "auth.login.success",
+        message: "Login realizado",
+        data: { email: data.email, userId: data.userId, name: data.name ?? "" },
+      });
       if (data.subscriptionEndDateUtc) {
         localStorage.setItem("subscriptionEndDateUtc", data.subscriptionEndDateUtc);
       } else {
@@ -88,6 +104,11 @@ export default function Login() {
       navigate("/dashboard"); // Vai para a rota protegida
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao logar.";
+      logClientEvent({
+        event: "auth.login.error",
+        message: "Erro no login",
+        data: { email: email.trim() || null, error: message },
+      });
       alert(message);
     } finally {
       setLoading(false); // Desativa loading

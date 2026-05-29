@@ -1,3 +1,4 @@
+import { logClientEvent } from "./lib/clientLogger";
 import { useEffect, useState, type ReactNode } from "react"; // Hooks + tipo
 import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Rotas do React Router
 import Layout from "./components/Layout"; // Layout premium (topbar + container)
@@ -46,6 +47,19 @@ function AnimatedPage({ children }: AnimatedPageProps) {
 }
 
 export default function App() {
+  const location = useLocation();
+
+  useEffect(() => {
+    logClientEvent({
+      event: "navigation.route",
+      message: "Navegacao de tela",
+      data: {
+        pathname: location.pathname,
+        search: location.search,
+      },
+    });
+  }, [location.pathname, location.search]);
+
   return (
     <Routes>
       {/* Rotas públicas */}

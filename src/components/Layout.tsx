@@ -8,6 +8,7 @@ import {
   type SubscriptionStatus,
 } from "../lib/auth";
 import { readApiErrorMessage } from "../lib/apiError";
+import { logClientEvent } from "../lib/clientLogger";
 
 import "./layout.css"; // Importa o CSS do layout premium
 
@@ -315,6 +316,11 @@ export default function Layout({ children }: Props) {
 
   function handleMobileMenuToggle(event: ReactMouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
+    logClientEvent({
+      event: "navigation.mobile_menu.toggle",
+      message: "Menu mobile alternado",
+      data: { nextOpen: !isMobileMenuOpen },
+    });
     setIsMobileMenuOpen((current) => !current);
   }
 
@@ -329,20 +335,28 @@ export default function Layout({ children }: Props) {
   }
 
   function handleActivatePlan() {
+    logClientEvent({ event: "subscription.activate.open", message: "Abriu modal de ativar plano" });
     setIsActivatePlanModalOpen(true);
   }
 
   function handleCloseActivatePlanModal() {
+    logClientEvent({ event: "subscription.activate.close", message: "Fechou modal de ativar plano" });
     setIsActivatePlanModalOpen(false);
   }
 
   function handleProfilePhotoClick() {
+    logClientEvent({ event: "profile.photo_picker.open", message: "Abriu seletor de foto" });
     profilePhotoInputRef.current?.click();
   }
 
   function handleProfilePhotoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
+    logClientEvent({
+      event: "profile.photo.change.selected",
+      message: "Selecionou foto de perfil",
+      data: { fileType: file.type, fileSize: file.size },
+    });
 
     if (!file.type.startsWith("image/")) {
       window.alert("Escolha uma imagem para usar como foto de perfil.");
@@ -364,6 +378,11 @@ export default function Layout({ children }: Props) {
 
       window.localStorage.setItem(getProfilePhotoStorageKey(profileUserId), result);
       setProfilePhoto(result);
+      logClientEvent({
+        event: "profile.photo.change.saved",
+        message: "Foto de perfil salva",
+        data: { userId: profileUserId || null },
+      });
     };
 
     reader.readAsDataURL(file);
@@ -373,6 +392,11 @@ export default function Layout({ children }: Props) {
   function handleRemoveProfilePhoto() {
     window.localStorage.removeItem(getProfilePhotoStorageKey(profileUserId));
     setProfilePhoto(null);
+    logClientEvent({
+      event: "profile.photo.remove",
+      message: "Foto de perfil removida",
+      data: { userId: profileUserId || null },
+    });
   }
 
   async function handleSubscribe(planId: string) {
@@ -479,6 +503,11 @@ export default function Layout({ children }: Props) {
   }
 
   function handleLogout() {
+    logClientEvent({
+      event: "auth.logout.start",
+      message: "Logout iniciado",
+      data: { email: profileEmail || null, userId: profileUserId || null },
+    });
     setIsLoggingOut(true);
     handleMobileMenuClose();
 
@@ -516,6 +545,7 @@ export default function Layout({ children }: Props) {
       });
 
       setSubscriptionStatus(null);
+      logClientEvent({ event: "auth.logout.finish", message: "Logout finalizado" });
       navigate("/login");
     }, 1500);
   }
@@ -533,10 +563,10 @@ export default function Layout({ children }: Props) {
     subscriptionStatus !== "trial" || remainingDays === null
       ? null
       : remainingDays > 1
-        ? `ðŸ’Ž Trial ativo â€¢ ${remainingDays} dias restantes`
+        ? `Teste ativo - ${remainingDays} dias restantes`
         : remainingDays === 1
-          ? "âš ï¸ Termina amanhÃ£"
-          : "âŒ Trial expirado";
+          ? "Termina amanha"
+          : "Trial expirado";
 
   return (
     <div className="app-shell">
@@ -553,6 +583,7 @@ export default function Layout({ children }: Props) {
           </div>
 
           <div
+            className="topbar-actions"
             style={{
               display: "flex",
               alignItems: "center",
@@ -562,6 +593,7 @@ export default function Layout({ children }: Props) {
           >
             {trialBadgeLabel ? (
               <span
+                className="trial-badge"
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -582,6 +614,7 @@ export default function Layout({ children }: Props) {
             {!hasConfirmedPaidSubscription ? (
               <button
                 type="button"
+                className="activate-plan-button"
                 onClick={handleActivatePlan}
                 style={{
                   display: "inline-flex",

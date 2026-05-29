@@ -1,6 +1,7 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { readApiErrorMessage } from "../lib/apiError";
+import { logClientEvent } from "../lib/clientLogger";
 import "./auth.css";
 // useNavigate permite redirecionar apÃ³s criar conta
 
@@ -19,6 +20,11 @@ export default function Register() {
 
   async function handleRegister() {
     // Executado ao clicar em "Criar conta"
+    logClientEvent({
+      event: "auth.register.submit",
+      message: "Tentativa de cadastro",
+      data: { email: email.trim() || null },
+    });
 
     if (!email || !password) {
       alert("Preencha email e senha.");
@@ -41,6 +47,11 @@ export default function Register() {
 
       if (!res.ok) {
         const message = await readApiErrorMessage(res, "Nao foi possivel criar a conta agora.");
+        logClientEvent({
+          event: "auth.register.failed",
+          message: "Cadastro falhou",
+          data: { email: email.trim(), status: res.status, error: message },
+        });
 
         if (res.status === 409) {
           alert("Esse e-mail jÃ¡ estÃ¡ cadastrado.");
@@ -51,11 +62,21 @@ export default function Register() {
       }
 
       alert("Conta criada com sucesso! FaÃ§a login.");
+      logClientEvent({
+        event: "auth.register.success",
+        message: "Cadastro realizado",
+        data: { email: email.trim() },
+      });
 
       // ðŸ”¥ Redireciona automaticamente para o Login
       navigate("/login");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao criar conta.";
+      logClientEvent({
+        event: "auth.register.error",
+        message: "Erro no cadastro",
+        data: { email: email.trim() || null, error: message },
+      });
       alert(message);
     } finally {
       setLoading(false);
