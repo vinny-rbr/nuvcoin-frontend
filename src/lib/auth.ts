@@ -1,5 +1,7 @@
-﻿export const INACTIVE_SUBSCRIPTION_MESSAGE =
-  "Sua conta nÃ£o estÃ¡ ativa. Ative seu plano para acessar este recurso.";
+﻿import { apiUrl } from "./api";
+
+export const INACTIVE_SUBSCRIPTION_MESSAGE =
+  "Sua conta não está ativa. Ative seu plano para acessar este recurso.";
 
 const SUBSCRIPTION_STATE_EVENT = "conciliaai_subscription_state_changed";
 
@@ -189,7 +191,7 @@ export async function probeSubscriptionStateFromFinanceApi(): Promise<boolean | 
   if (!token) return null;
 
   try {
-    const response = await fetch("/api/finance", {
+    const response = await fetch(apiUrl("/api/finance"), {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -211,4 +213,6 @@ export async function probeSubscriptionStateFromFinanceApi(): Promise<boolean | 
     return null;
   }
 }
+
+
 

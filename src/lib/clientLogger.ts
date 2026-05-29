@@ -1,3 +1,5 @@
+﻿import { apiUrl } from "./api";
+
 type ClientLogPayload = {
   event: string;
   message: string;
@@ -70,7 +72,7 @@ export function logClientEvent({ event, message, data }: ClientLogPayload): void
 
   console.log("[client-log]", event, message, data ?? "");
 
-  void fetch("/api/client-logs", {
+  void fetch(apiUrl("/api/client-logs"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -99,3 +101,4 @@ export function installGlobalClientLogger(): void {
     true
   );
 }
+

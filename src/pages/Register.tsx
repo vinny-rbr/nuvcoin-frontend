@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
 import "./auth.css";
@@ -34,7 +35,7 @@ export default function Register() {
     try {
       setLoading(true);
 
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(apiUrl("/api/auth/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,4 +117,7 @@ export default function Register() {
     </div>
   );
 }
+
+
+
 

@@ -1,5 +1,6 @@
 ﻿import { useState } from "react"; // Hook para controlar estados (inputs)
 import { Link, useNavigate } from "react-router-dom"; // Link + navegaÃ§Ã£o
+import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { persistSubscriptionState } from "../lib/auth";
 import { logClientEvent } from "../lib/clientLogger";
@@ -33,7 +34,7 @@ export default function Login() {
       // âœ… Chama backend pra gerar JWT vÃ¡lido
       // =========================
 
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -173,4 +174,7 @@ O que foi feito:
 âœ” MantÃ©m "auth=true" para continuar compatÃ­vel com ProtectedRoute
 âœ” Salva dados Ãºteis: conciliaai_email, conciliaai_userId, conciliaai_name
 */
+
+
+
 

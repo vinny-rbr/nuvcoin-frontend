@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom"; // Redirecionamento de rota
 import type { ReactNode } from "react"; // Tipo do React para children
+import { apiUrl } from "../lib/api";
 import {
   deriveSubscriptionStatusFromAuthData,
   getSubscriptionStatus,
@@ -54,7 +55,7 @@ export default function ProtectedRoute({ children, requireActiveSubscription = f
       }
 
       try {
-        const response = await fetch("/api/subscriptions/me", {
+        const response = await fetch(apiUrl("/api/subscriptions/me"), {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -127,3 +128,5 @@ lucassousa@gmail.com
 // - Se não estiver, redireciona para /login
 // - Se estiver, renderiza o conteúdo (children)
 */
+
+

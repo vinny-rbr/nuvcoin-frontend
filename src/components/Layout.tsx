@@ -7,6 +7,7 @@ import {
   subscribeToSubscriptionStatus,
   type SubscriptionStatus,
 } from "../lib/auth";
+import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
 
@@ -227,7 +228,7 @@ export default function Layout({ children }: Props) {
       }
 
       try {
-        const response = await fetch("/api/subscriptions/me", {
+        const response = await fetch(apiUrl("/api/subscriptions/me"), {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -285,7 +286,7 @@ export default function Layout({ children }: Props) {
 
     async function fetchPlans() {
       try {
-        const response = await fetch("/api/plans", {
+        const response = await fetch(apiUrl("/api/plans"), {
           method: "GET",
         });
 
@@ -405,7 +406,7 @@ export default function Layout({ children }: Props) {
     try {
       setLoadingPlanId(planId);
 
-      const response = await fetch("/api/payments/checkout", {
+      const response = await fetch(apiUrl("/api/payments/checkout"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -449,7 +450,7 @@ export default function Layout({ children }: Props) {
       let trialPlanId = plans[0]?.id ?? null;
 
       if (!trialPlanId) {
-        const plansResponse = await fetch("/api/plans", { method: "GET" });
+        const plansResponse = await fetch(apiUrl("/api/plans"), { method: "GET" });
 
         if (!plansResponse.ok) {
           const message = await readApiErrorMessage(plansResponse, "Nao foi possivel carregar os planos.");
@@ -467,7 +468,7 @@ export default function Layout({ children }: Props) {
         return;
       }
 
-      const response = await fetch("/api/subscriptions/start-trial", {
+      const response = await fetch(apiUrl("/api/subscriptions/start-trial"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1214,5 +1215,8 @@ lucassousa@gmail.com
 // - Adiciona navegaÃ§Ã£o real (Dashboard/Receitas/Despesas/Groups)
 // - MantÃ©m o conteÃºdo das pÃ¡ginas dentro de <main className="page">
 */
+
+
+
 
 

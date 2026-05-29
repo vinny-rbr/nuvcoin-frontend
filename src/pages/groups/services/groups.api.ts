@@ -8,6 +8,7 @@
   UpdateGroupExpenseRequest
 } from "../types/groups.types";
 
+import { apiUrl } from "../../../lib/api";
 import { getAuthTokenOrThrow } from "../utils/groups.helpers";
 
 type CreateGroupRequest = {
@@ -78,7 +79,7 @@ export async function fetchGroups(): Promise<GroupDto[]> {
 
   const token = getAuthTokenOrThrow();
 
-  const response = await fetch("/api/groups", {
+  const response = await fetch(apiUrl("/api/groups"), {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -105,7 +106,7 @@ export async function createGroup(
 
   const token = getAuthTokenOrThrow();
 
-  const response = await fetch("/api/groups", {
+  const response = await fetch(apiUrl("/api/groups"), {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -132,7 +133,7 @@ export async function deleteGroup(groupId: string): Promise<void> {
 
   const token = getAuthTokenOrThrow();
 
-  let response = await fetch(`/api/groups/${groupId}`, {
+  let response = await fetch(apiUrl(`/api/groups/${groupId}`), {
     method: "DELETE",
     headers: {
       Accept: "application/json",
@@ -141,7 +142,7 @@ export async function deleteGroup(groupId: string): Promise<void> {
   });
 
   if (response.status === 404) {
-    response = await fetch(`/api/groups/${groupId}/archive`, {
+    response = await fetch(apiUrl(`/api/groups/${groupId}/archive`), {
       method: "PATCH",
       headers: {
         Accept: "application/json",
@@ -165,7 +166,7 @@ export async function fetchMembers(groupId: string): Promise<GroupMembersRespons
 
   const token = getAuthTokenOrThrow();
 
-  const res = await fetch(`/api/groups/${groupId}/members`, {
+  const res = await fetch(apiUrl(`/api/groups/${groupId}/members`), {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -197,7 +198,7 @@ export async function addMember(
 
   const token = getAuthTokenOrThrow();
 
-  const response = await fetch(`/api/groups/${groupId}/members`, {
+  const response = await fetch(apiUrl(`/api/groups/${groupId}/members`), {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -225,7 +226,7 @@ export async function removeMember(
 
   const token = getAuthTokenOrThrow();
 
-  const response = await fetch(`/api/groups/${groupId}/members/${memberId}`, {
+  const response = await fetch(apiUrl(`/api/groups/${groupId}/members/${memberId}`), {
     method: "DELETE",
     headers: {
       Accept: "application/json",
@@ -248,7 +249,7 @@ export async function fetchExpenses(groupId: string): Promise<GroupExpensesListR
 
   const token = getAuthTokenOrThrow();
 
-  const res = await fetch(`/api/GroupExpenses/group/${groupId}`, {
+  const res = await fetch(apiUrl(`/api/GroupExpenses/group/${groupId}`), {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -277,7 +278,7 @@ export async function fetchBalances(groupId: string): Promise<GroupBalancesRespo
 
   const token = getAuthTokenOrThrow();
 
-  const res = await fetch(`/api/GroupExpenses/group/${groupId}/balances`, {
+  const res = await fetch(apiUrl(`/api/GroupExpenses/group/${groupId}/balances`), {
     method: "GET",
     headers: {
       Accept: "application/json",
@@ -308,7 +309,7 @@ export async function createExpense(
 
   const token = getAuthTokenOrThrow();
 
-  const res = await fetch(`/api/GroupExpenses`, {
+  const res = await fetch(apiUrl(`/api/GroupExpenses`), {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -338,7 +339,7 @@ export async function updateExpense(
 
   const token = getAuthTokenOrThrow();
 
-  const res = await fetch(`/api/GroupExpenses/${expenseId}`, {
+  const res = await fetch(apiUrl(`/api/GroupExpenses/${expenseId}`), {
     method: "PUT",
     headers: {
       Accept: "application/json",
@@ -363,7 +364,7 @@ export async function deleteExpense(expenseId: string): Promise<void> {
 
   const token = getAuthTokenOrThrow();
 
-  const res = await fetch(`/api/GroupExpenses/${expenseId}`, {
+  const res = await fetch(apiUrl(`/api/GroupExpenses/${expenseId}`), {
     method: "DELETE",
     headers: {
       Accept: "application/json",
@@ -394,4 +395,7 @@ export async function deleteExpense(expenseId: string): Promise<void> {
 // ObservaÃ§Ã£o importante:
 // - Mantive os payloads de grupo/membro de forma segura e simples.
 // - Para addMember, o frontend envia apenas o e-mail.
+
+
+
 

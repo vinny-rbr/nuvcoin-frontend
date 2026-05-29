@@ -1,4 +1,5 @@
 ﻿import type { FinanceItem } from "../types/finance"; // Tipos do app
+import { apiUrl } from "./api";
 import { persistSubscriptionState } from "./auth";
 
 import {
@@ -15,7 +16,7 @@ import {
 // =============================
 
 const USE_API = true; // âœ… Agora vamos usar a API real
-const API_BASE_URL = "/api/finance"; // âœ… Base da API
+const API_BASE_URL = apiUrl("/api/finance"); // Base da API
 
 // âœ… Freio anti-loop (evita fetch infinito)
 const SYNC_MIN_INTERVAL_MS = 3000; // 3s entre syncs automÃ¡ticos
@@ -238,7 +239,7 @@ export function financeDebugLog(message: string, data?: unknown): void {
 
   console.log("[finance-debug]", message, data ?? "");
 
-  void fetch("/api/client-logs", {
+  void fetch(apiUrl("/api/client-logs"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -554,4 +555,5 @@ O que foi corrigido agora:
 âœ” Mantido sem GET apÃ³s POST/DELETE (usa retorno do backend e confirma DELETE)
 âœ” Mantido cache hÃ­brido (API + localStorage) e eventos
 */
+
 
