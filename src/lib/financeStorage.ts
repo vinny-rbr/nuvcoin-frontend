@@ -37,7 +37,7 @@ export function notifyFinanceUpdated(): void {
 
 function normalizeItem(raw: any): FinanceItem {
   // Garante ID (se vier faltando)
-  const id: string = raw?.id ?? crypto.randomUUID(); // ID seguro
+  const id: string = raw?.id ?? makeId(); // ID seguro
 
   // Garante type/tÃ­tulo bÃ¡sicos
   const type = raw?.type ?? "DESPESA"; // Default seguro
@@ -188,7 +188,18 @@ export function calcFinanceSummary(items: FinanceItem[]): FinanceSummary {
    ===================================================== */
 
 export function makeId(): string {
-  return crypto.randomUUID(); // ID seguro
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function"
+      ? Array.from(crypto.getRandomValues(new Uint32Array(2)))
+          .map((value) => value.toString(36))
+          .join("")
+      : Math.random().toString(36).slice(2);
+
+  return `local-${Date.now().toString(36)}-${randomPart}`;
 }
 
 export function todayISO(): string {

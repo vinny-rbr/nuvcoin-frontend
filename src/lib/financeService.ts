@@ -3,8 +3,6 @@ import { persistSubscriptionState } from "./auth";
 
 import {
   loadFinanceItems, // LÃª itens do localStorage
-  addFinanceItem as addItemStorage, // Adiciona item no localStorage
-  deleteFinanceItem as deleteItemStorage, // Remove item no localStorage
   getFinanceStorageKey,
   isFinanceStorageKey,
   saveFinanceItems as saveItemsStorage, // Salva lista no localStorage (âœ… jÃ¡ dispara evento interno)
@@ -66,12 +64,16 @@ function makeHeaders(): HeadersInit {
 // =============================
 
 function normalizeApiItem(raw: any): FinanceItem {
-  const dateISO: string =
-    raw?.dateISO ?? // JÃ¡ veio pronto
+  const rawDate =
+    raw?.dateISO ?? // Ja veio pronto
     raw?.date ?? // Backend pode mandar "date"
-    raw?.dateUtc ?? // Outras variaÃ§Ãµes
-    raw?.dateTime ?? // Outras variaÃ§Ãµes
-    todayISO(); // Fallback
+    raw?.dateUtc ?? // Outras variacoes
+    raw?.dateTime; // Outras variacoes
+
+  const dateISO: string =
+    typeof rawDate === "string" && rawDate.length >= 10
+      ? rawDate.slice(0, 10)
+      : todayISO();
 
   const createdAtISO: string =
     raw?.createdAtISO ?? // JÃ¡ veio pronto
@@ -113,12 +115,12 @@ const localStorageProvider: FinanceProvider = {
   list: async () => loadFinanceItems(), // Lista do storage
 
   add: async (item) => {
-    addItemStorage(item); // Salva no local
+    saveItemsStorage([item, ...loadFinanceItems()]); // Salva no local
     return item; // Retorna item
   },
 
   remove: async (id) => {
-    deleteItemStorage(id); // Remove do storage
+    saveItemsStorage(loadFinanceItems().filter((item) => item.id !== id)); // Remove do storage
   },
 
   saveAll: async (items) => saveItemsStorage(items), // Salva lista (dispara evento interno)
@@ -144,6 +146,13 @@ const apiProvider: FinanceProvider = {
   },
 
   add: async (item) => {
+    financeDebugLog("API POST /finance inicio", {
+      type: item.type,
+      title: item.title,
+      amountCents: item.amountCents,
+      dateISO: item.dateISO,
+    });
+
     const payload = {
       type: item.type, // Tipo
       title: item.title, // TÃ­tulo
@@ -161,14 +170,19 @@ const apiProvider: FinanceProvider = {
     });
 
     if (res.status === 403) {
+      financeDebugLog("API POST /finance 403");
       persistSubscriptionState(false); // Marca conta como inativa
       throw new Error("Finance access forbidden: 403");
     }
 
-    if (!res.ok) throw new Error(`API add failed: ${res.status}`); // Erro
+    if (!res.ok) {
+      financeDebugLog("API POST /finance erro", { status: res.status });
+      throw new Error(`API add failed: ${res.status}`);
+    }
 
     const rawCreated = await res.json(); // Retorno do backend
     const created = normalizeApiItem(rawCreated); // Normaliza item criado
+    financeDebugLog("API POST /finance sucesso", created);
 
     return created; // âœ… Sem GET depois
   },
@@ -198,6 +212,39 @@ const apiProvider: FinanceProvider = {
 
 // Provider ativo
 const activeProvider: FinanceProvider = USE_API ? apiProvider : localStorageProvider;
+const pendingLocalItemIds = new Set<string>();
+
+export function financeDebugLog(message: string, data?: unknown): void {
+  if (typeof window === "undefined") return;
+
+  const userId = window.localStorage.getItem("conciliaai_userId") ?? window.localStorage.getItem("userId");
+  const email = window.localStorage.getItem("conciliaai_email") ?? window.localStorage.getItem("email");
+  const name = window.localStorage.getItem("conciliaai_name") ?? window.localStorage.getItem("name");
+  const hasToken = Boolean(getAuthToken());
+
+  const payload = {
+    at: new Date().toISOString(),
+    message,
+    data,
+    url: window.location.href,
+    userAgent: window.navigator.userAgent,
+    user: {
+      id: userId || null,
+      email: email || null,
+      name: name || null,
+      hasToken,
+    },
+  };
+
+  console.log("[finance-debug]", message, data ?? "");
+
+  void fetch("/api/client-logs", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    keepalive: true,
+  }).catch(() => undefined);
+}
 
 // =============================
 // HELPERS INTERNOS (fallback)
@@ -258,6 +305,16 @@ function removeById(list: FinanceItem[], id: string): FinanceItem[] {
   return list.filter((x) => x.id !== id); // Remove id
 }
 
+function mergePendingLocalItems(fromApi: FinanceItem[]): FinanceItem[] {
+  if (pendingLocalItemIds.size === 0) return fromApi;
+
+  const current = getCache();
+  const apiIds = new Set(fromApi.map((item) => item.id));
+  const pending = current.filter((item) => pendingLocalItemIds.has(item.id) && !apiIds.has(item.id));
+
+  return [...pending, ...fromApi];
+}
+
 // =============================
 // API DO SERVICE (usada pelas telas)
 // =============================
@@ -286,7 +343,7 @@ export function financeList(): FinanceItem[] {
   // âœ… Faz 1 sync em background (sem travar UI)
   void safe(
     async () => {
-      const fromApi = await activeProvider.list(); // Busca na API
+      const fromApi = mergePendingLocalItems(await activeProvider.list()); // Busca na API
 
       // âœ… SÃ³ grava se mudou (evita evento Ã  toa)
       const a = JSON.stringify(fromApi); // API
@@ -312,8 +369,42 @@ export function financeList(): FinanceItem[] {
   return cached; // Sempre retorna rÃ¡pido
 }
 
+export async function financeRefreshFromApi(): Promise<FinanceItem[]> {
+  ensureUserScopedCache();
+
+  if (!USE_API) {
+    return getCache();
+  }
+
+  if (syncInFlight) {
+    return getCache();
+  }
+
+  syncInFlight = true;
+
+  try {
+    const fromApi = mergePendingLocalItems(await activeProvider.list());
+
+    setCache(fromApi);
+    saveItemsStorage(fromApi);
+    hasHydratedFromApiThisSession = true;
+    lastSyncAt = Date.now();
+
+    return fromApi;
+  } finally {
+    syncInFlight = false;
+  }
+}
+
 export function financeAdd(item: FinanceItem): FinanceItem[] {
   ensureUserScopedCache();
+  financeDebugLog("financeAdd chamado", {
+    type: item.type,
+    title: item.title,
+    amountCents: item.amountCents,
+    dateISO: item.dateISO,
+  });
+
   // âœ… Garantimos que o item tem um id temporÃ¡rio para o modo otimista
   const tempItem: FinanceItem = {
     ...item, // Copia campos
@@ -321,16 +412,18 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
     createdAtISO: item.createdAtISO ?? new Date().toISOString(), // Garante createdAt
   };
 
-  // âœ… Add otimista local (rÃ¡pido)
-  const updatedLocal = addItemStorage(tempItem); // Salva no local (dispara evento interno)
-  setCache(updatedLocal); // Atualiza cache
+  const updatedLocal = [tempItem, ...getCache()]; // Atualiza primeiro em memoria
+  setCache(updatedLocal); // Garante que o evento abaixo ja leia a lista nova
+  saveItemsStorage(updatedLocal); // Salva no local e notifica telas
 
   if (USE_API) {
     const tempId = tempItem.id; // Guarda id temporÃ¡rio (pra substituir depois)
+    pendingLocalItemIds.add(tempId);
 
     void safe(
       async () => {
         const created = await activeProvider.add(tempItem); // POST e pega item criado (sem GET)
+        pendingLocalItemIds.delete(tempId);
 
         // âœ… Substitui o item temporÃ¡rio pelo item real do backend
         const current = getCache(); // Cache atual
@@ -346,6 +439,12 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
         return created; // Retorna item criado
       },
       async () => {
+        window.dispatchEvent(
+          new CustomEvent("conciliaai_finance_error", {
+            detail: "Nao foi possivel sincronizar com a API. O lancamento ficou salvo neste aparelho.",
+          })
+        );
+        financeDebugLog("financeAdd fallback local", tempItem);
         return tempItem; // Fallback: mantÃ©m o otimista
       }
     );
@@ -356,8 +455,9 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
 
 export function financeRemove(id: string): FinanceItem[] {
   ensureUserScopedCache();
-  const updatedLocal = deleteItemStorage(id); // Remove local
-  setCache(updatedLocal); // Atualiza cache
+  const updatedLocal = removeById(getCache(), id); // Remove primeiro em memoria
+  setCache(updatedLocal); // Garante que o evento abaixo ja leia a lista nova
+  saveItemsStorage(updatedLocal); // Salva no local e notifica telas
 
   if (USE_API) {
     void safe(

@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import type { FinanceCategory, FinanceItem, FinanceStatus, PaymentType } from "../types/finance";
 import {
   financeAdd,
+  financeDebugLog,
   financeList,
+  financeRefreshFromApi,
   financeRemove,
   financeSubscribe,
   makeId,
@@ -48,6 +50,8 @@ export default function Despesas() {
   const [paymentType, setPaymentType] = useState<PaymentType>("pix");
   const [status, setStatus] = useState<FinanceStatus>("paid");
   const [animate, setAnimate] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     const load = () => {
@@ -55,11 +59,29 @@ export default function Despesas() {
     };
 
     load();
+    void financeRefreshFromApi().then(setItems).catch(() => undefined);
 
     const unsubscribe = financeSubscribe(load);
 
+    const refresh = () => {
+      void financeRefreshFromApi().then(setItems).catch(() => undefined);
+    };
+
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+
+    const handleFinanceError = (event: Event) => {
+      const customEvent = event as CustomEvent<string>;
+      setFeedback(customEvent.detail || "Nao foi possivel sincronizar agora.");
+    };
+
+    window.addEventListener("conciliaai_finance_error", handleFinanceError as EventListener);
+
     return () => {
       unsubscribe();
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("conciliaai_finance_error", handleFinanceError as EventListener);
     };
   }, []);
 
@@ -78,15 +100,24 @@ export default function Despesas() {
   const despesas = useMemo(() => items.filter((x) => x.type === "DESPESA"), [items]);
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
 
-  function onAdd() {
+  const onAdd = useCallback((event?: SyntheticEvent | Event) => {
+    event?.preventDefault();
+    event?.stopPropagation();
+    financeDebugLog("onAdd despesa iniciou", { title, amount, dateISO, paymentType, status, saving });
+
+    if (saving) return;
+    setFeedback(null);
+
     const amountCents = parseAmountToCents(amount);
 
     if (!title.trim()) {
+      financeDebugLog("validacao falhou despesa titulo", { title });
       alert("Informe um título.");
       return;
     }
 
     if (amountCents <= 0) {
+      financeDebugLog("valor invalido despesa", { amount, amountCents });
       alert("Informe um valor válido.");
       return;
     }
@@ -103,8 +134,16 @@ export default function Despesas() {
       status,
     };
 
+    setSaving(true);
+    setFeedback("Salvando lancamento...");
     const updated = financeAdd(newItem);
     setItems(updated);
+    window.setTimeout(() => {
+      void financeRefreshFromApi()
+        .then(setItems)
+        .catch(() => undefined)
+        .finally(() => setSaving(false));
+    }, 700);
 
     setTitle("");
     setAmount("");
@@ -112,7 +151,26 @@ export default function Despesas() {
     setCategory("Alimentação");
     setPaymentType("pix");
     setStatus("paid");
-  }
+  }, [amount, category, dateISO, paymentType, saving, status, title]);
+
+  useEffect(() => {
+    function handleNativeAdd(event: Event) {
+      const target = event.target as HTMLElement | null;
+      if (!target?.closest("[data-finance-add='despesa']")) return;
+
+      onAdd(event);
+    }
+
+    document.addEventListener("click", handleNativeAdd, true);
+    document.addEventListener("pointerdown", handleNativeAdd, true);
+    document.addEventListener("touchstart", handleNativeAdd, true);
+
+    return () => {
+      document.removeEventListener("click", handleNativeAdd, true);
+      document.removeEventListener("pointerdown", handleNativeAdd, true);
+      document.removeEventListener("touchstart", handleNativeAdd, true);
+    };
+  }, [onAdd]);
 
   function onDelete(id: string) {
     const ok = confirm("Remover esta despesa?");
@@ -157,6 +215,9 @@ export default function Despesas() {
           </div>
         </div>
 
+        {feedback ? <div className="finance-feedback">{feedback}</div> : null}
+
+        <div>
         <div className="finance-form-grid">
           <label className="finance-field finance-field-title">
             <span>Título</span>
@@ -232,9 +293,15 @@ export default function Despesas() {
           </label>
         </div>
 
-        <button className="finance-primary-button" onClick={onAdd}>
-          Adicionar Despesa
+        <button
+          className="finance-primary-button"
+          type="button"
+          disabled={saving}
+          onClick={onAdd}
+        >
+          {saving ? "Salvando..." : "Adicionar Despesa"}
         </button>
+        </div>
       </div>
 
       <div className="chart-card finance-panel finance-list-panel">

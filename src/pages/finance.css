@@ -213,6 +213,26 @@
   font-weight: 800;
   box-shadow: 0 16px 34px color-mix(in srgb, var(--finance-accent) 24%, transparent);
   transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 3;
+}
+
+.finance-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.finance-feedback {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(250, 204, 21, 0.22);
+  border-radius: 14px;
+  background: rgba(113, 63, 18, 0.22);
+  color: #fde68a;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .finance-primary-button:hover {
@@ -400,6 +420,7 @@
   .finance-danger-button {
     width: 100%;
   }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
