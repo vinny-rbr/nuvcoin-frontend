@@ -123,7 +123,7 @@ export default function Login() {
         <h1 className="auth-title">Conciliaaí</h1>
 
         <p className="auth-subtitle">
-          Login (JWT real / API)
+          Acesse sua conta
         </p>
 
         <input
@@ -150,7 +150,7 @@ export default function Login() {
         </button>
 
         <p className="auth-footer">
-          NÃ£o tem conta?{" "}
+          Nao tem conta?{" "}
           <Link to="/register">
             Criar conta
           </Link>
