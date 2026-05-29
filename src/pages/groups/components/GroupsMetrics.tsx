@@ -25,15 +25,16 @@ export default function GroupsMetrics({
 }: GroupsMetricsProps) {
   const valueStyle: CSSProperties = {
     fontWeight: 900,
-    fontSize: "clamp(14px, 1.6vw, 22px)",
+    fontSize: "clamp(13px, 1.6vw, 22px)",
     lineHeight: 1.1,
     letterSpacing: -0.4,
-    whiteSpace: "nowrap",
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
     minWidth: 0,
   }; // Fonte menor e mais proporcional para caber sem cortar
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(132px, 1fr))", gap: 12 }}>
       <div style={{ ...metricCard("blue"), minWidth: 0 }}>
         <div style={subtleText}>Total do mês</div>
         <div style={valueStyle}>{formatBRLFromCents(monthTotalCents)}</div>

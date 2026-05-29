@@ -20,9 +20,24 @@
   font-family: 'Inter', sans-serif;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  touch-action: pan-y;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   background-color: var(--bg-main);
   color: var(--text-main);
+  overscroll-behavior-x: none;
 }
 
 /* Cards padrÃ£o */

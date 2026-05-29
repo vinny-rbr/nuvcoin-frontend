@@ -109,7 +109,7 @@ export default function GroupsDashboardContent({
       <div
         style={{
           display: "grid",
-          gap: 18,
+          gap: isMobile ? 14 : 18,
           opacity: isSwitchingGroup ? 0 : 1,
           transform: isSwitchingGroup ? "translateY(6px)" : "translateY(0px)",
           transition: "opacity 0.25s ease, transform 0.25s ease",
@@ -137,11 +137,11 @@ export default function GroupsDashboardContent({
             }}
           >
             <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, flexWrap: "wrap" }}>
                 <div
                   style={{
                     fontWeight: 900,
-                    fontSize: isMobile ? 26 : 32,
+                    fontSize: isMobile ? 24 : 32,
                     letterSpacing: -0.5,
                     lineHeight: 1.12,
                     overflowWrap: "anywhere",
@@ -174,12 +174,12 @@ export default function GroupsDashboardContent({
               </div>
 
               {selectedGroupId ? (
-                <div style={{ ...subtleText, fontSize: 13 }}>
+                <div style={{ ...subtleText, fontSize: isMobile ? 12 : 13, lineHeight: 1.45 }}>
                   {membersCount} pessoa(s) {"\u2022"} m\u00eas atual {currentMonthKey} {"\u2022"} modo{" "}
                   {splitMode === "SALARY" ? "autom\u00e1tico por sal\u00e1rio" : "manual por percentual"}
                 </div>
               ) : (
-                <div style={{ ...subtleText, fontSize: 13 }}>
+                <div style={{ ...subtleText, fontSize: isMobile ? 12 : 13, lineHeight: 1.45 }}>
                   {groupsCount === 0
                     ? 'Crie seu primeiro grupo no bot\u00e3o do topo para come\u00e7ar.'
                     : "Escolha um grupo na barra superior para abrir o dashboard."}

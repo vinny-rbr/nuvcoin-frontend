@@ -327,14 +327,14 @@ export default function GroupsHeaderActions({
       right: mobileMenuPosition.right,
       width: mobileMenuPosition.width,
       maxWidth: "calc(100vw - 32px)",
-      padding: 12,
-      borderRadius: 22,
+      padding: 10,
+      borderRadius: 18,
       border: "1px solid rgba(255,255,255,0.12)",
       background: "#0f172a",
       boxShadow:
         "0 28px 80px rgba(2,6,23,0.55), 0 14px 28px rgba(2,6,23,0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
       display: "grid",
-      gap: 8,
+      gap: 7,
       opacity: isMenuOpen ? 1 : 0,
       transform: isMenuOpen ? "translateY(0) scale(1)" : "translateY(-10px) scale(0.98)",
       transformOrigin: "top right",
@@ -367,18 +367,18 @@ export default function GroupsHeaderActions({
 
     return {
       width: "100%",
-      borderRadius: 16,
+      borderRadius: 14,
       border: isCreateAction
         ? "1px solid rgba(118,154,255,0.34)"
         : "1px solid rgba(255,255,255,0.08)",
       background: isCreateAction ? "#3157c7" : "#172033",
       color: "#f8fafc",
-      padding: "12px 14px",
+      padding: "11px 12px",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
       gap: 12,
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: 800,
       letterSpacing: -0.2,
       cursor: isDisabled ? "not-allowed" : "pointer",
@@ -549,6 +549,7 @@ export default function GroupsHeaderActions({
           position: "relative",
           width: "100%",
           boxSizing: "border-box",
+          overflow: "hidden",
           backgroundSize: "180% 180%",
           animation: "conciliaai-groups-hero-aura 5.5s ease-in-out infinite",
         }}
@@ -599,7 +600,7 @@ export default function GroupsHeaderActions({
             <h2
               style={{
                 margin: 0,
-                fontSize: isMobile ? 30 : 38,
+                fontSize: isMobile ? 28 : 38,
                 lineHeight: 1.05,
                 letterSpacing: -0.8,
                 overflowWrap: "anywhere",
@@ -612,6 +613,7 @@ export default function GroupsHeaderActions({
                 ...subtleText,
                 fontSize: isMobile ? 13 : 15,
                 maxWidth: isMobile ? "100%" : 780,
+                lineHeight: 1.45,
               }}
             >
               Crie grupos, adicione pessoas, defina salários ou percentuais e acompanhe a divisão do mês com clareza.
@@ -645,7 +647,7 @@ export default function GroupsHeaderActions({
                   alignItems: "center",
                   gap: 8,
                   fontWeight: 900,
-                  fontSize: 14,
+                  fontSize: 13,
                 }}
               >
                 Acoes do grupo

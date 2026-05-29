@@ -782,14 +782,43 @@
 }
 
 @media (max-width: 720px) {
+  .dashboard-view {
+    gap: 14px;
+  }
+
   .dashboard-hero-panel {
     align-items: flex-start;
     flex-direction: column;
-    padding: 20px;
+    padding: 18px;
+    border-radius: 18px;
   }
 
   .dashboard-hero-panel h2 {
-    font-size: 30px;
+    font-size: 28px;
+    line-height: 1.05;
+  }
+
+  .dashboard-hero-panel p {
+    font-size: 13px;
+  }
+
+  .dashboard-kicker {
+    font-size: 11px;
+  }
+
+  .dashboard-analytics-shell,
+  .chart-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .dashboard-analytics-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-analytics-head h3 {
+    font-size: 24px;
   }
 
   .dashboard-filter-cluster,
@@ -801,6 +830,55 @@
   .dashboard-segmented {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .dashboard-segmented button {
+    min-width: 0;
+    padding: 0 8px;
+    font-size: 13px;
+  }
+
+  .dashboard-donut-layout {
+    min-height: auto;
+    gap: 12px;
+  }
+
+  .dashboard-donut-wrap {
+    height: 230px;
+    min-height: 230px;
+  }
+
+  .dashboard-donut-center strong {
+    font-size: 20px;
+  }
+
+  .dashboard-donut-center small {
+    max-width: 120px;
+    line-height: 1.2;
+  }
+
+  .dashboard-donut-legend-row {
+    grid-template-columns: 10px minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .dashboard-legend-percent {
+    display: none;
+  }
+
+  .dashboard-drilldown {
+    padding: 10px;
+  }
+
+  .dashboard-drilldown-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dashboard-drilldown-row > strong {
+    white-space: normal;
   }
 
   .transaction-head {
@@ -829,27 +907,50 @@
 @media (max-width: 520px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .stat-card {
+    padding: 15px;
   }
 
   .stat-value {
-    font-size: 24px;
+    font-size: 25px;
+    overflow-wrap: anywhere;
   }
 
   .dashboard-donut-wrap {
-    height: 250px;
-    min-height: 250px;
+    height: 210px;
+    min-height: 210px;
   }
 
   .dashboard-donut-center strong {
-    font-size: 19px;
+    font-size: 18px;
   }
 
-  .dashboard-donut-legend-row {
-    grid-template-columns: 12px minmax(0, 1fr) auto;
+  .dashboard-donut-card {
+    min-width: 0;
   }
 
-  .dashboard-legend-percent {
-    display: none;
+  .dashboard-total-pill {
+    max-width: 100%;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .dashboard-mini-list div {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .transaction-row {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  .t-value {
+    text-align: left;
   }
 }
 

@@ -1,4 +1,4 @@
-﻿import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 import type { GroupDto } from "../types/groups.types";
 import { getInitials } from "../utils/groups.helpers";
@@ -26,6 +26,28 @@ export default function GroupsGroupsLane({
   subtleText,
   memberAvatarStyle,
 }: GroupsGroupsLaneProps) {
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth < 768;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+
+    function handleMediaChange(event: MediaQueryListEvent) {
+      setIsMobile(event.matches);
+    }
+
+    setIsMobile(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    return () => {
+      mediaQuery.removeEventListener("change", handleMediaChange);
+    };
+  }, []);
+
   if (groups.length === 0) {
     return null;
   }
@@ -43,9 +65,9 @@ export default function GroupsGroupsLane({
         <div
           style={{
             display: "flex",
-            gap: 14,
+            gap: isMobile ? 10 : 14,
             overflowX: "auto",
-            padding: "2px 2px 6px",
+            padding: isMobile ? "2px 2px 8px" : "2px 2px 6px",
             scrollbarWidth: "thin",
             animation: isGroupsLaneAnimating ? "conciliaai-groups-lane-reflow 0.62s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
             transformOrigin: "left center",
@@ -65,8 +87,8 @@ export default function GroupsGroupsLane({
                 style={{
                   cursor: "pointer",
                   textAlign: "left",
-                  padding: "14px 16px",
-                  borderRadius: 20,
+                  padding: isMobile ? "12px 12px" : "14px 16px",
+                  borderRadius: isMobile ? 16 : 20,
                   border: isHighlight
                     ? "1px solid rgba(91,140,255,0.95)"
                     : active
@@ -84,8 +106,8 @@ export default function GroupsGroupsLane({
                     : active
                       ? "0 16px 34px rgba(37,99,235,0.22), inset 0 1px 0 rgba(255,255,255,0.05)"
                       : "inset 0 1px 0 rgba(255,255,255,0.035)",
-                  minWidth: "min(250px, calc(100vw - 80px))",
-                  maxWidth: "calc(100vw - 80px)",
+                  minWidth: isMobile ? "min(220px, calc(100vw - 64px))" : "min(250px, calc(100vw - 80px))",
+                  maxWidth: isMobile ? "calc(100vw - 64px)" : "calc(100vw - 80px)",
                   flexShrink: 0,
                   transform: isHighlight
                     ? "translateY(-6px) scale(1.04)"
@@ -106,8 +128,18 @@ export default function GroupsGroupsLane({
                     "border 0.35s ease, background 0.35s ease, box-shadow 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-                  <div style={memberAvatarStyle}>{getInitials(group.name)}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 13 }}>
+                  <div
+                    style={{
+                      ...memberAvatarStyle,
+                      width: isMobile ? 44 : memberAvatarStyle.width,
+                      height: isMobile ? 44 : memberAvatarStyle.height,
+                      borderRadius: isMobile ? 16 : memberAvatarStyle.borderRadius,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {getInitials(group.name)}
+                  </div>
 
                   <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
                     <div
