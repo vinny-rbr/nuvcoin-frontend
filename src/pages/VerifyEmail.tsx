@@ -126,6 +126,8 @@ export default function VerifyEmail() {
         <p className="auth-footer">
           Ja confirmou? <Link to="/login">Entrar</Link>
         </p>
+
+        <p className="auth-credit">Feito com ❤️ por vinnytecnologia</p>
       </div>
     </div>
   );

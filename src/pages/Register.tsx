@@ -112,6 +112,8 @@ export default function Register() {
         >
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
+
+        <p className="auth-credit">Feito com ❤️ por vinnytecnologia</p>
       </div>
     </div>
   );

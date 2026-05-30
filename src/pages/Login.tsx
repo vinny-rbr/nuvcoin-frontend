@@ -162,6 +162,8 @@ export default function Login() {
             Criar conta
           </Link>
         </p>
+
+        <p className="auth-credit">Feito com ❤️ por vinnytecnologia</p>
       </div>
     </div>
   );

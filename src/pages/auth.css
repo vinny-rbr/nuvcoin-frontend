@@ -194,6 +194,15 @@
   color: #7dd3fc;
 }
 
+.auth-credit {
+  margin: 2px 0 0;
+  text-align: center;
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 12px;
+  font-weight: 800;
+  animation: auth-credit-in 0.72s ease 0.78s both, auth-credit-pulse 3.2s ease-in-out 1.4s infinite;
+}
+
 .auth-link-button {
   border: 0;
   background: transparent;
@@ -279,6 +288,29 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes auth-credit-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes auth-credit-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-1px);
   }
 }
 
