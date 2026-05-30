@@ -47,6 +47,10 @@
   animation: financeReveal 0.56s cubic-bezier(0.2, 0.8, 0.2, 1) 0.24s forwards;
 }
 
+.finance-view.is-ready .categories-panel {
+  animation: financeReveal 0.56s cubic-bezier(0.2, 0.8, 0.2, 1) 0.12s forwards;
+}
+
 .finance-hero {
   display: flex;
   align-items: end;
@@ -541,6 +545,11 @@
     width: 100%;
   }
 
+  .categories-actions .finance-primary-button,
+  .categories-actions .finance-danger-button {
+    width: 100%;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -551,7 +560,8 @@
   .finance-view.is-ready .finance-hero,
   .finance-view.is-ready .finance-summary-grid,
   .finance-view.is-ready .finance-form-panel,
-  .finance-view.is-ready .finance-list-panel {
+  .finance-view.is-ready .finance-list-panel,
+  .finance-view.is-ready .categories-panel {
     animation: none;
     opacity: 1;
     transform: none;
