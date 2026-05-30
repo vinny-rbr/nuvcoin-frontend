@@ -83,14 +83,28 @@ function listMonthsBetween(startYM: string, endYM: string): string[] {
   return months;
 }
 
-function getStartISO(period: PeriodKey): string | null {
+function getPeriodRange(period: PeriodKey): { startISO: string | null; endISOExclusive: string | null } {
   const now = new Date();
 
-  if (period === "ALL") return null;
-  if (period === "MONTH") return toISODate(new Date(now.getFullYear(), now.getMonth(), 1));
-  if (period === "LAST_3") return toISODate(new Date(now.getFullYear(), now.getMonth() - 2, 1));
+  if (period === "ALL") return { startISO: null, endISOExclusive: null };
+  if (period === "MONTH") {
+    return {
+      startISO: toISODate(new Date(now.getFullYear(), now.getMonth(), 1)),
+      endISOExclusive: toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 1)),
+    };
+  }
 
-  return toISODate(new Date(now.getFullYear(), 0, 1));
+  if (period === "LAST_3") {
+    return {
+      startISO: toISODate(new Date(now.getFullYear(), now.getMonth() - 2, 1)),
+      endISOExclusive: toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 1)),
+    };
+  }
+
+  return {
+    startISO: toISODate(new Date(now.getFullYear(), 0, 1)),
+    endISOExclusive: toISODate(new Date(now.getFullYear(), now.getMonth() + 1, 1)),
+  };
 }
 
 function getPeriodLabel(period: PeriodKey): string {
@@ -338,9 +352,15 @@ export default function Dashboard() {
   }, [period, viewMode, items]);
 
   const filteredItems = useMemo(() => {
-    const startISO = getStartISO(period);
-    if (!startISO) return items;
-    return items.filter((x) => x.dateISO >= startISO);
+    const today = toISODate(new Date());
+    const { startISO, endISOExclusive } = getPeriodRange(period);
+
+    return items.filter((item) => {
+      if (item.status !== "paid" && item.dateISO > today) return false;
+      if (startISO && item.dateISO < startISO) return false;
+      if (endISOExclusive && item.dateISO >= endISOExclusive) return false;
+      return true;
+    });
   }, [items, period]);
 
   const summary = useMemo(() => calculateSummary(filteredItems), [filteredItems]);

@@ -55,6 +55,25 @@ function addMonthsISO(dateISO: string, monthsToAdd: number): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function nextRecurringStartISO(dateISO: string): string {
+  const today = todayISO();
+  if (dateISO >= today) return dateISO;
+
+  const day = Number(dateISO.slice(8, 10));
+  const now = new Date();
+  const currentMonthCandidate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    Math.min(day, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()),
+  ).padStart(2, "0")}`;
+
+  if (currentMonthCandidate >= today) return currentMonthCandidate;
+
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const lastDay = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate();
+  return `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-${String(
+    Math.min(day, lastDay),
+  ).padStart(2, "0")}`;
+}
+
 export default function Despesas() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.DESPESA[0]);
@@ -171,18 +190,20 @@ export default function Despesas() {
 
     let updated = financeList();
     const createdAtISO = new Date().toISOString();
+    const firstDateISO = isRecurring ? nextRecurringStartISO(dateISO) : dateISO;
 
     for (let index = 0; index < totalMonths; index += 1) {
+      const installmentDateISO = addMonthsISO(firstDateISO, index);
       const newItem: FinanceItem = {
         id: makeId(),
         type: "DESPESA",
         title: title.trim(),
         category,
         amountCents,
-        dateISO: addMonthsISO(dateISO, index),
+        dateISO: installmentDateISO,
         createdAtISO,
         paymentType,
-        status: index === 0 ? status : "pending",
+        status: index === 0 && installmentDateISO <= todayISO() ? status : "pending",
       };
 
       updated = financeAdd(newItem);
