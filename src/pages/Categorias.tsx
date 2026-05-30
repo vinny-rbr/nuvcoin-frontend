@@ -35,6 +35,7 @@ export default function Categorias() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [animate, setAnimate] = useState(false);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
 
   const visibleCategories = useMemo(
     () =>
@@ -49,6 +50,25 @@ export default function Categorias() {
     () => visibleCategories.filter((category) => (category.level ?? 1) < 3 && category.id !== editingId),
     [editingId, visibleCategories],
   );
+
+  const rootCategories = useMemo(
+    () => visibleCategories.filter((category) => !category.parentId),
+    [visibleCategories],
+  );
+
+  const childrenByParentId = useMemo(() => {
+    const map = new Map<string, FinanceCategoryOption[]>();
+
+    for (const category of visibleCategories) {
+      if (!category.parentId) continue;
+
+      const current = map.get(category.parentId) ?? [];
+      current.push(category);
+      map.set(category.parentId, current);
+    }
+
+    return map;
+  }, [visibleCategories]);
 
   useEffect(() => {
     let isMounted = true;
@@ -103,6 +123,90 @@ export default function Categorias() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function toggleCategory(categoryId: string) {
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }
+
+  function renderCategoryRow(category: FinanceCategoryOption) {
+    const isEditing = editingId === category.id;
+    const children = childrenByParentId.get(category.id) ?? [];
+    const hasChildren = children.length > 0;
+    const isExpanded = expandedIds.has(category.id);
+
+    return (
+      <div key={category.id} className="categories-tree-item">
+        <div className={`categories-row categories-row-level-${category.level ?? 1}`}>
+          <div className="categories-row-main">
+            <button
+              className={`categories-expand-button${hasChildren ? "" : " is-empty"}`}
+              type="button"
+              disabled={!hasChildren}
+              aria-label={isExpanded ? "Fechar subcategorias" : "Abrir subcategorias"}
+              onClick={() => toggleCategory(category.id)}
+            >
+              {hasChildren ? (isExpanded ? "-" : "+") : ""}
+            </button>
+            <span className="finance-row-icon">{activeType === "RECEITA" ? "+" : "-"}</span>
+            <span className="categories-level-pill">Nivel {category.level ?? 1}</span>
+            {isEditing ? (
+              <input
+                className="finance-control"
+                value={editingName}
+                onChange={(event) => setEditingName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void handleSaveEdit();
+                  if (event.key === "Escape") setEditingId(null);
+                }}
+                autoFocus
+              />
+            ) : (
+              <div className="categories-name-stack">
+                <strong>{category.name}</strong>
+                <span>{category.fullPath ?? category.name}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="categories-actions">
+            {isEditing ? (
+              <>
+                <button className="categories-secondary-button" type="button" onClick={() => setEditingId(null)}>
+                  Cancelar
+                </button>
+                <button className="finance-primary-button" type="button" disabled={saving} onClick={handleSaveEdit}>
+                  Salvar
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="categories-secondary-button" type="button" onClick={() => startEdit(category)}>
+                  Editar
+                </button>
+                <button className="finance-danger-button" type="button" disabled={saving} onClick={() => handleDelete(category)}>
+                  Remover
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {hasChildren && isExpanded ? (
+          <div className="categories-tree-children">
+            {children.map((child) => renderCategoryRow(child))}
+          </div>
+        ) : null}
+      </div>
+    );
   }
 
   function startEdit(category: FinanceCategoryOption) {
@@ -224,7 +328,7 @@ export default function Categorias() {
           <div className="finance-empty-state">
             <strong>Carregando categorias...</strong>
           </div>
-        ) : visibleCategories.length === 0 ? (
+        ) : rootCategories.length === 0 ? (
           <div className="finance-empty-state">
             <div className="finance-empty-icon">+</div>
             <strong>{typeLabels[activeType].empty}</strong>
@@ -232,57 +336,7 @@ export default function Categorias() {
           </div>
         ) : (
           <div className="categories-list">
-            {visibleCategories.map((category) => {
-              const isEditing = editingId === category.id;
-
-              return (
-                <div key={category.id} className="categories-row">
-                  <div className="categories-row-main">
-                    <span className="finance-row-icon">{activeType === "RECEITA" ? "+" : "-"}</span>
-                    <span className="categories-level-pill">Nivel {category.level ?? 1}</span>
-                    {isEditing ? (
-                      <input
-                        className="finance-control"
-                        value={editingName}
-                        onChange={(event) => setEditingName(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") void handleSaveEdit();
-                          if (event.key === "Escape") setEditingId(null);
-                        }}
-                        autoFocus
-                      />
-                    ) : (
-                      <div className="categories-name-stack">
-                        <strong>{category.name}</strong>
-                        <span>{category.fullPath ?? category.name}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="categories-actions">
-                    {isEditing ? (
-                      <>
-                        <button className="categories-secondary-button" type="button" onClick={() => setEditingId(null)}>
-                          Cancelar
-                        </button>
-                        <button className="finance-primary-button" type="button" disabled={saving} onClick={handleSaveEdit}>
-                          Salvar
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button className="categories-secondary-button" type="button" onClick={() => startEdit(category)}>
-                          Editar
-                        </button>
-                        <button className="finance-danger-button" type="button" disabled={saving} onClick={() => handleDelete(category)}>
-                          Remover
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {rootCategories.map((category) => renderCategoryRow(category))}
           </div>
         )}
       </div>

@@ -17,7 +17,39 @@ function splitCategoryPath(value: string): string[] {
 
 export default function CategoryPicker({ label, value, options, onChange }: CategoryPickerProps) {
   const [open, setOpen] = useState(false);
+  const [prefix, setPrefix] = useState<string[]>([]);
   const selectedParts = useMemo(() => splitCategoryPath(value), [value]);
+  const normalizedOptions = useMemo(
+    () =>
+      Array.from(new Set(options))
+        .map((option) => ({ value: option, parts: splitCategoryPath(option) }))
+        .filter((option) => option.parts.length > 0)
+        .sort((a, b) => a.value.localeCompare(b.value)),
+    [options],
+  );
+
+  const visibleOptions = useMemo(() => {
+    const nextLevel = prefix.length + 1;
+
+    return normalizedOptions.filter((option) => {
+      if (option.parts.length !== nextLevel) return false;
+      return prefix.every((part, index) => option.parts[index] === part);
+    });
+  }, [normalizedOptions, prefix]);
+
+  const currentTitle = prefix.at(-1) ?? "Categorias";
+
+  function hasChildren(parts: string[]): boolean {
+    return normalizedOptions.some((option) => {
+      if (option.parts.length <= parts.length) return false;
+      return parts.every((part, index) => option.parts[index] === part);
+    });
+  }
+
+  function openPicker() {
+    setPrefix([]);
+    setOpen(true);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -42,35 +74,53 @@ export default function CategoryPicker({ label, value, options, onChange }: Cate
           >
             <div className="category-picker-head">
               <div>
-                <span>Organizacao</span>
-                <strong>Escolha a categoria</strong>
+                <span>{prefix.length === 0 ? "Organizacao" : "Dentro de"}</span>
+                <strong>{currentTitle}</strong>
               </div>
-              <button type="button" aria-label="Fechar categorias" onClick={() => setOpen(false)}>
-                x
-              </button>
+              <div className="category-picker-head-actions">
+                {prefix.length > 0 ? (
+                  <button type="button" aria-label="Voltar nivel" onClick={() => setPrefix((current) => current.slice(0, -1))}>
+                    {"<"}
+                  </button>
+                ) : null}
+                <button type="button" aria-label="Fechar categorias" onClick={() => setOpen(false)}>
+                  x
+                </button>
+              </div>
             </div>
 
             <div className="category-picker-list">
-              {options.map((option) => {
-                const parts = splitCategoryPath(option);
-                const isSelected = option === value;
+              {visibleOptions.map((option) => {
+                const child = hasChildren(option.parts);
+                const isSelected = option.value === value;
 
                 return (
                   <button
-                    key={option}
+                    key={option.value}
                     type="button"
                     className={`category-picker-option${isSelected ? " is-selected" : ""}`}
                     onClick={() => {
-                      onChange(option);
+                      if (child) {
+                        setPrefix(option.parts);
+                        return;
+                      }
+
+                      onChange(option.value);
                       setOpen(false);
                     }}
                   >
                     <span className="category-picker-option-main">
-                      <strong>{parts.at(-1) ?? option}</strong>
-                      {parts.length > 1 ? <small>{parts.slice(0, -1).join(" > ")}</small> : null}
+                      <strong>{option.parts.at(-1) ?? option.value}</strong>
+                      {child ? <small>Toque para ver subcategorias</small> : null}
                     </span>
-                    <span className="category-picker-level">Nivel {parts.length || 1}</span>
-                    <span className="category-picker-radio" aria-hidden="true" />
+                    <span className="category-picker-level">Nivel {option.parts.length || 1}</span>
+                    {child ? (
+                      <span className="category-picker-chevron" aria-hidden="true">
+                        {">"}
+                      </span>
+                    ) : (
+                      <span className="category-picker-radio" aria-hidden="true" />
+                    )}
                   </button>
                 );
               })}
@@ -84,7 +134,7 @@ export default function CategoryPicker({ label, value, options, onChange }: Cate
   return (
     <div className="finance-field">
       <span>{label}</span>
-      <button className="category-picker-trigger" type="button" onClick={() => setOpen(true)}>
+      <button className="category-picker-trigger" type="button" onClick={openPicker}>
         <span>
           <strong>{selectedParts.at(-1) ?? value}</strong>
           {selectedParts.length > 1 ? <small>{selectedParts.slice(0, -1).join(" > ")}</small> : null}
