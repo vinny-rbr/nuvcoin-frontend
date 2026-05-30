@@ -26,3 +26,5 @@ Thumbs.db
 
 # ===== Local screenshots =====
 *.png
+!public/icons/
+!public/icons/*.png
