@@ -229,6 +229,8 @@ function DonutDashboardCard({
                     borderRadius: 12,
                     color: "#F1F5F9",
                   }}
+                  itemStyle={{ color: "#F1F5F9", fontWeight: 800 }}
+                  labelStyle={{ color: "#CBD5E1", fontWeight: 800 }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -631,6 +633,8 @@ export default function Dashboard() {
                     borderRadius: 10,
                     color: "#F1F5F9",
                   }}
+                  itemStyle={{ color: "#F1F5F9", fontWeight: 800 }}
+                  labelStyle={{ color: "#CBD5E1", fontWeight: 800 }}
                 />
                 <Line type="monotone" dataKey="receitas" stroke="#22C55E" strokeWidth={3} dot={false} />
                 <Line type="monotone" dataKey="despesas" stroke="#EF4444" strokeWidth={3} dot={false} />
