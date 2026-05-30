@@ -54,6 +54,12 @@ function toISODate(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
 function getYearMonth(dateISO: string): string {
   return dateISO.slice(0, 7);
 }
@@ -365,6 +371,22 @@ export default function Dashboard() {
 
   const summary = useMemo(() => calculateSummary(filteredItems), [filteredItems]);
   const saldoClass = summary.saldoCents >= 0 ? "green" : "red";
+  const dueSoonExpenses = useMemo(() => {
+    const todayISODate = toISODate(new Date());
+    const limitISODate = toISODate(addDays(new Date(), 3));
+
+    return items
+      .filter((item) => {
+        return (
+          item.type === "DESPESA" &&
+          item.status !== "paid" &&
+          item.dateISO >= todayISODate &&
+          item.dateISO <= limitISODate
+        );
+      })
+      .sort((a, b) => a.dateISO.localeCompare(b.dateISO))
+      .slice(0, 4);
+  }, [items]);
 
   const monthCmp = useMemo(() => {
     const referenceISO = toISODate(new Date());
@@ -592,6 +614,38 @@ export default function Dashboard() {
           <div className="stat-caption">{cmpLine.saldo}</div>
         </div>
       </div>
+
+      {dueSoonExpenses.length > 0 ? (
+        <section className="dashboard-due-alert dashboard-panel" aria-label="Despesas proximas do vencimento">
+          <div className="dashboard-due-alert-main">
+            <span className="dashboard-kicker">Atenção</span>
+            <h3>
+              {dueSoonExpenses.length === 1
+                ? "1 despesa vence nos próximos dias"
+                : `${dueSoonExpenses.length} despesas vencem nos próximos dias`}
+            </h3>
+            <p>Marque como paga quando resolver ou ajuste a data se precisar reorganizar o mês.</p>
+          </div>
+
+          <div className="dashboard-due-alert-list">
+            {dueSoonExpenses.map((item) => (
+              <div key={item.id} className="dashboard-due-alert-row">
+                <div>
+                  <strong>{item.title}</strong>
+                  <span>
+                    {item.category} • {formatDateBR(item.dateISO)}
+                  </span>
+                </div>
+                <strong>{formatBRLFromCents(item.amountCents)}</strong>
+              </div>
+            ))}
+          </div>
+
+          <a className="dashboard-due-alert-action" href="/despesas">
+            Ver despesas
+          </a>
+        </section>
+      ) : null}
 
       <section className="dashboard-analytics-shell dashboard-panel">
         <div className="dashboard-analytics-head">
