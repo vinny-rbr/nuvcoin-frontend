@@ -133,6 +133,8 @@ export function canAccessSubscriptionRoute(pathname: string): boolean {
     pathname === "/dashboard" ||
     pathname === "/receitas" ||
     pathname === "/despesas" ||
+    pathname === "/categorias" ||
+    pathname === "/onboarding" ||
     pathname === "/groups"
   ) {
     return true;

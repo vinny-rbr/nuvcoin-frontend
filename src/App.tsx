@@ -7,6 +7,8 @@ import ProtectedRoute from "./routes/ProtectedRoute"; // Proteção de rota (moc
 import Login from "./pages/Login"; // Página de login
 import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail"; // Página de cadastro
+import Welcome from "./pages/Welcome";
+import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard"; // Página dashboard
 import Receitas from "./pages/Receitas"; // Página receitas
 import Despesas from "./pages/Despesas"; // Página despesas
@@ -68,6 +70,16 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/welcome" element={<Welcome />} />
+
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Dashboard */}
       <Route
@@ -139,7 +151,7 @@ export default function App() {
       />
 
       {/* Rota inicial */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Navigate to="/welcome" replace />} />
 
       {/* Qualquer rota desconhecida */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

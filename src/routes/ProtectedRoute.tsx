@@ -112,7 +112,7 @@ export default function ProtectedRoute({ children, requireActiveSubscription = f
   }
 
   if (requireActiveSubscription && subscriptionStatus === "inactive") {
-    return <Navigate to="/groups" replace state={{ from: location }} />;
+    return <Navigate to="/onboarding" replace state={{ from: location }} />;
   }
 
   // ✅ Se estiver logado, renderiza o conteúdo protegido (Layout + Página)

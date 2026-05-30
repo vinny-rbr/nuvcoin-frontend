@@ -113,6 +113,13 @@ export default function Register() {
           {loading ? "Criando conta..." : "Criar conta"}
         </button>
 
+        <p className="auth-footer">
+          Ja tem conta?{" "}
+          <button type="button" className="auth-link-button" onClick={() => navigate("/login")}>
+            Entrar
+          </button>
+        </p>
+
         <p className="auth-credit">Feito com ❤️ por vinnytecnologia</p>
       </div>
     </div>

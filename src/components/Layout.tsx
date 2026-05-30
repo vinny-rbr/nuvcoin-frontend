@@ -1,5 +1,5 @@
 ﻿import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent as ReactMouseEvent } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Links sem recarregar a pÃ¡gina
+import { Link, useLocation, useNavigate } from "react-router-dom"; // Links sem recarregar a pÃ¡gina
 import {
   deriveSubscriptionStatusFromAuthData,
   INACTIVE_SUBSCRIPTION_MESSAGE,
@@ -10,6 +10,7 @@ import {
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
+import { hasCompletedOnboarding } from "../lib/onboarding";
 
 import "./layout.css"; // Importa o CSS do layout premium
 
@@ -69,6 +70,7 @@ function getInitials(nameOrEmail: string): string {
 
 export default function Layout({ children }: Props) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isActivatePlanModalOpen, setIsActivatePlanModalOpen] = useState(false);
@@ -209,10 +211,10 @@ export default function Layout({ children }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!isCheckingSubscriptionStatus && subscriptionStatus === "inactive") {
+    if (!isCheckingSubscriptionStatus && subscriptionStatus === "inactive" && location.pathname !== "/onboarding") {
       setShowTrialModal(true);
     }
-  }, [isCheckingSubscriptionStatus, subscriptionStatus]);
+  }, [isCheckingSubscriptionStatus, location.pathname, subscriptionStatus]);
 
   useEffect(() => {
     let isMounted = true;
@@ -498,6 +500,7 @@ export default function Layout({ children }: Props) {
       persistSubscriptionState("trial");
       setSubscriptionStatus("trial");
       setShowTrialModal(false);
+      navigate(hasCompletedOnboarding(profileUserId) ? "/dashboard" : "/onboarding", { replace: true });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Nao foi possivel iniciar o trial.";
       window.alert(message);

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom"; // Link + navegaÃ§Ã£o
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { persistSubscriptionState } from "../lib/auth";
+import { hasCompletedOnboarding } from "../lib/onboarding";
 import { logClientEvent } from "../lib/clientLogger";
 import "./auth.css";
 
@@ -108,8 +109,7 @@ export default function Login() {
       }
       persistSubscriptionState(null); // Estado da assinatura sera validado pelo backend apos login
 
-      // Depois de salvar, manda pro Dashboard
-      navigate("/dashboard"); // Vai para a rota protegida
+      navigate(hasCompletedOnboarding(data.userId) ? "/dashboard" : "/onboarding");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao logar.";
       logClientEvent({
