@@ -62,15 +62,14 @@ export default function Register() {
         throw new Error(message);
       }
 
-      alert("Conta criada com sucesso! FaÃ§a login.");
+      alert("Conta criada. Enviamos um codigo para confirmar seu e-mail.");
       logClientEvent({
         event: "auth.register.success",
         message: "Cadastro realizado",
         data: { email: email.trim() },
       });
 
-      // ðŸ”¥ Redireciona automaticamente para o Login
-      navigate("/login");
+      navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro ao criar conta.";
       logClientEvent({

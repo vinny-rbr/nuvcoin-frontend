@@ -52,6 +52,13 @@ export default function Login() {
           message: "Login falhou",
           data: { email: email.trim(), status: res.status, error: message },
         });
+
+        if (res.status === 403) {
+          alert(message);
+          navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
+          return;
+        }
+
         alert(message);
         return;
       }

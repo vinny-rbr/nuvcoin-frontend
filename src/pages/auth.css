@@ -133,6 +133,13 @@
   transform: translateY(-1px);
 }
 
+.auth-code-input {
+  text-align: center;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 8px;
+}
+
 .auth-button {
   position: relative;
   height: 52px;
@@ -185,6 +192,20 @@
 
 .auth-footer a {
   color: #7dd3fc;
+}
+
+.auth-link-button {
+  border: 0;
+  background: transparent;
+  color: #7dd3fc;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.auth-link-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 @keyframes auth-card-in {

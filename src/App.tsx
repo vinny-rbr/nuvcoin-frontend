@@ -1,11 +1,12 @@
-import { logClientEvent } from "./lib/clientLogger";
+﻿import { logClientEvent } from "./lib/clientLogger";
 import { useEffect, useState, type ReactNode } from "react"; // Hooks + tipo
 import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Rotas do React Router
 import Layout from "./components/Layout"; // Layout premium (topbar + container)
 import ProtectedRoute from "./routes/ProtectedRoute"; // Proteção de rota (mock login)
 
 import Login from "./pages/Login"; // Página de login
-import Register from "./pages/Register"; // Página de cadastro
+import Register from "./pages/Register";
+import VerifyEmail from "./pages/VerifyEmail"; // Página de cadastro
 import Dashboard from "./pages/Dashboard"; // Página dashboard
 import Receitas from "./pages/Receitas"; // Página receitas
 import Despesas from "./pages/Despesas"; // Página despesas
@@ -65,6 +66,7 @@ export default function App() {
       {/* Rotas públicas */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* Dashboard */}
       <Route
@@ -145,3 +147,4 @@ Mudança feita:
 ✔ Sem criar arquivo novo
 ✔ Sem depender de biblioteca externa
 */
+
