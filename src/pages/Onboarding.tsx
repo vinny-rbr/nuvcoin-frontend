@@ -21,43 +21,43 @@ type Question = {
 const questions: Question[] = [
   {
     id: "financial_state",
-    title: "Conta pra gente, qual sua situacao financeira atual?",
-    subtitle: "Essas respostas vao ajudar a criar uma experiencia personalizada",
+    title: "Como esta sua relacao com o dinheiro hoje?",
+    subtitle: "Suas respostas ajudam o Conciliaai a preparar um inicio mais util para voce.",
     options: [
-      { id: "debt", label: "Tenho dividas", icon: "!" },
-      { id: "no_save", label: "Nao tenho dividas, mas tambem nao consigo economizar", icon: "=" },
-      { id: "save_little", label: "Ate que consigo economizar pouco", icon: "+" },
-      { id: "investing", label: "Economizo e ja consigo investir", icon: "$" },
+      { id: "debt", label: "Estou organizando pendencias", icon: "!" },
+      { id: "no_save", label: "Tenho controle, mas quase nao sobra", icon: "=" },
+      { id: "save_little", label: "Consigo guardar um pouco por mes", icon: "+" },
+      { id: "investing", label: "Ja guardo e quero evoluir melhor", icon: "$" },
     ],
   },
   {
     id: "main_pain",
-    title: "O que mais te tira o sono quando o assunto e dinheiro?",
+    title: "Qual ponto mais atrapalha sua rotina financeira?",
     options: [
-      { id: "unknown_spending", label: "Nao sei para onde o meu dinheiro vai", icon: "?" },
-      { id: "cant_reduce", label: "Sei com o que gasto, mas nao consigo diminuir", icon: "-" },
-      { id: "low_savings", label: "Economizo menos dinheiro do que gostaria", icon: "%" },
-      { id: "late_payments", label: "Nunca lembro de pagar nas datas corretas", icon: "D" },
+      { id: "unknown_spending", label: "Perco a visao dos gastos do mes", icon: "?" },
+      { id: "cant_reduce", label: "Sei onde gasto, mas quero cortar excessos", icon: "-" },
+      { id: "low_savings", label: "Quero guardar mais do que consigo hoje", icon: "%" },
+      { id: "late_payments", label: "Preciso lembrar melhor contas e vencimentos", icon: "D" },
     ],
   },
   {
     id: "main_goal",
-    title: "Chegou a hora de falar sobre suas expectativas. Qual seu principal objetivo?",
+    title: "Qual resultado voce quer alcancar primeiro?",
     options: [
-      { id: "understand", label: "Entender minhas movimentacoes financeiras", icon: "R$" },
-      { id: "discover_problem", label: "Descobrir o que mais prejudica minhas financas", icon: "L" },
-      { id: "forecast", label: "Ter uma previsao e me preparar para gastos futuros", icon: "30" },
-      { id: "plan", label: "Criar um planejamento financeiro personalizado", icon: "+" },
-      { id: "centralize", label: "Centralizar meus gastos em uma so plataforma", icon: "1" },
+      { id: "understand", label: "Enxergar entradas e saidas com clareza", icon: "R$" },
+      { id: "discover_problem", label: "Encontrar gastos que pesam no orcamento", icon: "L" },
+      { id: "forecast", label: "Planejar os proximos meses com seguranca", icon: "30" },
+      { id: "plan", label: "Criar um metodo simples de acompanhamento", icon: "+" },
+      { id: "centralize", label: "Reunir tudo em um painel unico", icon: "1" },
     ],
   },
 ];
 
 const tourSteps = [
-  "Cadastre sua primeira receita para ver o saldo nascer.",
-  "Registre despesas e separe tudo por categorias do seu jeito.",
-  "Use o dashboard para comparar periodo, gastos e recebimentos.",
-  "Crie grupos quando quiser dividir custos com outras pessoas.",
+  "Comece por uma receita para o saldo ficar vivo.",
+  "Lance despesas e use categorias com a sua linguagem.",
+  "Compare periodos no dashboard e descubra padroes.",
+  "Use grupos quando precisar dividir custos com alguem.",
 ];
 
 type Plan = {
@@ -234,9 +234,9 @@ export default function Onboarding() {
             </div>
 
             <div className="onboarding-tour-copy">
-              <span>Tutorial rapido</span>
+              <span>Primeiros passos</span>
               <h1>{tourSteps[tourIndex]}</h1>
-              <p>Voce pode ajustar tudo depois, mas esses passos deixam sua conta pronta para uso.</p>
+              <p>Nada fica travado: depois voce troca categorias, datas e valores do seu jeito.</p>
 
               <button type="button" className="onboarding-primary" onClick={() => setStep((current) => current + 1)}>
                 Continuar
@@ -248,8 +248,8 @@ export default function Onboarding() {
         {isFinalStep ? (
           <div className="onboarding-final">
             <div className="onboarding-final-icon">✓</div>
-            <h1>Tudo pronto para comecar</h1>
-            <p>Seu painel vai abrir com receitas, despesas, categorias e dashboard prontos para voce alimentar.</p>
+            <h1>Seu painel esta pronto</h1>
+            <p>Agora e so registrar os primeiros movimentos e acompanhar tudo pela visao geral.</p>
             {feedback ? <div className="onboarding-feedback">{feedback}</div> : null}
             <button type="button" className="onboarding-primary" onClick={finish} disabled={loading}>
               {loading ? "Preparando..." : finalButtonLabel}

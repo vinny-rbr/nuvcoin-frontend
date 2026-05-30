@@ -4,23 +4,23 @@ import "./onboarding.css";
 
 const slides = [
   {
-    title: "O jeito mais facil de controlar suas financas",
-    text: "Cadastre-se, crie planejamentos e acompanhe receitas, despesas e saldo em um so lugar.",
+    title: "Seu dinheiro em uma visao clara",
+    text: "Acompanhe entradas, saidas e saldo sem precisar montar planilha para tudo.",
     preview: "summary",
   },
   {
-    title: "Entenda para onde seu dinheiro vai",
-    text: "Veja categorias, formas de pagamento e comparativos para tomar decisoes melhores.",
+    title: "Categorias com a sua linguagem",
+    text: "Organize gastos e recebimentos do jeito que combina com sua rotina.",
     preview: "donut",
   },
   {
-    title: "Organize gastos sozinho ou em grupo",
-    text: "Controle suas despesas pessoais e divida custos com outras pessoas quando precisar.",
+    title: "Controle individual ou compartilhado",
+    text: "Use sozinho ou crie grupos para dividir custos com outras pessoas.",
     preview: "cards",
   },
   {
-    title: "Monte um plano para seus objetivos",
-    text: "Use o dashboard para acompanhar evolucao e ajustar seus habitos mes a mes.",
+    title: "Decisoes pequenas, mes mais previsivel",
+    text: "Compare periodos, veja padroes e ajuste o caminho antes do susto chegar.",
     preview: "plan",
   },
 ];
