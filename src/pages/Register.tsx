@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
+import { getPasswordPolicyError } from "../lib/passwordPolicy";
 import "./auth.css";
 // useNavigate permite redirecionar apÃ³s criar conta
 
@@ -29,6 +30,17 @@ export default function Register() {
 
     if (!email || !password) {
       alert("Preencha email e senha.");
+      return;
+    }
+
+    const passwordError = getPasswordPolicyError(password);
+    if (passwordError) {
+      alert(passwordError);
+      logClientEvent({
+        event: "auth.register.password_rejected",
+        message: "Senha recusada pela politica de seguranca",
+        data: { email: email.trim() || null, reason: passwordError },
+      });
       return;
     }
 
