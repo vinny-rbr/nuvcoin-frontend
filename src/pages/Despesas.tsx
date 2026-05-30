@@ -11,6 +11,7 @@ import {
   makeId,
   todayISO,
 } from "../lib/financeService";
+import CategoryPicker from "../components/CategoryPicker";
 import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
@@ -313,20 +314,12 @@ export default function Despesas() {
               />
             </label>
 
-            <label className="finance-field">
-              <span>Categoria</span>
-              <select
-                className="finance-control"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {categoryOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <CategoryPicker
+              label="Categoria"
+              value={category}
+              options={categoryOptions}
+              onChange={(nextCategory) => setCategory(nextCategory)}
+            />
 
             <label className="finance-field">
               <span>Valor</span>
