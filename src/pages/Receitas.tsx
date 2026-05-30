@@ -10,13 +10,13 @@ import {
   makeId,
   todayISO,
 } from "../lib/financeService";
+import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
 import "./finance.css";
 
 function formatBRLFromCents(valueCents: number): string {
-  const value = valueCents / 100;
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return (valueCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function parseBRLToCents(input: string): number {
@@ -34,7 +34,8 @@ export default function Receitas() {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
   const [dateISO, setDateISO] = useState(todayISO());
-  const [category, setCategory] = useState<FinanceCategory>("Salário");
+  const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.RECEITA[0]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORIES.RECEITA);
   const [animate, setAnimate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -72,6 +73,23 @@ export default function Receitas() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    void listFinanceCategories()
+      .then((categories) => {
+        if (!isMounted) return;
+        const options = categoriesForType(categories, "RECEITA");
+        setCategoryOptions(options);
+        setCategory((current) => (options.includes(current) ? current : options[0] ?? "Outros"));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     setAnimate(false);
 
     const timeoutId = window.setTimeout(() => {
@@ -96,7 +114,7 @@ export default function Receitas() {
 
     if (!title.trim() || !amount.trim()) {
       financeDebugLog("validacao falhou receita", { title, amount });
-      alert("Preencha título e valor.");
+      alert("Preencha titulo e valor.");
       return;
     }
 
@@ -104,7 +122,7 @@ export default function Receitas() {
 
     if (amountCents <= 0) {
       financeDebugLog("valor invalido receita", { amount, amountCents });
-      alert("Informe um valor válido.");
+      alert("Informe um valor valido.");
       return;
     }
 
@@ -134,8 +152,8 @@ export default function Receitas() {
     setTitle("");
     setAmount("");
     setDateISO(todayISO());
-    setCategory("Salário");
-  }, [amount, category, dateISO, saving, title]);
+    setCategory(categoryOptions[0] ?? "Outros");
+  }, [amount, category, categoryOptions, dateISO, saving, title]);
 
   useEffect(() => {
     function handleNativeAdd(event: Event) {
@@ -199,68 +217,64 @@ export default function Receitas() {
         {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
         <div>
-        <div className="finance-form-grid">
-          <label className="finance-field finance-field-title">
-            <span>Título</span>
-            <input
-              className="finance-control"
-              placeholder="Ex: Salário"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
+          <div className="finance-form-grid">
+            <label className="finance-field finance-field-title">
+              <span>Titulo</span>
+              <input
+                className="finance-control"
+                placeholder="Ex: Salario"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </label>
 
-          <label className="finance-field">
-            <span>Categoria</span>
-            <select
-              className="finance-control"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as FinanceCategory)}
-            >
-              <option value="Salário">Salário</option>
-              <option value="Freelance">Freelance</option>
-              <option value="Vendas">Vendas</option>
-              <option value="Outros">Outros</option>
-            </select>
-          </label>
+            <label className="finance-field">
+              <span>Categoria</span>
+              <select
+                className="finance-control"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                {categoryOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label className="finance-field">
-            <span>Valor</span>
-            <input
-              className="finance-control"
-              inputMode="decimal"
-              placeholder="Ex: 2500,00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </label>
+            <label className="finance-field">
+              <span>Valor</span>
+              <input
+                className="finance-control"
+                inputMode="decimal"
+                placeholder="Ex: 2500,00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
 
-          <label className="finance-field">
-            <span>Data</span>
-            <input
-              className="finance-control"
-              type="date"
-              value={dateISO}
-              onChange={(e) => setDateISO(e.target.value)}
-            />
-          </label>
-        </div>
+            <label className="finance-field">
+              <span>Data</span>
+              <input
+                className="finance-control"
+                type="date"
+                value={dateISO}
+                onChange={(e) => setDateISO(e.target.value)}
+              />
+            </label>
+          </div>
 
-        <button
-          className="finance-primary-button"
-          type="button"
-          disabled={saving}
-          onClick={handleAdd}
-        >
-          {saving ? "Salvando..." : "Adicionar Receita"}
-        </button>
+          <button className="finance-primary-button" type="button" disabled={saving} onClick={handleAdd}>
+            {saving ? "Salvando..." : "Adicionar Receita"}
+          </button>
         </div>
       </div>
 
       <div className="chart-card finance-panel finance-list-panel">
         <div className="finance-section-heading">
           <div>
-            <span className="finance-kicker">Histórico</span>
+            <span className="finance-kicker">Historico</span>
             <h3>Lista de Receitas</h3>
           </div>
           <span className="finance-count">{receitas.length} cadastrada(s)</span>
@@ -270,7 +284,7 @@ export default function Receitas() {
           <div className="finance-empty-state">
             <div className="finance-empty-icon">+</div>
             <strong>Nenhuma receita cadastrada ainda.</strong>
-            <span>Adicione sua primeira entrada pelo formulário acima.</span>
+            <span>Adicione sua primeira entrada pelo formulario acima.</span>
           </div>
         ) : (
           <div className="finance-list">
@@ -287,9 +301,7 @@ export default function Receitas() {
                 </div>
 
                 <div className="finance-row-actions">
-                  <div className="finance-row-value green">
-                    {formatBRLFromCents(item.amountCents)}
-                  </div>
+                  <div className="finance-row-value green">{formatBRLFromCents(item.amountCents)}</div>
 
                   <button className="finance-danger-button" onClick={() => handleRemove(item.id)}>
                     Remover

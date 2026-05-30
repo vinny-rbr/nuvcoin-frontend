@@ -10,6 +10,7 @@ import {
   makeId,
   todayISO,
 } from "../lib/financeService";
+import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
 import "./finance.css";
@@ -22,8 +23,7 @@ function parseAmountToCents(input: string): number {
 }
 
 function formatCentsBRL(cents: number): string {
-  const value = cents / 100;
-  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
 function formatDateBR(dateISO: string): string {
@@ -32,9 +32,9 @@ function formatDateBR(dateISO: string): string {
 
 function getPaymentLabel(paymentType: PaymentType): string {
   if (paymentType === "pix") return "Pix";
-  if (paymentType === "debit") return "Débito";
+  if (paymentType === "debit") return "Debito";
   if (paymentType === "cash") return "Dinheiro";
-  return "Crédito";
+  return "Credito";
 }
 
 function getStatusLabel(status: FinanceStatus): string {
@@ -43,7 +43,8 @@ function getStatusLabel(status: FinanceStatus): string {
 
 export default function Despesas() {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState<FinanceCategory>("Alimentação");
+  const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.DESPESA[0]);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORIES.DESPESA);
   const [amount, setAmount] = useState("");
   const [dateISO, setDateISO] = useState(todayISO());
   const [items, setItems] = useState<FinanceItem[]>([]);
@@ -86,6 +87,23 @@ export default function Despesas() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
+    void listFinanceCategories()
+      .then((categories) => {
+        if (!isMounted) return;
+        const options = categoriesForType(categories, "DESPESA");
+        setCategoryOptions(options);
+        setCategory((current) => (options.includes(current) ? current : options[0] ?? "Outros"));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     setAnimate(false);
 
     const timeoutId = window.setTimeout(() => {
@@ -112,13 +130,13 @@ export default function Despesas() {
 
     if (!title.trim()) {
       financeDebugLog("validacao falhou despesa titulo", { title });
-      alert("Informe um título.");
+      alert("Informe um titulo.");
       return;
     }
 
     if (amountCents <= 0) {
       financeDebugLog("valor invalido despesa", { amount, amountCents });
-      alert("Informe um valor válido.");
+      alert("Informe um valor valido.");
       return;
     }
 
@@ -148,10 +166,10 @@ export default function Despesas() {
     setTitle("");
     setAmount("");
     setDateISO(todayISO());
-    setCategory("Alimentação");
+    setCategory(categoryOptions[0] ?? "Outros");
     setPaymentType("pix");
     setStatus("paid");
-  }, [amount, category, dateISO, paymentType, saving, status, title]);
+  }, [amount, category, categoryOptions, dateISO, paymentType, saving, status, title]);
 
   useEffect(() => {
     function handleNativeAdd(event: Event) {
@@ -184,7 +202,7 @@ export default function Despesas() {
     <div className={`finance-view finance-expense${animate ? " is-ready" : ""}`}>
       <section className="finance-hero">
         <div>
-          <span className="finance-kicker">Saídas</span>
+          <span className="finance-kicker">Saidas</span>
           <h2>Despesas</h2>
         </div>
         <p>Registre gastos, separe por categoria e acompanhe o impacto no saldo.</p>
@@ -210,7 +228,7 @@ export default function Despesas() {
       <div className="chart-card finance-panel finance-form-panel">
         <div className="finance-section-heading">
           <div>
-            <span className="finance-kicker">Nova saída</span>
+            <span className="finance-kicker">Nova saida</span>
             <h3>Adicionar Despesa</h3>
           </div>
         </div>
@@ -218,96 +236,85 @@ export default function Despesas() {
         {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
         <div>
-        <div className="finance-form-grid">
-          <label className="finance-field finance-field-title">
-            <span>Título</span>
-            <input
-              className="finance-control"
-              placeholder="Ex: Mercado"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </label>
+          <div className="finance-form-grid">
+            <label className="finance-field finance-field-title">
+              <span>Titulo</span>
+              <input
+                className="finance-control"
+                placeholder="Ex: Mercado"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </label>
 
-          <label className="finance-field">
-            <span>Categoria</span>
-            <select
-              className="finance-control"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as FinanceCategory)}
-            >
-              <option value="Alimentação">Alimentação</option>
-              <option value="Transporte">Transporte</option>
-              <option value="Moradia">Moradia</option>
-              <option value="Saúde">Saúde</option>
-              <option value="Lazer">Lazer</option>
-              <option value="Outros">Outros</option>
-            </select>
-          </label>
+            <label className="finance-field">
+              <span>Categoria</span>
+              <select
+                className="finance-control"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                {categoryOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <label className="finance-field">
-            <span>Valor</span>
-            <input
-              className="finance-control"
-              inputMode="decimal"
-              placeholder="Ex: 150,00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </label>
+            <label className="finance-field">
+              <span>Valor</span>
+              <input
+                className="finance-control"
+                inputMode="decimal"
+                placeholder="Ex: 150,00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
 
-          <label className="finance-field">
-            <span>Data</span>
-            <input
-              className="finance-control"
-              type="date"
-              value={dateISO}
-              onChange={(e) => setDateISO(e.target.value)}
-            />
-          </label>
+            <label className="finance-field">
+              <span>Data</span>
+              <input className="finance-control" type="date" value={dateISO} onChange={(e) => setDateISO(e.target.value)} />
+            </label>
 
-          <label className="finance-field">
-            <span>Pagamento</span>
-            <select
-              className="finance-control"
-              value={paymentType}
-              onChange={(e) => setPaymentType(e.target.value as PaymentType)}
-            >
-              <option value="pix">Pix</option>
-              <option value="debit">Débito</option>
-              <option value="cash">Dinheiro</option>
-              <option value="credit">Crédito</option>
-            </select>
-          </label>
+            <label className="finance-field">
+              <span>Pagamento</span>
+              <select
+                className="finance-control"
+                value={paymentType}
+                onChange={(e) => setPaymentType(e.target.value as PaymentType)}
+              >
+                <option value="pix">Pix</option>
+                <option value="debit">Debito</option>
+                <option value="cash">Dinheiro</option>
+                <option value="credit">Credito</option>
+              </select>
+            </label>
 
-          <label className="finance-field">
-            <span>Status</span>
-            <select
-              className="finance-control"
-              value={status}
-              onChange={(e) => setStatus(e.target.value as FinanceStatus)}
-            >
-              <option value="paid">Pago</option>
-              <option value="pending">Pendente</option>
-            </select>
-          </label>
-        </div>
+            <label className="finance-field">
+              <span>Status</span>
+              <select
+                className="finance-control"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as FinanceStatus)}
+              >
+                <option value="paid">Pago</option>
+                <option value="pending">Pendente</option>
+              </select>
+            </label>
+          </div>
 
-        <button
-          className="finance-primary-button"
-          type="button"
-          disabled={saving}
-          onClick={onAdd}
-        >
-          {saving ? "Salvando..." : "Adicionar Despesa"}
-        </button>
+          <button className="finance-primary-button" type="button" disabled={saving} onClick={onAdd}>
+            {saving ? "Salvando..." : "Adicionar Despesa"}
+          </button>
         </div>
       </div>
 
       <div className="chart-card finance-panel finance-list-panel">
         <div className="finance-section-heading">
           <div>
-            <span className="finance-kicker">Histórico</span>
+            <span className="finance-kicker">Historico</span>
             <h3>Lista de Despesas</h3>
           </div>
           <span className="finance-count">{despesas.length} cadastrada(s)</span>
@@ -317,7 +324,7 @@ export default function Despesas() {
           <div className="finance-empty-state">
             <div className="finance-empty-icon">-</div>
             <strong>Nenhuma despesa cadastrada ainda.</strong>
-            <span>Adicione sua primeira saída pelo formulário acima.</span>
+            <span>Adicione sua primeira saida pelo formulario acima.</span>
           </div>
         ) : (
           <div className="finance-list">

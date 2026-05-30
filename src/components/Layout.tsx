@@ -27,6 +27,7 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", requiresActiveSubscription: true },
   { to: "/receitas", label: "Receitas", requiresActiveSubscription: true },
   { to: "/despesas", label: "Despesas", requiresActiveSubscription: true },
+  { to: "/categorias", label: "Categorias", requiresActiveSubscription: true },
   { to: "/groups", label: "Groups", requiresActiveSubscription: false },
 ];
 

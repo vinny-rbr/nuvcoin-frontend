@@ -1,49 +1,40 @@
 // Tipo principal: Receita ou Despesa
 export type FinanceType = "RECEITA" | "DESPESA";
 
-// Método de pagamento (necessário para separar Crédito depois)
+// Metodo de pagamento, usado para separar credito no dashboard.
 export type PaymentType = "pix" | "debit" | "cash" | "credit";
 
-// Status (opcional mas já preparado)
+// Status do lancamento.
 export type FinanceStatus = "paid" | "pending";
 
-// Categorias
-export type FinanceCategory =
-  | "Salário"
-  | "Freelance"
-  | "Vendas"
-  | "Alimentação"
-  | "Transporte"
-  | "Moradia"
-  | "Saúde"
-  | "Lazer"
-  | "Outros";
+// Categoria cadastrada pelo usuario.
+export type FinanceCategory = string;
 
-// Modelo principal da transação
+export interface FinanceCategoryOption {
+  id: string;
+  type: FinanceType;
+  name: string;
+  createdAtUtc?: string;
+  updatedAtUtc?: string | null;
+}
+
+// Modelo principal da transacao.
 export interface FinanceItem {
-  id: string; // Identificador único
-  type: FinanceType; // RECEITA ou DESPESA
-  title: string; // Nome da transação
-  category: FinanceCategory; // Categoria
-  amountCents: number; // Valor sempre positivo (em centavos)
-  dateISO: string; // Data principal da transação
-  createdAtISO: string; // Data de criação
-  paymentType: PaymentType; // pix | debit | cash | credit
-  status: FinanceStatus; // paid | pending
+  id: string;
+  type: FinanceType;
+  title: string;
+  category: FinanceCategory;
+  amountCents: number;
+  dateISO: string;
+  createdAtISO: string;
+  paymentType: PaymentType;
+  status: FinanceStatus;
 }
 
-// Resumo para o Dashboard
+// Resumo para o Dashboard.
 export interface FinanceSummary {
-  totalReceitasCents: number; // Soma RECEITA
-  totalDespesasCents: number; // Soma DESPESA
-  totalCreditoCents: number; // Soma DESPESA com paymentType = credit
-  saldoCents: number; // receitas - despesas
+  totalReceitasCents: number;
+  totalDespesasCents: number;
+  totalCreditoCents: number;
+  saldoCents: number;
 }
-
-// Desenvolvido por Lucas Vinicius
-// lucassousa@gmail.com
-// Explicação:
-// - amountCents sempre positivo.
-// - Quem define se soma ou subtrai é o campo "type".
-// - Crédito será: type="DESPESA" AND paymentType="credit".
-// - Isso evita refatoração futura.

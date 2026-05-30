@@ -10,6 +10,7 @@ import VerifyEmail from "./pages/VerifyEmail"; // Página de cadastro
 import Dashboard from "./pages/Dashboard"; // Página dashboard
 import Receitas from "./pages/Receitas"; // Página receitas
 import Despesas from "./pages/Despesas"; // Página despesas
+import Categorias from "./pages/Categorias";
 import Groups from "./pages/Groups"; // Página de grupos (Splitwise)
 
 type AnimatedPageProps = {
@@ -104,6 +105,19 @@ export default function App() {
             <Layout>
               <AnimatedPage>
                 <Despesas />
+              </AnimatedPage>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/categorias"
+        element={
+          <ProtectedRoute requireActiveSubscription>
+            <Layout>
+              <AnimatedPage>
+                <Categorias />
               </AnimatedPage>
             </Layout>
           </ProtectedRoute>
