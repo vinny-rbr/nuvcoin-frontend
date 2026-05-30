@@ -14,6 +14,9 @@ export interface FinanceCategoryOption {
   id: string;
   type: FinanceType;
   name: string;
+  parentId?: string | null;
+  level?: number;
+  fullPath?: string;
   createdAtUtc?: string;
   updatedAtUtc?: string | null;
 }

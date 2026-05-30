@@ -471,7 +471,7 @@
 
 .categories-create-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) auto;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
   gap: 12px;
   align-items: end;
 }
@@ -502,6 +502,29 @@
 
 .categories-row-main strong {
   color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.categories-level-pill {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  background: rgba(37, 99, 235, 0.12);
+  color: #bfdbfe;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.categories-name-stack {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.categories-name-stack span {
+  color: var(--text-secondary);
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
 

@@ -28,9 +28,31 @@ function normalizeCategory(raw: any): FinanceCategoryOption {
     id: String(raw?.id ?? ""),
     type: raw?.type === "RECEITA" ? "RECEITA" : "DESPESA",
     name: String(raw?.name ?? "").trim(),
+    parentId: raw?.parentId ?? null,
+    level: Number(raw?.level ?? 1),
     createdAtUtc: raw?.createdAtUtc,
     updatedAtUtc: raw?.updatedAtUtc ?? null,
   };
+}
+
+function withFullPaths(categories: FinanceCategoryOption[]): FinanceCategoryOption[] {
+  const byId = new Map(categories.map((category) => [category.id, category]));
+  const pathCache = new Map<string, string>();
+
+  const pathFor = (category: FinanceCategoryOption): string => {
+    const cached = pathCache.get(category.id);
+    if (cached) return cached;
+
+    const parent = category.parentId ? byId.get(category.parentId) : null;
+    const path = parent ? `${pathFor(parent)} > ${category.name}` : category.name;
+    pathCache.set(category.id, path);
+    return path;
+  };
+
+  return categories.map((category) => ({
+    ...category,
+    fullPath: pathFor(category),
+  }));
 }
 
 export async function listFinanceCategories(): Promise<FinanceCategoryOption[]> {
@@ -44,14 +66,19 @@ export async function listFinanceCategories(): Promise<FinanceCategoryOption[]> 
   }
 
   const raw = await response.json();
-  return Array.isArray(raw) ? raw.map(normalizeCategory).filter((category) => category.id && category.name) : [];
+  const normalized = Array.isArray(raw) ? raw.map(normalizeCategory).filter((category) => category.id && category.name) : [];
+  return withFullPaths(normalized);
 }
 
-export async function createFinanceCategory(type: FinanceType, name: string): Promise<FinanceCategoryOption> {
+export async function createFinanceCategory(
+  type: FinanceType,
+  name: string,
+  parentId?: string | null,
+): Promise<FinanceCategoryOption> {
   const response = await fetch(apiUrl("/api/finance-categories"), {
     method: "POST",
     headers: makeHeaders(),
-    body: JSON.stringify({ type, name }),
+    body: JSON.stringify({ type, name, parentId: parentId ?? null }),
   });
 
   if (!response.ok) {
@@ -92,7 +119,7 @@ export async function deleteFinanceCategory(id: string): Promise<void> {
 export function categoriesForType(categories: FinanceCategoryOption[], type: FinanceType): string[] {
   const names = categories
     .filter((category) => category.type === type)
-    .map((category) => category.name)
+    .map((category) => category.fullPath ?? category.name)
     .filter(Boolean);
 
   return names.length > 0 ? names : DEFAULT_CATEGORIES[type];

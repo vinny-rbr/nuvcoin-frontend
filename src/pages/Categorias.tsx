@@ -28,6 +28,7 @@ export default function Categorias() {
   const [categories, setCategories] = useState<FinanceCategoryOption[]>([]);
   const [activeType, setActiveType] = useState<FinanceType>("RECEITA");
   const [newName, setNewName] = useState("");
+  const [newParentId, setNewParentId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -36,8 +37,17 @@ export default function Categorias() {
   const [animate, setAnimate] = useState(false);
 
   const visibleCategories = useMemo(
-    () => categories.filter((category) => category.type === activeType),
+    () =>
+      categories
+        .filter((category) => category.type === activeType)
+        .slice()
+        .sort((a, b) => (a.fullPath ?? a.name).localeCompare(b.fullPath ?? b.name)),
     [activeType, categories],
+  );
+
+  const parentOptions = useMemo(
+    () => visibleCategories.filter((category) => (category.level ?? 1) < 3 && category.id !== editingId),
+    [editingId, visibleCategories],
   );
 
   useEffect(() => {
@@ -83,10 +93,11 @@ export default function Categorias() {
     try {
       setSaving(true);
       setFeedback(null);
-      const created = await createFinanceCategory(activeType, name);
-      setCategories((current) => [...current, created].sort((a, b) => a.name.localeCompare(b.name)));
+      await createFinanceCategory(activeType, name, newParentId || null);
+      await refreshCategories();
       setNewName("");
-      setFeedback("Categoria criada com sucesso.");
+      setNewParentId("");
+      setFeedback(newParentId ? "Subcategoria criada com sucesso." : "Categoria criada com sucesso.");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Nao foi possivel criar a categoria.");
     } finally {
@@ -112,8 +123,8 @@ export default function Categorias() {
     try {
       setSaving(true);
       setFeedback(null);
-      const updated = await updateFinanceCategory(editingId, name);
-      setCategories((current) => current.map((category) => (category.id === updated.id ? updated : category)));
+      await updateFinanceCategory(editingId, name);
+      await refreshCategories();
       setEditingId(null);
       setEditingName("");
       setFeedback("Categoria atualizada. Os lancamentos antigos tambem foram ajustados.");
@@ -167,6 +178,7 @@ export default function Categorias() {
                 className={activeType === type ? "is-active" : ""}
                 onClick={() => {
                   setActiveType(type);
+                  setNewParentId("");
                   setEditingId(null);
                   setFeedback(null);
                 }}
@@ -181,7 +193,7 @@ export default function Categorias() {
 
         <div className="categories-create-row">
           <label className="finance-field">
-            <span>Nova categoria</span>
+            <span>Novo nome</span>
             <input
               className="finance-control"
               placeholder={typeLabels[activeType].placeholder}
@@ -192,8 +204,19 @@ export default function Categorias() {
               }}
             />
           </label>
+          <label className="finance-field">
+            <span>Dentro de</span>
+            <select className="finance-control" value={newParentId} onChange={(event) => setNewParentId(event.target.value)}>
+              <option value="">Categoria principal</option>
+              {parentOptions.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.fullPath ?? category.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <button className="finance-primary-button" type="button" disabled={saving} onClick={handleCreate}>
-            Adicionar categoria
+            {newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
           </button>
         </div>
 
@@ -216,6 +239,7 @@ export default function Categorias() {
                 <div key={category.id} className="categories-row">
                   <div className="categories-row-main">
                     <span className="finance-row-icon">{activeType === "RECEITA" ? "+" : "-"}</span>
+                    <span className="categories-level-pill">Nivel {category.level ?? 1}</span>
                     {isEditing ? (
                       <input
                         className="finance-control"
@@ -228,7 +252,10 @@ export default function Categorias() {
                         autoFocus
                       />
                     ) : (
-                      <strong>{category.name}</strong>
+                      <div className="categories-name-stack">
+                        <strong>{category.name}</strong>
+                        <span>{category.fullPath ?? category.name}</span>
+                      </div>
                     )}
                   </div>
 
