@@ -171,6 +171,67 @@
   letter-spacing: 0.03em;
 }
 
+.finance-check-row,
+.finance-radio-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: var(--text-main);
+}
+
+.finance-check-row input,
+.finance-radio-card input {
+  width: 18px;
+  height: 18px;
+  margin-top: 3px;
+  accent-color: var(--finance-accent);
+  flex-shrink: 0;
+}
+
+.finance-check-row strong,
+.finance-radio-card strong {
+  display: block;
+  line-height: 1.2;
+}
+
+.finance-check-row small,
+.finance-radio-card small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.finance-recurring-box {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid var(--finance-accent-border);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, var(--finance-accent-soft), transparent 44%),
+    rgba(15, 23, 42, 0.36);
+}
+
+.finance-recurring-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.finance-radio-card {
+  min-height: 86px;
+  padding: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.finance-recurring-months {
+  grid-column: 1 / -1;
+}
+
 .finance-control {
   width: 100%;
   height: 54px;
@@ -494,7 +555,8 @@
   }
 
   .finance-income .finance-summary-grid,
-  .finance-form-grid {
+  .finance-form-grid,
+  .finance-recurring-options {
     grid-template-columns: 1fr;
   }
 

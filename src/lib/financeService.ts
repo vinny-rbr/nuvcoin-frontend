@@ -107,6 +107,7 @@ function normalizeApiList(rawList: any): FinanceItem[] {
 type FinanceProvider = {
   list: () => Promise<FinanceItem[]>; // Lista
   add: (item: FinanceItem) => Promise<FinanceItem>; // Add (retorna item criado)
+  update: (id: string, patch: Partial<FinanceItem>) => Promise<FinanceItem>; // Atualiza
   remove: (id: string) => Promise<void>; // Remove
   saveAll: (items: FinanceItem[]) => Promise<void>; // Bulk (ainda local)
 };
@@ -118,6 +119,12 @@ const localStorageProvider: FinanceProvider = {
   add: async (item) => {
     saveItemsStorage([item, ...loadFinanceItems()]); // Salva no local
     return item; // Retorna item
+  },
+
+  update: async (id, patch) => {
+    const updated = loadFinanceItems().map((item) => (item.id === id ? { ...item, ...patch } : item));
+    saveItemsStorage(updated);
+    return updated.find((item) => item.id === id) as FinanceItem;
   },
 
   remove: async (id) => {
@@ -186,6 +193,33 @@ const apiProvider: FinanceProvider = {
     financeDebugLog("API POST /finance sucesso", created);
 
     return created; // âœ… Sem GET depois
+  },
+
+  update: async (id, patch) => {
+    const payload: Record<string, unknown> = {};
+
+    if (patch.type) payload.type = patch.type;
+    if (patch.title !== undefined) payload.title = patch.title;
+    if (patch.category !== undefined) payload.category = patch.category;
+    if (patch.amountCents !== undefined) payload.amountCents = patch.amountCents;
+    if (patch.dateISO !== undefined) payload.date = patch.dateISO;
+    if (patch.paymentType !== undefined) payload.paymentType = patch.paymentType;
+    if (patch.status !== undefined) payload.status = patch.status;
+
+    const res = await fetch(`${API_BASE_URL}/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      headers: makeHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (res.status === 403) {
+      persistSubscriptionState(false);
+      throw new Error("Finance access forbidden: 403");
+    }
+
+    if (!res.ok) throw new Error(`API update failed: ${res.status}`);
+
+    return normalizeApiItem(await res.json());
   },
 
   remove: async (id) => {
@@ -477,6 +511,37 @@ export function financeRemove(id: string): FinanceItem[] {
   }
 
   return updatedLocal; // Retorna local
+}
+
+export function financeUpdate(id: string, patch: Partial<FinanceItem>): FinanceItem[] {
+  ensureUserScopedCache();
+  const previous = getCache();
+  const updatedLocal = previous.map((item) => (item.id === id ? { ...item, ...patch } : item));
+  setCache(updatedLocal);
+  saveItemsStorage(updatedLocal);
+
+  if (USE_API) {
+    void safe(
+      async () => {
+        const updated = await activeProvider.update(id, patch);
+        const next = upsertById(getCache(), updated);
+        saveItemsStorage(next);
+        setCache(next);
+        hasHydratedFromApiThisSession = true;
+        return updated;
+      },
+      async () => {
+        window.dispatchEvent(
+          new CustomEvent("conciliaai_finance_error", {
+            detail: "Nao foi possivel sincronizar a alteracao agora. Tente novamente em alguns segundos.",
+          })
+        );
+        return previous.find((item) => item.id === id) ?? updatedLocal[0];
+      }
+    );
+  }
+
+  return updatedLocal;
 }
 
 export function financeSaveAll(items: FinanceItem[]): void {

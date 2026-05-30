@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
 import type { FinanceCategory, FinanceItem, FinanceStatus, PaymentType } from "../types/finance";
 import {
   financeAdd,
@@ -7,6 +7,7 @@ import {
   financeRefreshFromApi,
   financeRemove,
   financeSubscribe,
+  financeUpdate,
   makeId,
   todayISO,
 } from "../lib/financeService";
@@ -41,6 +42,19 @@ function getStatusLabel(status: FinanceStatus): string {
   return status === "paid" ? "Pago" : "Pendente";
 }
 
+function addMonthsISO(dateISO: string, monthsToAdd: number): string {
+  const [year, month, day] = dateISO.split("-").map(Number);
+  const target = new Date(year, month - 1 + monthsToAdd, 1);
+  const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  const safeDay = Math.min(day, lastDay);
+  target.setDate(safeDay);
+
+  const yyyy = target.getFullYear();
+  const mm = String(target.getMonth() + 1).padStart(2, "0");
+  const dd = String(target.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export default function Despesas() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.DESPESA[0]);
@@ -50,9 +64,13 @@ export default function Despesas() {
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [paymentType, setPaymentType] = useState<PaymentType>("pix");
   const [status, setStatus] = useState<FinanceStatus>("paid");
+  const [isRecurring, setIsRecurring] = useState(false);
+  const [recurrenceMode, setRecurrenceMode] = useState<"forever" | "months">("forever");
+  const [recurrenceMonths, setRecurrenceMonths] = useState("6");
   const [animate, setAnimate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     const load = () => {
@@ -121,12 +139,14 @@ export default function Despesas() {
   const onAdd = useCallback((event?: SyntheticEvent | Event) => {
     event?.preventDefault();
     event?.stopPropagation();
-    financeDebugLog("onAdd despesa iniciou", { title, amount, dateISO, paymentType, status, saving });
+    financeDebugLog("onAdd despesa iniciou", { title, amount, dateISO, paymentType, status, saving, isRecurring });
 
-    if (saving) return;
+    if (savingRef.current || saving) return;
     setFeedback(null);
 
     const amountCents = parseAmountToCents(amount);
+    const parsedMonths = Number(recurrenceMonths);
+    const totalMonths = isRecurring ? (recurrenceMode === "forever" ? 12 : Math.min(Math.max(Math.trunc(parsedMonths || 0), 1), 60)) : 1;
 
     if (!title.trim()) {
       financeDebugLog("validacao falhou despesa titulo", { title });
@@ -140,28 +160,44 @@ export default function Despesas() {
       return;
     }
 
-    const newItem: FinanceItem = {
-      id: makeId(),
-      type: "DESPESA",
-      title: title.trim(),
-      category,
-      amountCents,
-      dateISO,
-      createdAtISO: new Date().toISOString(),
-      paymentType,
-      status,
-    };
+    if (isRecurring && recurrenceMode === "months" && (!parsedMonths || parsedMonths < 1)) {
+      alert("Informe por quantos meses essa despesa deve se repetir.");
+      return;
+    }
 
+    savingRef.current = true;
     setSaving(true);
-    setFeedback("Salvando lancamento...");
-    const updated = financeAdd(newItem);
+    setFeedback(isRecurring ? "Criando despesas mensais..." : "Salvando lancamento...");
+
+    let updated = financeList();
+    const createdAtISO = new Date().toISOString();
+
+    for (let index = 0; index < totalMonths; index += 1) {
+      const newItem: FinanceItem = {
+        id: makeId(),
+        type: "DESPESA",
+        title: title.trim(),
+        category,
+        amountCents,
+        dateISO: addMonthsISO(dateISO, index),
+        createdAtISO,
+        paymentType,
+        status: index === 0 ? status : "pending",
+      };
+
+      updated = financeAdd(newItem);
+    }
+
     setItems(updated);
     window.setTimeout(() => {
       void financeRefreshFromApi()
         .then(setItems)
         .catch(() => undefined)
-        .finally(() => setSaving(false));
-    }, 700);
+        .finally(() => {
+          savingRef.current = false;
+          setSaving(false);
+        });
+    }, isRecurring ? 1200 : 700);
 
     setTitle("");
     setAmount("");
@@ -169,7 +205,10 @@ export default function Despesas() {
     setCategory(categoryOptions[0] ?? "Outros");
     setPaymentType("pix");
     setStatus("paid");
-  }, [amount, category, categoryOptions, dateISO, paymentType, saving, status, title]);
+    setIsRecurring(false);
+    setRecurrenceMode("forever");
+    setRecurrenceMonths("6");
+  }, [amount, category, categoryOptions, dateISO, isRecurring, paymentType, recurrenceMode, recurrenceMonths, saving, status, title]);
 
   useEffect(() => {
     function handleNativeAdd(event: Event) {
@@ -195,6 +234,12 @@ export default function Despesas() {
     if (!ok) return;
 
     const updated = financeRemove(id);
+    setItems(updated);
+  }
+
+  function toggleStatus(item: FinanceItem) {
+    const nextStatus: FinanceStatus = item.status === "paid" ? "pending" : "paid";
+    const updated = financeUpdate(item.id, { status: nextStatus });
     setItems(updated);
   }
 
@@ -305,8 +350,66 @@ export default function Despesas() {
             </label>
           </div>
 
+          <div className="finance-recurring-box">
+            <label className="finance-check-row">
+              <input
+                type="checkbox"
+                checked={isRecurring}
+                onChange={(event) => setIsRecurring(event.target.checked)}
+              />
+              <span>
+                <strong>Gasto fixo mensal</strong>
+                <small>Ex: aluguel, internet, mensalidade ou qualquer conta que volta todo mes.</small>
+              </span>
+            </label>
+
+            {isRecurring ? (
+              <div className="finance-recurring-options">
+                <label className="finance-radio-card">
+                  <input
+                    type="radio"
+                    name="recurrence-mode"
+                    checked={recurrenceMode === "forever"}
+                    onChange={() => setRecurrenceMode("forever")}
+                  />
+                  <span>
+                    <strong>Sem data para acabar</strong>
+                    <small>Cria os proximos 12 meses agora.</small>
+                  </span>
+                </label>
+
+                <label className="finance-radio-card">
+                  <input
+                    type="radio"
+                    name="recurrence-mode"
+                    checked={recurrenceMode === "months"}
+                    onChange={() => setRecurrenceMode("months")}
+                  />
+                  <span>
+                    <strong>Por alguns meses</strong>
+                    <small>Voce escolhe a quantidade de parcelas mensais.</small>
+                  </span>
+                </label>
+
+                {recurrenceMode === "months" ? (
+                  <label className="finance-field finance-recurring-months">
+                    <span>Quantidade de meses</span>
+                    <input
+                      className="finance-control"
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={recurrenceMonths}
+                      onChange={(event) => setRecurrenceMonths(event.target.value)}
+                    />
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
           <button className="finance-primary-button" type="button" disabled={saving} onClick={onAdd}>
-            {saving ? "Salvando..." : "Adicionar Despesa"}
+            {saving ? "Salvando..." : isRecurring ? "Adicionar despesas mensais" : "Adicionar Despesa"}
           </button>
         </div>
       </div>
@@ -344,6 +447,9 @@ export default function Despesas() {
 
                 <div className="finance-row-actions">
                   <div className="finance-row-value red">- {formatCentsBRL(d.amountCents)}</div>
+                  <button className="categories-secondary-button" type="button" onClick={() => toggleStatus(d)}>
+                    {d.status === "paid" ? "Marcar pendente" : "Marcar pago"}
+                  </button>
                   <button className="finance-danger-button" onClick={() => onDelete(d.id)}>
                     Remover
                   </button>
