@@ -2,6 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react"; // Hooks + tipo
 import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Rotas do React Router
 import Layout from "./components/Layout"; // Layout premium (topbar + container)
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
 import ProtectedRoute from "./routes/ProtectedRoute"; // Proteção de rota (mock login)
 
 import Login from "./pages/Login"; // Página de login
@@ -65,7 +66,9 @@ export default function App() {
   }, [location.pathname, location.search]);
 
   return (
-    <Routes>
+    <>
+      <PwaInstallPrompt />
+      <Routes>
       {/* Rotas públicas */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -155,7 +158,8 @@ export default function App() {
 
       {/* Qualquer rota desconhecida */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
