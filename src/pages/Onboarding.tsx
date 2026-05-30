@@ -1,9 +1,15 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
-import { getSubscriptionStatus, persistSubscriptionState, type SubscriptionStatus } from "../lib/auth";
-import { completeOnboarding, type OnboardingAnswer } from "../lib/onboarding";
+import {
+  deriveSubscriptionStatusFromAuthData,
+  getSubscriptionStatus,
+  persistSubscriptionState,
+  subscribeToSubscriptionStatus,
+  type SubscriptionStatus,
+} from "../lib/auth";
+import { completeOnboarding, hasCompletedOnboarding, type OnboardingAnswer } from "../lib/onboarding";
 import { logClientEvent } from "../lib/clientLogger";
 import "./onboarding.css";
 
@@ -117,7 +123,7 @@ export default function Onboarding() {
   const [answers, setAnswers] = useState<OnboardingAnswer[]>([]);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const subscriptionStatus = getSubscriptionStatus();
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(() => getSubscriptionStatus());
   const currentQuestion = questions[step];
   const isQuestionStep = step < questions.length;
   const tourIndex = step - questions.length;
@@ -130,6 +136,53 @@ export default function Onboarding() {
     if (subscriptionStatus === "active" || subscriptionStatus === "trial") return "Abrir dashboard";
     return "Ativar teste e abrir dashboard";
   }, [subscriptionStatus]);
+
+  useEffect(() => {
+    return subscribeToSubscriptionStatus(setSubscriptionStatus);
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncSubscriptionStatus() {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      try {
+        const response = await fetch(apiUrl("/api/subscriptions/me"), {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) return;
+
+        const data = (await response.json()) as Record<string, unknown>;
+        const nextStatus = deriveSubscriptionStatusFromAuthData(data);
+        if (!nextStatus || !isMounted) return;
+
+        persistSubscriptionState(nextStatus);
+        setSubscriptionStatus(nextStatus);
+      } catch {
+        // Mantem o status local quando a rede falhar.
+      }
+    }
+
+    void syncSubscriptionStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hasCompletedOnboarding()) return;
+    if (subscriptionStatus !== "active" && subscriptionStatus !== "trial") return;
+
+    navigate("/dashboard", { replace: true });
+  }, [navigate, subscriptionStatus]);
 
   function handleAnswer(option: Question["options"][number]) {
     if (!currentQuestion) return;
@@ -183,10 +236,6 @@ export default function Onboarding() {
 
   function skipOnboarding() {
     completeOnboarding(answers);
-    if (subscriptionStatus !== "active" && subscriptionStatus !== "trial") {
-      setStep(questions.length + tourSteps.length);
-      return;
-    }
     navigate("/dashboard", { replace: true });
   }
 
