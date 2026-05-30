@@ -840,7 +840,7 @@ export default function Layout({ children }: Props) {
             }}
           >
             <h2 style={{ margin: 0, fontSize: "28px", fontWeight: 700 }}>Saindo...</h2>
-            <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)" }}>Volte sempre ðŸ‘‹</p>
+            <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)" }}>Volte sempre!</p>
           </div>
         </div>
       ) : null}
@@ -900,10 +900,10 @@ export default function Layout({ children }: Props) {
                 Acesso premium
               </span>
               <h2 style={{ margin: 0, fontSize: "30px", fontWeight: 800, lineHeight: 1.1 }}>
-                Ative seu plano e libere toda a experiÃªncia
+                Ative seu plano e libere toda a experiencia
               </h2>
               <p style={{ margin: 0, fontSize: "16px", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-                Continue com um plano ativo para usar sem bloqueios, manter seu histÃ³rico sincronizado e acessar
+                Continue com um plano ativo para usar sem bloqueios, manter seu historico sincronizado e acessar
                 todos os recursos da plataforma.
               </p>
             </div>
@@ -996,9 +996,9 @@ export default function Layout({ children }: Props) {
                           lineHeight: 1.6,
                         }}
                       >
-                        <li>Acesso completo ao dashboard e aos mÃ³dulos financeiros</li>
-                        <li>Recursos premium liberados para controle e organizaÃ§Ã£o</li>
-                        <li>Continuidade do histÃ³rico e suporte ao crescimento da conta</li>
+                        <li>Acesso completo ao dashboard e aos modulos financeiros</li>
+                        <li>Recursos premium liberados para controle e organizacao</li>
+                        <li>Continuidade do historico e suporte ao crescimento da conta</li>
                       </ul>
                     </div>
 
@@ -1036,7 +1036,7 @@ export default function Layout({ children }: Props) {
                     textAlign: "center",
                   }}
                 >
-                  Nenhum plano disponÃ­vel no momento.
+                  Nenhum plano disponivel no momento.
                 </div>
               ) : null}
             </div>
