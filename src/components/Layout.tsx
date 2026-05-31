@@ -24,6 +24,28 @@ type Plan = {
   priceCents: number;
 };
 
+function readStoredLifetimeState(): boolean {
+  if (typeof window === "undefined") return false;
+
+  return window.localStorage.getItem("conciliaai_subscription_lifetime") === "true";
+}
+
+function readLifetimeStateFromApiResponse(data: Record<string, unknown>): boolean {
+  return data.isLifetime === true || data.lifetime === true || data.planLifetime === true;
+}
+
+function persistLifetimeState(value: boolean): void {
+  if (typeof window === "undefined") return;
+
+  if (value) {
+    window.localStorage.setItem("conciliaai_subscription_lifetime", "true");
+    window.localStorage.removeItem("subscriptionEndDateUtc");
+    return;
+  }
+
+  window.localStorage.removeItem("conciliaai_subscription_lifetime");
+}
+
 const navItems = [
   { to: "/dashboard", label: "Dashboard", requiresActiveSubscription: true },
   { to: "/receitas", label: "Receitas", requiresActiveSubscription: true },
@@ -87,6 +109,7 @@ export default function Layout({ children }: Props) {
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const profilePhotoInputRef = useRef<HTMLInputElement | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const [isLifetimeSubscription, setIsLifetimeSubscription] = useState(readStoredLifetimeState);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [profileName, setProfileName] = useState(() =>
     typeof window === "undefined" ? "" : window.localStorage.getItem("conciliaai_name") ?? "",
@@ -245,12 +268,24 @@ export default function Layout({ children }: Props) {
 
         const data = (await response.json()) as Record<string, unknown>;
         const nextSubscriptionStatus = deriveSubscriptionStatusFromAuthData(data);
+        const nextIsLifetime = readLifetimeStateFromApiResponse(data);
+        const nextEndDate =
+          typeof data.subscriptionEndDateUtc === "string"
+            ? data.subscriptionEndDateUtc
+            : typeof data.endDateUtc === "string"
+              ? data.endDateUtc
+              : null;
 
         if (!isMounted) {
           return;
         }
 
         if (nextSubscriptionStatus === "active") {
+          setIsLifetimeSubscription(nextIsLifetime);
+          persistLifetimeState(nextIsLifetime);
+          if (!nextIsLifetime && nextEndDate) {
+            localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
+          }
           setSubscriptionStatus("active");
           persistSubscriptionState("active");
           setShowTrialModal(false);
@@ -258,12 +293,19 @@ export default function Layout({ children }: Props) {
         }
 
         if (nextSubscriptionStatus === "trial") {
+          setIsLifetimeSubscription(false);
+          persistLifetimeState(false);
+          if (nextEndDate) {
+            localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
+          }
           setSubscriptionStatus("trial");
           persistSubscriptionState("trial");
           setShowTrialModal(false);
           return;
         }
 
+        setIsLifetimeSubscription(false);
+        persistLifetimeState(false);
         setSubscriptionStatus("inactive");
         persistSubscriptionState("inactive");
       } catch {
@@ -490,10 +532,17 @@ export default function Layout({ children }: Props) {
       const data = (await response.json()) as {
         subscriptionEndDateUtc?: string | null;
         endDateUtc?: string | null;
+        isLifetime?: boolean;
+        lifetime?: boolean;
+        planLifetime?: boolean;
       };
       const endDateUtc = data.subscriptionEndDateUtc ?? data.endDateUtc;
+      const nextIsLifetime = data.isLifetime === true || data.lifetime === true || data.planLifetime === true;
 
-      if (endDateUtc) {
+      persistLifetimeState(nextIsLifetime);
+      setIsLifetimeSubscription(nextIsLifetime);
+
+      if (endDateUtc && !nextIsLifetime) {
         localStorage.setItem("subscriptionEndDateUtc", endDateUtc);
       }
 
@@ -543,6 +592,7 @@ export default function Layout({ children }: Props) {
         "planActive",
         "plan_active",
         "isActive",
+        "conciliaai_subscription_lifetime",
       ];
 
       localStorageKeysToRemove.forEach((key) => {
@@ -550,13 +600,16 @@ export default function Layout({ children }: Props) {
       });
 
       setSubscriptionStatus(null);
+      setIsLifetimeSubscription(false);
       logClientEvent({ event: "auth.logout.finish", message: "Logout finalizado" });
       navigate("/login");
     }, 1500);
   }
 
   const planBadgeLabel =
-    subscriptionStatus === "active"
+    subscriptionStatus === "active" && isLifetimeSubscription
+      ? "Plano vitalício"
+      : subscriptionStatus === "active"
       ? "Plano ativo"
       : subscriptionStatus === "trial"
         ? "Periodo de teste"
@@ -564,6 +617,7 @@ export default function Layout({ children }: Props) {
           ? "Conta inativa"
           : "Status do plano";
   const hasConfirmedPaidSubscription = !isCheckingSubscriptionStatus && subscriptionStatus === "active";
+  const lifetimeBadgeLabel = subscriptionStatus === "active" && isLifetimeSubscription ? "Vitalício" : null;
   const trialBadgeLabel =
     subscriptionStatus !== "trial" || remainingDays === null
       ? null
@@ -596,6 +650,12 @@ export default function Layout({ children }: Props) {
               marginLeft: "auto",
             }}
           >
+            {lifetimeBadgeLabel ? (
+              <span className="lifetime-badge">
+                {lifetimeBadgeLabel}
+              </span>
+            ) : null}
+
             {trialBadgeLabel ? (
               <span
                 className="trial-badge"

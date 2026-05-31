@@ -107,6 +107,7 @@ export default function Login() {
       } else {
         localStorage.removeItem("subscriptionEndDateUtc");
       }
+      localStorage.removeItem("conciliaai_subscription_lifetime");
       persistSubscriptionState(null); // Estado da assinatura sera validado pelo backend apos login
 
       navigate(hasCompletedOnboarding(data.userId) ? "/dashboard" : "/onboarding");
