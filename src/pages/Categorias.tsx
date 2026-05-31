@@ -225,7 +225,16 @@ export default function Categorias() {
 
           <div className="categories-actions">
             {canAddChild ? (
-              <button className="categories-icon-button" type="button" aria-label="Adicionar subcategoria" onClick={() => openCreate(category.id)}>
+              <button
+                className="categories-icon-button"
+                type="button"
+                aria-label="Adicionar subcategoria"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openCreate(category.id);
+                }}
+              >
                 +
               </button>
             ) : null}
@@ -348,14 +357,23 @@ export default function Categorias() {
           </div>
         )}
 
-        <button className="categories-fab" type="button" aria-label="Adicionar categoria" onClick={() => openCreate()}>
+        <button
+          className="categories-fab"
+          type="button"
+          aria-label="Adicionar categoria"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            openCreate();
+          }}
+        >
           +
         </button>
 
       </div>
 
       {composerOpen ? (
-        <div className="categories-composer-backdrop" role="presentation" onClick={() => setComposerOpen(false)}>
+        <div className="categories-composer-backdrop" role="presentation">
           <div className="categories-composer-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <div className="categories-composer-head">
               <div>
