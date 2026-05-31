@@ -28,6 +28,8 @@ function normalizeCategory(raw: any): FinanceCategoryOption {
     id: String(raw?.id ?? ""),
     type: raw?.type === "RECEITA" ? "RECEITA" : "DESPESA",
     name: String(raw?.name ?? "").trim(),
+    icon: String(raw?.icon ?? "💼").trim() || "💼",
+    color: /^#[0-9a-fA-F]{6}$/.test(String(raw?.color ?? "")) ? String(raw?.color) : "#60a5fa",
     parentId: raw?.parentId ?? null,
     level: Number(raw?.level ?? 1),
     createdAtUtc: raw?.createdAtUtc,
@@ -74,11 +76,13 @@ export async function createFinanceCategory(
   type: FinanceType,
   name: string,
   parentId?: string | null,
+  icon?: string,
+  color?: string,
 ): Promise<FinanceCategoryOption> {
   const response = await fetch(apiUrl("/api/finance-categories"), {
     method: "POST",
     headers: makeHeaders(),
-    body: JSON.stringify({ type, name, parentId: parentId ?? null }),
+    body: JSON.stringify({ type, name, parentId: parentId ?? null, icon, color }),
   });
 
   if (!response.ok) {
@@ -89,11 +93,16 @@ export async function createFinanceCategory(
   return normalizeCategory(await response.json());
 }
 
-export async function updateFinanceCategory(id: string, name: string): Promise<FinanceCategoryOption> {
+export async function updateFinanceCategory(
+  id: string,
+  name: string,
+  icon?: string,
+  color?: string,
+): Promise<FinanceCategoryOption> {
   const response = await fetch(apiUrl(`/api/finance-categories/${encodeURIComponent(id)}`), {
     method: "PUT",
     headers: makeHeaders(),
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name, icon, color }),
   });
 
   if (!response.ok) {

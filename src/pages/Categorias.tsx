@@ -24,6 +24,20 @@ const typeLabels: Record<FinanceType, { title: string; kicker: string; empty: st
   },
 };
 
+const categoryEmojis = [
+  "🍽️", "🚗", "👕", "🏠", "📚", "💵", "🎁", "📈", "🛡️", "•••",
+  "✈️", "🏦", "🛍️", "🚲", "🦴", "📱", "💼", "🧹", "🚌", "🎂",
+  "🧮", "📅", "🎥", "📷", "🍬", "🛒", "🐾", "💻", "💎", "🏀",
+  "🏋️", "✉️", "🙂", "🍔", "📊", "🎮", "⛽", "🔑", "❤️", "🏥",
+  "🛏️", "☁️", "💡", "🗺️", "🎤", "🎵", "🧾", "📌", "🌲", "🦷",
+  "🏆", "🔒", "🌎",
+];
+
+const categoryColors = [
+  "#60a5fa", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6",
+  "#06b6d4", "#ec4899", "#84cc16", "#64748b", "#f97316",
+];
+
 export default function Categorias() {
   const [categories, setCategories] = useState<FinanceCategoryOption[]>([]);
   const [activeType, setActiveType] = useState<FinanceType>("RECEITA");
@@ -31,6 +45,8 @@ export default function Categorias() {
   const [newParentId, setNewParentId] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState("💼");
+  const [selectedColor, setSelectedColor] = useState("#60a5fa");
   const [feedback, setFeedback] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -105,7 +121,7 @@ export default function Categorias() {
     setCategories(loaded);
   }
 
-  async function handleCreate() {
+  async function handleSubmitCategory() {
     const name = newName.trim();
     if (!name) {
       setFeedback("Informe o nome da categoria.");
@@ -115,14 +131,22 @@ export default function Categorias() {
     try {
       setSaving(true);
       setFeedback(null);
-      await createFinanceCategory(activeType, name, newParentId || null);
+
+      if (editingId) {
+        await updateFinanceCategory(editingId, name, selectedIcon, selectedColor);
+      } else {
+        await createFinanceCategory(activeType, name, newParentId || null, selectedIcon, selectedColor);
+      }
+
       await refreshCategories();
       setNewName("");
       setNewParentId("");
+      setEditingId(null);
+      setEditingName("");
       setComposerOpen(false);
-      setFeedback(newParentId ? "Subcategoria criada com sucesso." : "Categoria criada com sucesso.");
+      setFeedback(editingId ? "Categoria atualizada." : newParentId ? "Subcategoria criada com sucesso." : "Categoria criada com sucesso.");
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Nao foi possivel criar a categoria.");
+      setFeedback(error instanceof Error ? error.message : "Nao foi possivel salvar a categoria.");
     } finally {
       setSaving(false);
     }
@@ -131,6 +155,10 @@ export default function Categorias() {
   function openCreate(parentId = "") {
     setNewName("");
     setNewParentId(parentId);
+    setEditingId(null);
+    setEditingName("");
+    setSelectedIcon(parentId ? parentOptions.find((category) => category.id === parentId)?.icon ?? "💼" : "💼");
+    setSelectedColor(parentId ? parentOptions.find((category) => category.id === parentId)?.color ?? "#60a5fa" : "#60a5fa");
     setFeedback(null);
     setActionMenuId(null);
     setComposerOpen(true);
@@ -157,7 +185,6 @@ export default function Categorias() {
   }
 
   function renderCategoryRow(category: FinanceCategoryOption) {
-    const isEditing = editingId === category.id;
     const children = childrenByParentId.get(category.id) ?? [];
     const hasChildren = children.length > 0;
     const isExpanded = expandedIds.has(category.id);
@@ -176,65 +203,41 @@ export default function Categorias() {
             >
               {hasChildren ? (isExpanded ? "-" : "+") : ""}
             </button>
-            <span className="finance-row-icon">{activeType === "RECEITA" ? "+" : "-"}</span>
-            {isEditing ? (
-              <input
-                className="finance-control"
-                value={editingName}
-                onChange={(event) => setEditingName(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") void handleSaveEdit();
-                  if (event.key === "Escape") setEditingId(null);
-                }}
-                autoFocus
-              />
-            ) : (
-              <div className="categories-name-stack">
-                <strong>{category.name}</strong>
-                <span>{category.fullPath ?? category.name}</span>
-              </div>
-            )}
+            <span className="categories-emoji-badge" style={{ backgroundColor: category.color ?? "#60a5fa" }}>
+              {category.icon ?? "💼"}
+            </span>
+            <div className="categories-name-stack">
+              <strong>{category.name}</strong>
+              <span>{category.fullPath ?? category.name}</span>
+            </div>
           </div>
 
           <div className="categories-actions">
-            {isEditing ? (
-              <>
-                <button className="categories-secondary-button" type="button" onClick={() => setEditingId(null)}>
-                  Cancelar
-                </button>
-                <button className="finance-primary-button" type="button" disabled={saving} onClick={handleSaveEdit}>
-                  Salvar
-                </button>
-              </>
-            ) : (
-              <>
-                {canAddChild ? (
-                  <button className="categories-icon-button" type="button" aria-label="Adicionar subcategoria" onClick={() => openCreate(category.id)}>
-                    +
+            {canAddChild ? (
+              <button className="categories-icon-button" type="button" aria-label="Adicionar subcategoria" onClick={() => openCreate(category.id)}>
+                +
+              </button>
+            ) : null}
+            <div className="categories-menu-wrap">
+              <button
+                className="categories-icon-button"
+                type="button"
+                aria-label="Mais opcoes"
+                onClick={() => setActionMenuId((current) => (current === category.id ? null : category.id))}
+              >
+                ...
+              </button>
+              {actionMenuId === category.id ? (
+                <div className="categories-menu">
+                  <button type="button" onClick={() => startEdit(category)}>
+                    Editar
                   </button>
-                ) : null}
-                <div className="categories-menu-wrap">
-                  <button
-                    className="categories-icon-button"
-                    type="button"
-                    aria-label="Mais opcoes"
-                    onClick={() => setActionMenuId((current) => (current === category.id ? null : category.id))}
-                  >
-                    ...
+                  <button type="button" disabled={saving} onClick={() => handleDelete(category)}>
+                    Remover
                   </button>
-                  {actionMenuId === category.id ? (
-                    <div className="categories-menu">
-                      <button type="button" onClick={() => startEdit(category)}>
-                        Editar
-                      </button>
-                      <button type="button" disabled={saving} onClick={() => handleDelete(category)}>
-                        Remover
-                      </button>
-                    </div>
-                  ) : null}
                 </div>
-              </>
-            )}
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -250,32 +253,13 @@ export default function Categorias() {
   function startEdit(category: FinanceCategoryOption) {
     setEditingId(category.id);
     setEditingName(category.name);
+    setNewName(category.name);
+    setNewParentId(category.parentId ?? "");
+    setSelectedIcon(category.icon ?? "💼");
+    setSelectedColor(category.color ?? "#60a5fa");
     setFeedback(null);
     setActionMenuId(null);
-  }
-
-  async function handleSaveEdit() {
-    if (!editingId) return;
-
-    const name = editingName.trim();
-    if (!name) {
-      setFeedback("Informe o nome da categoria.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      setFeedback(null);
-      await updateFinanceCategory(editingId, name);
-      await refreshCategories();
-      setEditingId(null);
-      setEditingName("");
-      setFeedback("Categoria atualizada. Os lancamentos antigos tambem foram ajustados.");
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Nao foi possivel atualizar a categoria.");
-    } finally {
-      setSaving(false);
-    }
+    setComposerOpen(true);
   }
 
   async function handleDelete(category: FinanceCategoryOption) {
@@ -362,8 +346,8 @@ export default function Categorias() {
             <div className="categories-composer-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
               <div className="categories-composer-head">
                 <div>
-                  <span className="finance-kicker">{newParentId ? "Nova subcategoria" : "Nova categoria"}</span>
-                  <h3>{newParentId ? selectedParent?.name ?? "Subcategoria" : typeLabels[activeType].title}</h3>
+                  <span className="finance-kicker">{editingId ? "Editar categoria" : newParentId ? "Nova subcategoria" : "Nova categoria"}</span>
+                  <h3>{editingId ? editingName : newParentId ? selectedParent?.name ?? "Subcategoria" : typeLabels[activeType].title}</h3>
                   {selectedParent ? <p>Dentro de {selectedParent.fullPath ?? selectedParent.name}</p> : null}
                 </div>
                 <button type="button" aria-label="Fechar" onClick={() => setComposerOpen(false)}>
@@ -379,14 +363,46 @@ export default function Categorias() {
                   value={newName}
                   onChange={(event) => setNewName(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") void handleCreate();
+                    if (event.key === "Enter") void handleSubmitCategory();
                   }}
                   autoFocus
                 />
               </label>
 
-              <button className="finance-primary-button" type="button" disabled={saving} onClick={handleCreate}>
-                {newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
+              <div className="category-style-section">
+                <span>Cor</span>
+                <div className="category-color-grid">
+                  {categoryColors.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      className={selectedColor === color ? "is-selected" : ""}
+                      style={{ backgroundColor: color }}
+                      aria-label={`Selecionar cor ${color}`}
+                      onClick={() => setSelectedColor(color)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="category-style-section">
+                <span>Emoji</span>
+                <div className="category-emoji-grid">
+                  {categoryEmojis.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      className={selectedIcon === emoji ? "is-selected" : ""}
+                      onClick={() => setSelectedIcon(emoji)}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button className="finance-primary-button" type="button" disabled={saving} onClick={handleSubmitCategory}>
+                {editingId ? "Salvar categoria" : newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
               </button>
             </div>
           </div>
