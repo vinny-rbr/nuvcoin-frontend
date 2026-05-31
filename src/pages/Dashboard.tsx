@@ -38,6 +38,14 @@ type DonutItem = {
   detailItems: FinanceItem[];
 };
 
+type CategoryAccountSummary = {
+  name: string;
+  receitasCents: number;
+  despesasCents: number;
+  saldoCents: number;
+  totalCents: number;
+};
+
 function formatBRLFromCents(valueCents: number): string {
   const value = valueCents / 100;
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -127,6 +135,13 @@ function getPaymentLabel(paymentType: PaymentType): string {
   return "Crédito";
 }
 
+function getRootCategory(category: string): string {
+  return category
+    .split(">")
+    .map((part) => part.trim())
+    .filter(Boolean)[0] || "Outros";
+}
+
 function toDonutData(entries: Array<{ name: string; valueCents: number; detailItems?: FinanceItem[] }>): DonutItem[] {
   const total = entries.reduce((sum, item) => sum + item.valueCents, 0);
 
@@ -162,6 +177,37 @@ function groupByCategory(items: FinanceItem[], type: "RECEITA" | "DESPESA"): Don
   );
 }
 
+function buildCategoryAccountSummaries(items: FinanceItem[]): CategoryAccountSummary[] {
+  const map = new Map<string, CategoryAccountSummary>();
+
+  for (const item of items) {
+    const rootCategory = getRootCategory(item.category);
+    const current =
+      map.get(rootCategory) ??
+      {
+        name: rootCategory,
+        receitasCents: 0,
+        despesasCents: 0,
+        saldoCents: 0,
+        totalCents: 0,
+      };
+
+    if (item.type === "RECEITA") {
+      current.receitasCents += item.amountCents;
+    } else {
+      current.despesasCents += item.amountCents;
+    }
+
+    current.saldoCents = current.receitasCents - current.despesasCents;
+    current.totalCents = current.receitasCents + current.despesasCents;
+    map.set(rootCategory, current);
+  }
+
+  return Array.from(map.values())
+    .filter((item) => item.totalCents > 0)
+    .sort((a, b) => b.totalCents - a.totalCents);
+}
+
 function groupByPayment(items: FinanceItem[]): DonutItem[] {
   const map = new Map<string, { valueCents: number; detailItems: FinanceItem[] }>();
 
@@ -180,6 +226,90 @@ function groupByPayment(items: FinanceItem[]): DonutItem[] {
       valueCents: value.valueCents,
       detailItems: value.detailItems,
     }))
+  );
+}
+
+function CategoryAccountCard({
+  account,
+  periodLabel,
+  colors,
+}: {
+  account: CategoryAccountSummary;
+  periodLabel: string;
+  colors: string[];
+}) {
+  const data = toDonutData([
+    { name: "Receitas", valueCents: account.receitasCents },
+    { name: "Despesas", valueCents: account.despesasCents },
+  ]);
+  const saldoClass = account.saldoCents >= 0 ? "green" : "red";
+
+  return (
+    <div className="category-account-card">
+      <div className="category-account-head">
+        <div>
+          <span>Categoria principal</span>
+          <strong>{account.name}</strong>
+        </div>
+        <span className={`category-account-balance ${saldoClass}`}>{formatBRLFromCents(account.saldoCents)}</span>
+      </div>
+
+      <div className="category-account-body">
+        <div className="category-account-chart">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="name"
+                innerRadius="60%"
+                outerRadius="84%"
+                paddingAngle={2}
+                stroke="rgba(241,245,249,0.8)"
+                strokeWidth={2}
+              >
+                {data.map((_, index) => (
+                  <Cell key={index} fill={colors[index % colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(_, name, props) => {
+                  const item = props.payload as DonutItem;
+                  return [formatBRLFromCents(item.valueCents), name];
+                }}
+                contentStyle={{
+                  backgroundColor: "#0b1220",
+                  border: "1px solid rgba(148,163,184,0.2)",
+                  borderRadius: 12,
+                  color: "#F1F5F9",
+                }}
+                itemStyle={{ color: "#F1F5F9", fontWeight: 800 }}
+                labelStyle={{ color: "#CBD5E1", fontWeight: 800 }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+
+          <div className="category-account-center">
+            <span>Saldo</span>
+            <strong>{formatBRLFromCents(account.saldoCents)}</strong>
+            <small>{periodLabel}</small>
+          </div>
+        </div>
+
+        <div className="category-account-metrics">
+          <div>
+            <span className="dashboard-dot" style={{ background: colors[0] }} />
+            <span>Receitas</span>
+            <strong className="green">{formatBRLFromCents(account.receitasCents)}</strong>
+          </div>
+          <div>
+            <span className="dashboard-dot" style={{ background: colors[1] }} />
+            <span>Despesas</span>
+            <strong className="red">{formatBRLFromCents(account.despesasCents)}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -330,6 +460,7 @@ export default function Dashboard() {
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [period, setPeriod] = useState<PeriodKey>("LAST_3");
   const [viewMode, setViewMode] = useState<DashboardViewMode>("CONFRONTO");
+  const [selectedCategoryAccounts, setSelectedCategoryAccounts] = useState<string[]>([]);
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
@@ -457,6 +588,41 @@ export default function Dashboard() {
 
   const receitasByCategory = useMemo(() => groupByCategory(filteredItems, "RECEITA"), [filteredItems]);
   const paymentData = useMemo(() => groupByPayment(filteredItems), [filteredItems]);
+  const categoryAccountSummaries = useMemo(() => buildCategoryAccountSummaries(filteredItems), [filteredItems]);
+
+  useEffect(() => {
+    if (categoryAccountSummaries.length === 0) {
+      setSelectedCategoryAccounts([]);
+      return;
+    }
+
+    setSelectedCategoryAccounts((current) => {
+      const availableNames = new Set(categoryAccountSummaries.map((item) => item.name));
+      const stillAvailable = current.filter((name) => availableNames.has(name));
+
+      if (stillAvailable.length > 0) {
+        return stillAvailable.slice(0, 2);
+      }
+
+      return categoryAccountSummaries.slice(0, 2).map((item) => item.name);
+    });
+  }, [categoryAccountSummaries]);
+
+  const selectedCategoryAccountSummaries = useMemo(() => {
+    return selectedCategoryAccounts
+      .map((name) => categoryAccountSummaries.find((item) => item.name === name))
+      .filter((item): item is CategoryAccountSummary => Boolean(item));
+  }, [categoryAccountSummaries, selectedCategoryAccounts]);
+
+  function toggleCategoryAccount(name: string) {
+    setSelectedCategoryAccounts((current) => {
+      if (current.includes(name)) {
+        return current.filter((item) => item !== name);
+      }
+
+      return [...current.slice(-1), name];
+    });
+  }
 
   const confrontationData = useMemo(() => {
     return toDonutData([
@@ -684,6 +850,42 @@ export default function Dashboard() {
           />
         </div>
       </section>
+
+      {categoryAccountSummaries.length > 0 ? (
+        <section className="category-accounts-shell dashboard-panel">
+          <div className="category-accounts-head">
+            <div>
+              <span className="dashboard-kicker">Comparativo por conta</span>
+              <h3>Veja cada categoria principal separada</h3>
+              <p>Escolha ate duas categorias para comparar receitas, despesas e saldo dentro de cada bloco.</p>
+            </div>
+
+            <div className="category-account-filter" aria-label="Categorias principais no dashboard">
+              {categoryAccountSummaries.map((account) => (
+                <button
+                  key={account.name}
+                  type="button"
+                  className={selectedCategoryAccounts.includes(account.name) ? "is-active" : ""}
+                  onClick={() => toggleCategoryAccount(account.name)}
+                >
+                  {account.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="category-account-grid">
+            {selectedCategoryAccountSummaries.map((account) => (
+              <CategoryAccountCard
+                key={account.name}
+                account={account}
+                periodLabel={getPeriodLabel(period)}
+                colors={["#22C55E", "#EF4444"]}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="dashboard-charts">
         <div className="chart-card dashboard-panel">
