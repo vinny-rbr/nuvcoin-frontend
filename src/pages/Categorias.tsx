@@ -54,6 +54,8 @@ export default function Categorias() {
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [composerOpen, setComposerOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [showAllColors, setShowAllColors] = useState(false);
+  const [showAllIcons, setShowAllIcons] = useState(false);
 
   const visibleCategories = useMemo(
     () =>
@@ -172,6 +174,8 @@ export default function Categorias() {
     setSelectedColor(parentId ? parentOptions.find((category) => category.id === parentId)?.color ?? "#60a5fa" : "#60a5fa");
     setFeedback(null);
     setActionMenuId(null);
+    setShowAllColors(false);
+    setShowAllIcons(false);
     setComposerOpen(true);
 
     if (parentId) {
@@ -279,6 +283,8 @@ export default function Categorias() {
     setSelectedColor(category.color ?? "#60a5fa");
     setFeedback(null);
     setActionMenuId(null);
+    setShowAllColors(false);
+    setShowAllIcons(false);
     setComposerOpen(true);
   }
 
@@ -302,6 +308,8 @@ export default function Categorias() {
   }
 
   const selectedParent = parentOptions.find((category) => category.id === newParentId);
+  const visibleColorOptions = showAllColors ? categoryColors : categoryColors.slice(0, 3);
+  const visibleIconOptions = showAllIcons ? categoryEmojis : categoryEmojis.slice(0, 3);
 
   return (
     <div className={`finance-view categories-view${animate ? " is-ready" : ""}${composerOpen ? " is-composer-open" : ""}`}>
@@ -374,7 +382,7 @@ export default function Categorias() {
 
       {composerOpen ? (
         <div className="categories-composer-backdrop" role="presentation">
-          <div className="categories-composer-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+          <div className="categories-composer-sheet categories-composer-sheet-compact" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <div className="categories-composer-head">
               <div>
                 <span className="finance-kicker">{editingId ? "Editar categoria" : newParentId ? "Nova subcategoria" : "Nova categoria"}</span>
@@ -386,8 +394,8 @@ export default function Categorias() {
               </button>
             </div>
 
-            <label className="finance-field">
-              <span>Nome</span>
+            <label className="finance-field categories-description-field">
+              <span>Descrição</span>
               <input
                 className="finance-control"
                 placeholder={typeLabels[activeType].placeholder}
@@ -400,10 +408,10 @@ export default function Categorias() {
               />
             </label>
 
-            <div className="category-style-section">
-              <span>Cor</span>
-              <div className="category-color-grid">
-                {categoryColors.map((color) => (
+            <div className="category-option-row">
+              <span className="category-option-label">Cor</span>
+              <div className={`category-color-grid${showAllColors ? " is-expanded" : ""}`}>
+                {visibleColorOptions.map((color) => (
                   <button
                     key={color}
                     type="button"
@@ -413,13 +421,20 @@ export default function Categorias() {
                     onClick={() => setSelectedColor(color)}
                   />
                 ))}
+                <button
+                  type="button"
+                  className="category-more-button"
+                  onClick={() => setShowAllColors((current) => !current)}
+                >
+                  {showAllColors ? "Menos" : "Outros..."}
+                </button>
               </div>
             </div>
 
-            <div className="category-style-section category-emoji-section">
-              <span>Emoji</span>
-              <div className="category-emoji-grid">
-                {categoryEmojis.map((emoji) => (
+            <div className="category-option-row">
+              <span className="category-option-label">Ícone</span>
+              <div className={`category-emoji-grid category-emoji-grid-inline${showAllIcons ? " is-expanded" : ""}`}>
+                {visibleIconOptions.map((emoji) => (
                   <button
                     key={emoji}
                     type="button"
@@ -429,6 +444,13 @@ export default function Categorias() {
                     {emoji}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className="category-more-button"
+                  onClick={() => setShowAllIcons((current) => !current)}
+                >
+                  {showAllIcons ? "Menos" : "Outros..."}
+                </button>
               </div>
             </div>
 
