@@ -116,6 +116,17 @@ export default function Categorias() {
     return () => window.clearTimeout(timeoutId);
   }, [activeType, categories.length]);
 
+  useEffect(() => {
+    if (!composerOpen) return undefined;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [composerOpen]);
+
   async function refreshCategories() {
     const loaded = await listFinanceCategories();
     setCategories(loaded);
@@ -284,7 +295,7 @@ export default function Categorias() {
   const selectedParent = parentOptions.find((category) => category.id === newParentId);
 
   return (
-    <div className={`finance-view categories-view${animate ? " is-ready" : ""}`}>
+    <div className={`finance-view categories-view${animate ? " is-ready" : ""}${composerOpen ? " is-composer-open" : ""}`}>
       <section className="finance-hero">
         <div>
           <span className="finance-kicker">Organizacao</span>
@@ -341,73 +352,74 @@ export default function Categorias() {
           +
         </button>
 
-        {composerOpen ? (
-          <div className="categories-composer-backdrop" role="presentation" onClick={() => setComposerOpen(false)}>
-            <div className="categories-composer-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-              <div className="categories-composer-head">
-                <div>
-                  <span className="finance-kicker">{editingId ? "Editar categoria" : newParentId ? "Nova subcategoria" : "Nova categoria"}</span>
-                  <h3>{editingId ? editingName : newParentId ? selectedParent?.name ?? "Subcategoria" : typeLabels[activeType].title}</h3>
-                  {selectedParent ? <p>Dentro de {selectedParent.fullPath ?? selectedParent.name}</p> : null}
-                </div>
-                <button type="button" aria-label="Fechar" onClick={() => setComposerOpen(false)}>
-                  x
-                </button>
+      </div>
+
+      {composerOpen ? (
+        <div className="categories-composer-backdrop" role="presentation" onClick={() => setComposerOpen(false)}>
+          <div className="categories-composer-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="categories-composer-head">
+              <div>
+                <span className="finance-kicker">{editingId ? "Editar categoria" : newParentId ? "Nova subcategoria" : "Nova categoria"}</span>
+                <h3>{editingId ? editingName : newParentId ? selectedParent?.name ?? "Subcategoria" : typeLabels[activeType].title}</h3>
+                {selectedParent ? <p>Dentro de {selectedParent.fullPath ?? selectedParent.name}</p> : null}
               </div>
-
-              <label className="finance-field">
-                <span>Nome</span>
-                <input
-                  className="finance-control"
-                  placeholder={typeLabels[activeType].placeholder}
-                  value={newName}
-                  onChange={(event) => setNewName(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") void handleSubmitCategory();
-                  }}
-                  autoFocus
-                />
-              </label>
-
-              <div className="category-style-section">
-                <span>Cor</span>
-                <div className="category-color-grid">
-                  {categoryColors.map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      className={selectedColor === color ? "is-selected" : ""}
-                      style={{ backgroundColor: color }}
-                      aria-label={`Selecionar cor ${color}`}
-                      onClick={() => setSelectedColor(color)}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="category-style-section">
-                <span>Emoji</span>
-                <div className="category-emoji-grid">
-                  {categoryEmojis.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      className={selectedIcon === emoji ? "is-selected" : ""}
-                      onClick={() => setSelectedIcon(emoji)}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button className="finance-primary-button" type="button" disabled={saving} onClick={handleSubmitCategory}>
-                {editingId ? "Salvar categoria" : newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
+              <button type="button" aria-label="Fechar" onClick={() => setComposerOpen(false)}>
+                x
               </button>
             </div>
+
+            <label className="finance-field">
+              <span>Nome</span>
+              <input
+                className="finance-control"
+                placeholder={typeLabels[activeType].placeholder}
+                value={newName}
+                onChange={(event) => setNewName(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void handleSubmitCategory();
+                }}
+                autoFocus
+              />
+            </label>
+
+            <div className="category-style-section">
+              <span>Cor</span>
+              <div className="category-color-grid">
+                {categoryColors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={selectedColor === color ? "is-selected" : ""}
+                    style={{ backgroundColor: color }}
+                    aria-label={`Selecionar cor ${color}`}
+                    onClick={() => setSelectedColor(color)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="category-style-section">
+              <span>Emoji</span>
+              <div className="category-emoji-grid">
+                {categoryEmojis.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    className={selectedIcon === emoji ? "is-selected" : ""}
+                    onClick={() => setSelectedIcon(emoji)}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button className="finance-primary-button categories-composer-submit" type="button" disabled={saving} onClick={handleSubmitCategory}>
+              {editingId ? "Salvar categoria" : newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
+            </button>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }
