@@ -191,6 +191,21 @@
   font-size: 11px;
 }
 
+.profile-version-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background: rgba(59, 130, 246, 0.13);
+  color: #bfdbfe;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .profile-panel {
   position: absolute;
   top: calc(100% + 12px);
@@ -250,6 +265,18 @@
 .profile-panel-head span {
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+.profile-panel-head .profile-version {
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .profile-file-input {
@@ -469,6 +496,10 @@
   }
 
   .profile-button-text {
+    display: none;
+  }
+
+  .profile-version-pill {
     display: none;
   }
 

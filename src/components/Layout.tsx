@@ -10,6 +10,7 @@ import {
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
+import { APP_VERSION } from "../lib/appVersion";
 import { hasCompletedOnboarding } from "../lib/onboarding";
 
 import "./layout.css"; // Importa o CSS do layout premium
@@ -729,6 +730,7 @@ export default function Layout({ children }: Props) {
                 <span className="profile-avatar" aria-hidden="true">
                   {profilePhoto ? <img src={profilePhoto} alt="" /> : profileInitials}
                 </span>
+                <span className="profile-version-pill">v{APP_VERSION}</span>
                 <span className="profile-button-text">
                   <strong>{profileDisplayName}</strong>
                   <small>{profileEmail || "Perfil"}</small>
@@ -748,6 +750,7 @@ export default function Layout({ children }: Props) {
                   <div>
                     <strong>{profileDisplayName}</strong>
                     <span>{profileEmail || "Sem e-mail salvo"}</span>
+                    <span className="profile-version">Versao {APP_VERSION}</span>
                   </div>
                 </div>
 

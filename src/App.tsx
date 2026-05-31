@@ -2,6 +2,7 @@
 import { useEffect, useState, type ReactNode } from "react"; // Hooks + tipo
 import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Rotas do React Router
 import Layout from "./components/Layout"; // Layout premium (topbar + container)
+import AppUpdatePrompt from "./components/AppUpdatePrompt";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
 import ProtectedRoute from "./routes/ProtectedRoute"; // Proteção de rota (mock login)
 
@@ -68,6 +69,7 @@ export default function App() {
 
   return (
     <>
+      <AppUpdatePrompt />
       <PwaInstallPrompt />
       <Routes>
       {/* Rotas públicas */}

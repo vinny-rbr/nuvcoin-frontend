@@ -3,6 +3,7 @@ node_modules/
 dist/
 build/
 .vite/
+public/version.json
 
 # ===== Logs =====
 npm-debug.log*
