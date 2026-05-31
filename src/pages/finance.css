@@ -344,7 +344,7 @@
   width: min(560px, 100%);
   max-height: min(82vh, 640px);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid rgba(96, 165, 250, 0.18);
   border-radius: 24px;
@@ -398,6 +398,66 @@
   cursor: pointer;
   font-size: 18px;
   font-weight: 800;
+}
+
+.category-picker-create {
+  display: grid;
+  gap: 10px;
+  padding: 12px 18px 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.10);
+  background: rgba(15, 23, 42, 0.32);
+}
+
+.category-picker-create label {
+  display: grid;
+  gap: 8px;
+}
+
+.category-picker-create span {
+  color: #bfdbfe;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.category-picker-create input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(96, 165, 250, 0.26);
+  border-radius: 14px;
+  outline: none;
+  background: rgba(2, 6, 23, 0.48);
+  color: var(--text-main);
+  font: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.category-picker-create input:focus {
+  border-color: rgba(96, 165, 250, 0.78);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
+}
+
+.category-picker-create small {
+  color: #fecaca;
+  font-size: 12px;
+}
+
+.category-picker-create button {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #f8fafc;
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.category-picker-create button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 
 .category-picker-list {

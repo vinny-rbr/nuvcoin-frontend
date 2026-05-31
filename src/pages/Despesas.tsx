@@ -12,7 +12,7 @@ import {
   todayISO,
 } from "../lib/financeService";
 import CategoryPicker from "../components/CategoryPicker";
-import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
+import { categoriesForType, createFinanceCategory, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
 import "./finance.css";
@@ -155,6 +155,17 @@ export default function Despesas() {
 
   const despesas = useMemo(() => items.filter((x) => x.type === "DESPESA"), [items]);
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
+
+  async function handleQuickCreateCategory(name: string): Promise<string> {
+    const created = await createFinanceCategory("DESPESA", name, null, "💼", "#60a5fa");
+    const categories = await listFinanceCategories();
+    const options = categoriesForType(categories, "DESPESA");
+    setCategoryOptions(options);
+
+    const createdValue = options.find((option) => option === created.name || option.endsWith(`> ${created.name}`)) ?? created.name;
+    setCategory(createdValue);
+    return createdValue;
+  }
 
   const onAdd = useCallback((event?: SyntheticEvent | Event) => {
     event?.preventDefault();
@@ -319,6 +330,7 @@ export default function Despesas() {
               value={category}
               options={categoryOptions}
               onChange={(nextCategory) => setCategory(nextCategory)}
+              onCreateCategory={handleQuickCreateCategory}
             />
 
             <label className="finance-field">

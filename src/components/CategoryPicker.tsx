@@ -6,6 +6,7 @@ type CategoryPickerProps = {
   value: string;
   options: string[];
   onChange: (value: string) => void;
+  onCreateCategory?: (name: string) => Promise<string>;
 };
 
 function splitCategoryPath(value: string): string[] {
@@ -15,9 +16,13 @@ function splitCategoryPath(value: string): string[] {
     .filter(Boolean);
 }
 
-export default function CategoryPicker({ label, value, options, onChange }: CategoryPickerProps) {
+export default function CategoryPicker({ label, value, options, onChange, onCreateCategory }: CategoryPickerProps) {
   const [open, setOpen] = useState(false);
   const [prefix, setPrefix] = useState<string[]>([]);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [savingNew, setSavingNew] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const selectedParts = useMemo(() => splitCategoryPath(value), [value]);
   const normalizedOptions = useMemo(
     () =>
@@ -48,7 +53,34 @@ export default function CategoryPicker({ label, value, options, onChange }: Cate
 
   function openPicker() {
     setPrefix([]);
+    setCreating(false);
+    setNewName("");
+    setCreateError(null);
     setOpen(true);
+  }
+
+  async function handleCreateCategory() {
+    if (!onCreateCategory) return;
+
+    const trimmedName = newName.trim();
+    if (!trimmedName) {
+      setCreateError("Informe o nome da categoria.");
+      return;
+    }
+
+    try {
+      setSavingNew(true);
+      setCreateError(null);
+      const createdValue = await onCreateCategory(trimmedName);
+      onChange(createdValue);
+      setOpen(false);
+      setCreating(false);
+      setNewName("");
+    } catch (error) {
+      setCreateError(error instanceof Error ? error.message : "Nao foi possivel criar a categoria.");
+    } finally {
+      setSavingNew(false);
+    }
   }
 
   useEffect(() => {
@@ -78,6 +110,11 @@ export default function CategoryPicker({ label, value, options, onChange }: Cate
                 <strong>{currentTitle}</strong>
               </div>
               <div className="category-picker-head-actions">
+                {onCreateCategory ? (
+                  <button type="button" aria-label="Criar categoria" onClick={() => setCreating((current) => !current)}>
+                    +
+                  </button>
+                ) : null}
                 {prefix.length > 0 ? (
                   <button type="button" aria-label="Voltar nivel" onClick={() => setPrefix((current) => current.slice(0, -1))}>
                     {"<"}
@@ -88,6 +125,27 @@ export default function CategoryPicker({ label, value, options, onChange }: Cate
                 </button>
               </div>
             </div>
+
+            {creating ? (
+              <div className="category-picker-create">
+                <label>
+                  <span>Nova categoria</span>
+                  <input
+                    autoFocus
+                    value={newName}
+                    placeholder="Ex: Consultoria"
+                    onChange={(event) => setNewName(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void handleCreateCategory();
+                    }}
+                  />
+                </label>
+                {createError ? <small>{createError}</small> : null}
+                <button type="button" disabled={savingNew} onClick={handleCreateCategory}>
+                  {savingNew ? "Criando..." : "Criar e selecionar"}
+                </button>
+              </div>
+            ) : null}
 
             <div className="category-picker-list">
               {visibleOptions.map((option) => {
