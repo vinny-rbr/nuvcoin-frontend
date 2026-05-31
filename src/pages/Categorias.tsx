@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { FinanceCategoryOption, FinanceType } from "../types/finance";
 import {
   createFinanceCategory,
@@ -380,7 +381,7 @@ export default function Categorias() {
 
       </div>
 
-      {composerOpen ? (
+      {composerOpen && typeof document !== "undefined" ? createPortal(
         <div className="categories-composer-backdrop" role="presentation">
           <div className="categories-composer-sheet categories-composer-sheet-compact" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
             <div className="categories-composer-head">
@@ -458,7 +459,8 @@ export default function Categorias() {
               {editingId ? "Salvar categoria" : newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
             </button>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </div>
   );
