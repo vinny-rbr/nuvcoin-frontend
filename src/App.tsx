@@ -7,6 +7,7 @@ import ProtectedRoute from "./routes/ProtectedRoute"; // Proteção de rota (moc
 
 import Login from "./pages/Login"; // Página de login
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import VerifyEmail from "./pages/VerifyEmail"; // Página de cadastro
 import Welcome from "./pages/Welcome";
 import Onboarding from "./pages/Onboarding";
@@ -72,6 +73,7 @@ export default function App() {
       {/* Rotas públicas */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/welcome" element={<Welcome />} />
 

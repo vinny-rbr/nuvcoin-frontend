@@ -16,6 +16,7 @@ export default function Register() {
 
   const [password, setPassword] = useState("");
   // Guarda senha digitada
+  const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   // Controla estado de carregamento
@@ -109,13 +110,35 @@ export default function Register() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <input
-          className="auth-input"
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="auth-password-field">
+          <input
+            className="auth-input auth-password-input"
+            type={showPassword ? "text" : "password"}
+            placeholder="Senha"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            className="auth-password-toggle"
+            aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+            onClick={() => setShowPassword((current) => !current)}
+          >
+            {showPassword ? (
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 3l18 18" />
+                <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
+                <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 5 9 7a8.8 8.8 0 0 1-2.1 3.2" />
+                <path d="M6.6 6.7C4.2 8.2 3 10.7 3 12c0 2 3.5 7 9 7a10.9 10.9 0 0 0 4.2-.8" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            )}
+          </button>
+        </div>
 
         <button
           className="auth-button auth-button-register"

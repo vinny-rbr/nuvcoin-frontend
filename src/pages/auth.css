@@ -133,6 +133,50 @@
   transform: translateY(-1px);
 }
 
+.auth-password-field {
+  position: relative;
+  width: 100%;
+  animation: auth-item-in 0.72s ease 0.48s both;
+}
+
+.auth-password-input {
+  padding-right: 50px;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.72);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-password-toggle:hover {
+  color: #ffffff;
+  background: rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.24);
+}
+
+.auth-password-toggle svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .auth-code-input {
   text-align: center;
   font-size: 22px;
@@ -201,6 +245,11 @@
   font-size: 12px;
   font-weight: 800;
   animation: auth-credit-in 0.72s ease 0.78s both, auth-credit-pulse 3.2s ease-in-out 1.4s infinite;
+}
+
+.auth-card-reset {
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
 }
 
 .auth-link-button {
