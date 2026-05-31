@@ -6,7 +6,7 @@ type CategoryPickerProps = {
   value: string;
   options: string[];
   onChange: (value: string) => void;
-  onCreateCategory?: (name: string) => Promise<string>;
+  onCreateCategory?: (name: string, parentPath?: string) => Promise<string>;
 };
 
 function splitCategoryPath(value: string): string[] {
@@ -71,7 +71,7 @@ export default function CategoryPicker({ label, value, options, onChange, onCrea
     try {
       setSavingNew(true);
       setCreateError(null);
-      const createdValue = await onCreateCategory(trimmedName);
+      const createdValue = await onCreateCategory(trimmedName, prefix.length > 0 ? prefix.join(" > ") : undefined);
       onChange(createdValue);
       setOpen(false);
       setCreating(false);
@@ -129,7 +129,7 @@ export default function CategoryPicker({ label, value, options, onChange, onCrea
             {creating ? (
               <div className="category-picker-create">
                 <label>
-                  <span>Nova categoria</span>
+                  <span>{prefix.length > 0 ? "Nova subcategoria" : "Nova categoria"}</span>
                   <input
                     autoFocus
                     value={newName}

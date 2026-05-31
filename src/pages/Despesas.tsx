@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
-import type { FinanceCategory, FinanceItem, FinanceStatus, PaymentType } from "../types/finance";
+import type { FinanceCategory, FinanceCategoryOption, FinanceItem, FinanceStatus, PaymentType } from "../types/finance";
 import {
   financeAdd,
   financeDebugLog,
@@ -79,6 +79,7 @@ export default function Despesas() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.DESPESA[0]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORIES.DESPESA);
+  const [categoryRecords, setCategoryRecords] = useState<FinanceCategoryOption[]>([]);
   const [amount, setAmount] = useState("");
   const [dateISO, setDateISO] = useState(todayISO());
   const [items, setItems] = useState<FinanceItem[]>([]);
@@ -131,6 +132,7 @@ export default function Despesas() {
       .then((categories) => {
         if (!isMounted) return;
         const options = categoriesForType(categories, "DESPESA");
+        setCategoryRecords(categories.filter((item) => item.type === "DESPESA"));
         setCategoryOptions(options);
         setCategory((current) => (options.includes(current) ? current : options[0] ?? "Outros"));
       })
@@ -156,13 +158,16 @@ export default function Despesas() {
   const despesas = useMemo(() => items.filter((x) => x.type === "DESPESA"), [items]);
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
 
-  async function handleQuickCreateCategory(name: string): Promise<string> {
-    const created = await createFinanceCategory("DESPESA", name, null, "💼", "#60a5fa");
+  async function handleQuickCreateCategory(name: string, parentPath?: string): Promise<string> {
+    const parent = parentPath ? categoryRecords.find((item) => item.fullPath === parentPath) : null;
+    const created = await createFinanceCategory("DESPESA", name, parent?.id ?? null, parent?.icon ?? "💼", parent?.color ?? "#60a5fa");
     const categories = await listFinanceCategories();
     const options = categoriesForType(categories, "DESPESA");
+    setCategoryRecords(categories.filter((item) => item.type === "DESPESA"));
     setCategoryOptions(options);
 
-    const createdValue = options.find((option) => option === created.name || option.endsWith(`> ${created.name}`)) ?? created.name;
+    const expectedPath = parentPath ? `${parentPath} > ${created.name}` : created.name;
+    const createdValue = options.find((option) => option === expectedPath || option === created.name || option.endsWith(`> ${created.name}`)) ?? expectedPath;
     setCategory(createdValue);
     return createdValue;
   }

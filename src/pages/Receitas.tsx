@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from "react";
-import type { FinanceCategory, FinanceItem } from "../types/finance";
+import type { FinanceCategory, FinanceCategoryOption, FinanceItem } from "../types/finance";
 import {
   financeAdd,
   financeDebugLog,
@@ -37,6 +37,7 @@ export default function Receitas() {
   const [dateISO, setDateISO] = useState(todayISO());
   const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.RECEITA[0]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORIES.RECEITA);
+  const [categoryRecords, setCategoryRecords] = useState<FinanceCategoryOption[]>([]);
   const [animate, setAnimate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -80,6 +81,7 @@ export default function Receitas() {
       .then((categories) => {
         if (!isMounted) return;
         const options = categoriesForType(categories, "RECEITA");
+        setCategoryRecords(categories.filter((item) => item.type === "RECEITA"));
         setCategoryOptions(options);
         setCategory((current) => (options.includes(current) ? current : options[0] ?? "Outros"));
       })
@@ -105,13 +107,16 @@ export default function Receitas() {
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
   const receitas = useMemo(() => items.filter((x) => x.type === "RECEITA"), [items]);
 
-  async function handleQuickCreateCategory(name: string): Promise<string> {
-    const created = await createFinanceCategory("RECEITA", name, null, "💼", "#60a5fa");
+  async function handleQuickCreateCategory(name: string, parentPath?: string): Promise<string> {
+    const parent = parentPath ? categoryRecords.find((item) => item.fullPath === parentPath) : null;
+    const created = await createFinanceCategory("RECEITA", name, parent?.id ?? null, parent?.icon ?? "💼", parent?.color ?? "#60a5fa");
     const categories = await listFinanceCategories();
     const options = categoriesForType(categories, "RECEITA");
+    setCategoryRecords(categories.filter((item) => item.type === "RECEITA"));
     setCategoryOptions(options);
 
-    const createdValue = options.find((option) => option === created.name || option.endsWith(`> ${created.name}`)) ?? created.name;
+    const expectedPath = parentPath ? `${parentPath} > ${created.name}` : created.name;
+    const createdValue = options.find((option) => option === expectedPath || option === created.name || option.endsWith(`> ${created.name}`)) ?? expectedPath;
     setCategory(createdValue);
     return createdValue;
   }
