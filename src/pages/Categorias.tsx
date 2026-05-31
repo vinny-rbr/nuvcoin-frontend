@@ -416,7 +416,7 @@ export default function Categorias() {
               </div>
             </div>
 
-            <div className="category-style-section">
+            <div className="category-style-section category-emoji-section">
               <span>Emoji</span>
               <div className="category-emoji-grid">
                 {categoryEmojis.map((emoji) => (
