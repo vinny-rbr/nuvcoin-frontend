@@ -36,6 +36,8 @@ export default function Categorias() {
   const [saving, setSaving] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null);
 
   const visibleCategories = useMemo(
     () =>
@@ -117,11 +119,28 @@ export default function Categorias() {
       await refreshCategories();
       setNewName("");
       setNewParentId("");
+      setComposerOpen(false);
       setFeedback(newParentId ? "Subcategoria criada com sucesso." : "Categoria criada com sucesso.");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Nao foi possivel criar a categoria.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  function openCreate(parentId = "") {
+    setNewName("");
+    setNewParentId(parentId);
+    setFeedback(null);
+    setActionMenuId(null);
+    setComposerOpen(true);
+
+    if (parentId) {
+      setExpandedIds((current) => {
+        const next = new Set(current);
+        next.add(parentId);
+        return next;
+      });
     }
   }
 
@@ -142,6 +161,7 @@ export default function Categorias() {
     const children = childrenByParentId.get(category.id) ?? [];
     const hasChildren = children.length > 0;
     const isExpanded = expandedIds.has(category.id);
+    const canAddChild = (category.level ?? 1) < 3;
 
     return (
       <div key={category.id} className="categories-tree-item">
@@ -157,7 +177,6 @@ export default function Categorias() {
               {hasChildren ? (isExpanded ? "-" : "+") : ""}
             </button>
             <span className="finance-row-icon">{activeType === "RECEITA" ? "+" : "-"}</span>
-            <span className="categories-level-pill">Nivel {category.level ?? 1}</span>
             {isEditing ? (
               <input
                 className="finance-control"
@@ -189,12 +208,31 @@ export default function Categorias() {
               </>
             ) : (
               <>
-                <button className="categories-secondary-button" type="button" onClick={() => startEdit(category)}>
-                  Editar
-                </button>
-                <button className="finance-danger-button" type="button" disabled={saving} onClick={() => handleDelete(category)}>
-                  Remover
-                </button>
+                {canAddChild ? (
+                  <button className="categories-icon-button" type="button" aria-label="Adicionar subcategoria" onClick={() => openCreate(category.id)}>
+                    +
+                  </button>
+                ) : null}
+                <div className="categories-menu-wrap">
+                  <button
+                    className="categories-icon-button"
+                    type="button"
+                    aria-label="Mais opcoes"
+                    onClick={() => setActionMenuId((current) => (current === category.id ? null : category.id))}
+                  >
+                    ...
+                  </button>
+                  {actionMenuId === category.id ? (
+                    <div className="categories-menu">
+                      <button type="button" onClick={() => startEdit(category)}>
+                        Editar
+                      </button>
+                      <button type="button" disabled={saving} onClick={() => handleDelete(category)}>
+                        Remover
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </>
             )}
           </div>
@@ -213,6 +251,7 @@ export default function Categorias() {
     setEditingId(category.id);
     setEditingName(category.name);
     setFeedback(null);
+    setActionMenuId(null);
   }
 
   async function handleSaveEdit() {
@@ -248,6 +287,7 @@ export default function Categorias() {
       setFeedback(null);
       await deleteFinanceCategory(category.id);
       setCategories((current) => current.filter((item) => item.id !== category.id));
+      setActionMenuId(null);
       setFeedback("Categoria removida.");
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : "Nao foi possivel remover a categoria.");
@@ -256,6 +296,8 @@ export default function Categorias() {
       setSaving(false);
     }
   }
+
+  const selectedParent = parentOptions.find((category) => category.id === newParentId);
 
   return (
     <div className={`finance-view categories-view${animate ? " is-ready" : ""}`}>
@@ -295,35 +337,6 @@ export default function Categorias() {
 
         {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
-        <div className="categories-create-row">
-          <label className="finance-field">
-            <span>Novo nome</span>
-            <input
-              className="finance-control"
-              placeholder={typeLabels[activeType].placeholder}
-              value={newName}
-              onChange={(event) => setNewName(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") void handleCreate();
-              }}
-            />
-          </label>
-          <label className="finance-field">
-            <span>Dentro de</span>
-            <select className="finance-control" value={newParentId} onChange={(event) => setNewParentId(event.target.value)}>
-              <option value="">Categoria principal</option>
-              {parentOptions.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.fullPath ?? category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button className="finance-primary-button" type="button" disabled={saving} onClick={handleCreate}>
-            {newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
-          </button>
-        </div>
-
         {loading ? (
           <div className="finance-empty-state">
             <strong>Carregando categorias...</strong>
@@ -339,6 +352,45 @@ export default function Categorias() {
             {rootCategories.map((category) => renderCategoryRow(category))}
           </div>
         )}
+
+        <button className="categories-fab" type="button" aria-label="Adicionar categoria" onClick={() => openCreate()}>
+          +
+        </button>
+
+        {composerOpen ? (
+          <div className="categories-composer-backdrop" role="presentation" onClick={() => setComposerOpen(false)}>
+            <div className="categories-composer-sheet" role="dialog" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+              <div className="categories-composer-head">
+                <div>
+                  <span className="finance-kicker">{newParentId ? "Nova subcategoria" : "Nova categoria"}</span>
+                  <h3>{newParentId ? selectedParent?.name ?? "Subcategoria" : typeLabels[activeType].title}</h3>
+                  {selectedParent ? <p>Dentro de {selectedParent.fullPath ?? selectedParent.name}</p> : null}
+                </div>
+                <button type="button" aria-label="Fechar" onClick={() => setComposerOpen(false)}>
+                  x
+                </button>
+              </div>
+
+              <label className="finance-field">
+                <span>Nome</span>
+                <input
+                  className="finance-control"
+                  placeholder={typeLabels[activeType].placeholder}
+                  value={newName}
+                  onChange={(event) => setNewName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") void handleCreate();
+                  }}
+                  autoFocus
+                />
+              </label>
+
+              <button className="finance-primary-button" type="button" disabled={saving} onClick={handleCreate}>
+                {newParentId ? "Adicionar subcategoria" : "Adicionar categoria"}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
