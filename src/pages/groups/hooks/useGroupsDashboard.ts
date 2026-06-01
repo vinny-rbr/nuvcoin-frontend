@@ -30,6 +30,7 @@ type CreateGroupRequest = {
 
 type AddGroupMemberRequest = {
   email?: string; // E-mail do membro a ser adicionado
+  displayName?: string; // Nome de exibicao dentro do grupo
 };
 
 type UseGroupsDashboardReturn = {

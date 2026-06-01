@@ -17,6 +17,7 @@ type CreateGroupRequest = {
 
 type AddGroupMemberRequest = {
   email?: string;
+  displayName?: string;
 };
 
 type UpdateGroupMemberSalariesRequest = {

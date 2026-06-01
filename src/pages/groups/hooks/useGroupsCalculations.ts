@@ -27,6 +27,7 @@ type UseGroupsCalculationsParams = {
 
 type MonthSplitMember = {
   userId: string;
+  displayName?: string | null;
   name?: string | null;
   email?: string | null;
 };
@@ -40,7 +41,7 @@ export function useGroupsCalculations({
   manualPercentInputByUserId,
 }: UseGroupsCalculationsParams) {
   const memberIdentityMap = useMemo(() => {
-    const map: Record<string, { name?: string | null; email?: string | null }> = {};
+    const map: Record<string, { displayName?: string | null; name?: string | null; email?: string | null }> = {};
 
     for (const member of balances?.members ?? []) {
       map[member.userId] = {
@@ -53,6 +54,7 @@ export function useGroupsCalculations({
       if (expense.paidByUserId) {
         const current = map[expense.paidByUserId] ?? {};
         map[expense.paidByUserId] = {
+          displayName: current.displayName ?? null,
           name: current.name ?? expense.paidByName ?? null,
           email: current.email ?? expense.paidByEmail ?? null,
         };
@@ -61,19 +63,30 @@ export function useGroupsCalculations({
       for (const participant of expense.participants ?? []) {
         const current = map[participant.userId] ?? {};
         map[participant.userId] = {
+          displayName: current.displayName ?? null,
           name: current.name ?? participant.name ?? null,
           email: current.email ?? participant.email ?? null,
         };
       }
     }
 
+    for (const member of membersInfo?.members ?? []) {
+      const current = map[member.userId] ?? {};
+      map[member.userId] = {
+        displayName: member.displayName ?? current.displayName ?? null,
+        name: member.name ?? current.name ?? null,
+        email: member.email ?? current.email ?? null,
+      };
+    }
+
     return map;
-  }, [balances?.members, expenses?.items]);
+  }, [balances?.members, expenses?.items, membersInfo?.members]);
 
   const members = useMemo<MonthSplitMember[]>(() => {
     if ((balances?.members?.length ?? 0) > 0) {
       return balances!.members.map((member) => ({
         userId: member.userId,
+        displayName: memberIdentityMap[member.userId]?.displayName ?? null,
         name: member.name,
         email: member.email,
       }));
@@ -86,6 +99,7 @@ export function useGroupsCalculations({
 
       uniqueMembers.set(member.userId, {
         userId: member.userId,
+        displayName: identity?.displayName ?? member.displayName ?? null,
         name: identity?.name ?? null,
         email: identity?.email ?? null,
       });
@@ -189,7 +203,7 @@ export function useGroupsCalculations({
 
       return {
         userId: member.userId, // Mantém userId na linha final
-        label: safeName(member.name, member.email, member.userId), // Gera nome amigável para exibição
+        label: safeName(member.displayName || member.name, member.email, member.userId), // Gera nome amigável para exibição
         salary, // Salário numérico do membro
         weightPercent: weight * 100, // Peso em percentual
         shouldPay, // Valor que deveria pagar em reais

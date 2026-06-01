@@ -13,12 +13,14 @@ type GroupsPeopleCardProps = {
   removeMemberError: string | null;
   addMemberOpen: boolean;
   addMemberEmail: string;
+  addMemberDisplayName: string;
   addMemberLoading: boolean;
   addMemberError: string | null;
   addMemberSuccess: string | null;
   removeMemberLoadingId: string | null;
   onToggleAddMember: () => void;
   onAddMemberEmailChange: (value: string) => void;
+  onAddMemberDisplayNameChange: (value: string) => void;
   onAddMember: () => void;
   onRemoveMember: (memberId: string, role: string) => void;
   sectionCard: CSSProperties;
@@ -41,12 +43,14 @@ export default function GroupsPeopleCard({
   removeMemberError,
   addMemberOpen,
   addMemberEmail,
+  addMemberDisplayName,
   addMemberLoading,
   addMemberError,
   addMemberSuccess,
   removeMemberLoadingId,
   onToggleAddMember,
   onAddMemberEmailChange,
+  onAddMemberDisplayNameChange,
   onAddMember,
   onRemoveMember,
   sectionCard,
@@ -97,7 +101,7 @@ export default function GroupsPeopleCard({
         <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
           {membersInfo.members.map((m) => {
             const rich = members.find((x) => x.userId === m.userId);
-            const display = safeName(rich?.name, rich?.email, m.userId);
+            const display = safeName(m.displayName || rich?.name || m.name, rich?.email || m.email, m.userId);
 
             return (
               <div
@@ -151,6 +155,12 @@ export default function GroupsPeopleCard({
             <div style={{ fontWeight: 800, opacity: 0.95 }}>Convidar pessoa</div>
             <div style={subtleText}>Digite o e-mail da pessoa. Ela recebera um codigo para entrar apenas neste grupo.</div>
             <input value={addMemberEmail} onChange={(e) => onAddMemberEmailChange(e.target.value)} placeholder="E-mail" style={inputStyle} />
+            <input
+              value={addMemberDisplayName}
+              onChange={(e) => onAddMemberDisplayNameChange(e.target.value)}
+              placeholder="Como essa pessoa quer ser chamada?"
+              style={inputStyle}
+            />
           </div>
 
           {addMemberError && (

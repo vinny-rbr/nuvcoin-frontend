@@ -35,6 +35,7 @@ type GroupsHeaderActionModalProps = {
   removeMemberError: string | null;
   addMemberOpen: boolean;
   addMemberEmail: string;
+  addMemberDisplayName: string;
   submittingMember: boolean;
   addMemberError: string | null;
   addMemberSuccess: string | null;
@@ -54,6 +55,7 @@ type GroupsHeaderActionModalProps = {
   onClose: () => void;
   onToggleAddMember: () => void;
   onAddMemberEmailChange: (value: string) => void;
+  onAddMemberDisplayNameChange: (value: string) => void;
   onAddMember: () => void;
   onRemoveMember: (memberId: string, role: string) => void;
   onOpenBaseConfigModal: () => void;
@@ -113,12 +115,14 @@ function renderModalContent(props: GroupsHeaderActionModalProps): ReactNode {
           removeMemberError={props.removeMemberError}
           addMemberOpen={props.addMemberOpen}
           addMemberEmail={props.addMemberEmail}
+          addMemberDisplayName={props.addMemberDisplayName}
           addMemberLoading={props.submittingMember}
           addMemberError={props.addMemberError}
           addMemberSuccess={props.addMemberSuccess}
           removeMemberLoadingId={props.removingMemberId}
           onToggleAddMember={props.onToggleAddMember}
           onAddMemberEmailChange={props.onAddMemberEmailChange}
+          onAddMemberDisplayNameChange={props.onAddMemberDisplayNameChange}
           onAddMember={props.onAddMember}
           onRemoveMember={props.onRemoveMember}
           sectionCard={embeddedSectionCard}

@@ -1,13 +1,18 @@
+import { useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
 
-import type { GroupBalancesResponse, GroupSplitMode } from "../types/groups.types";
+import type { GroupBalancesResponse, GroupMembersResponse, GroupSplitMode } from "../types/groups.types";
 
 type GroupsBaseModalProps = {
   open: boolean;
   selectedGroupId: string | null;
   balances: GroupBalancesResponse | null;
+  membersInfo: GroupMembersResponse | null;
   splitMode: GroupSplitMode;
   salaryByUserId: Record<string, number>;
+  currentUserId: string;
+  canManageAllSalaries: boolean;
   manualPercentInputByUserId: Record<string, string>;
   manualPercentTotal: number;
   recommendedLimitPercent: number;
@@ -38,8 +43,11 @@ export default function GroupsBaseModal({
   open,
   selectedGroupId,
   balances,
+  membersInfo,
   splitMode,
   salaryByUserId,
+  currentUserId,
+  canManageAllSalaries,
   manualPercentInputByUserId,
   manualPercentTotal,
   recommendedLimitPercent,
@@ -65,20 +73,64 @@ export default function GroupsBaseModal({
   ghostButton,
   tabButton,
 }: GroupsBaseModalProps) {
+  const members = useMemo(() => {
+    const membersById = new Map<string, { userId: string; name?: string | null; email?: string | null; displayName?: string | null }>();
+
+    for (const member of membersInfo?.members ?? []) {
+      membersById.set(member.userId, {
+        userId: member.userId,
+        name: member.displayName || member.name,
+        email: member.email,
+        displayName: member.displayName,
+      });
+    }
+
+    for (const member of balances?.members ?? []) {
+      if (!membersById.has(member.userId)) {
+        membersById.set(member.userId, member);
+      }
+    }
+
+    return Array.from(membersById.values());
+  }, [balances?.members, membersInfo?.members]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   if (!open || !selectedGroupId) return null;
 
-  const members = balances?.members ?? [];
   const manualIsValid = Math.abs(manualPercentTotal - 100) < 0.01;
 
-  return (
+  return createPortal(
     <div
-      style={modalOverlay}
+      style={{
+        ...modalOverlay,
+        alignItems: "start",
+        placeItems: undefined,
+        overflowY: "auto",
+        padding: "14px 12px",
+        zIndex: 120,
+      }}
       onClick={() => {
         onClose();
       }}
     >
       <div
-        style={modalCard}
+        style={{
+          ...modalCard,
+          width: "min(780px, 100%)",
+          maxHeight: "calc(100dvh - 28px)",
+          display: "grid",
+          gridTemplateRows: "auto minmax(0, 1fr)",
+        }}
         onClick={(e) => {
           e.stopPropagation();
         }}
@@ -94,7 +146,7 @@ export default function GroupsBaseModal({
           </button>
         </div>
 
-        <div style={modalBody}>
+        <div style={{ ...modalBody, overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
           {salaryError && (
             <div style={subtleText}>
               <strong>Falha:</strong> {salaryError}
@@ -126,8 +178,9 @@ export default function GroupsBaseModal({
           {splitMode === "SALARY" && (
             <div style={{ display: "grid", gap: 10 }}>
               {members.map((m) => {
-                const label = safeName(m.name, m.email, m.userId);
+                const label = safeName(m.displayName || m.name, m.email, m.userId);
                 const current = Number(salaryByUserId[m.userId] ?? 0) || 0;
+                const canEditSalary = canManageAllSalaries || m.userId === currentUserId;
 
                 return (
                   <div
@@ -138,12 +191,12 @@ export default function GroupsBaseModal({
                       border: "1px solid rgba(255,255,255,0.10)",
                       background: "rgba(255,255,255,0.02)",
                       display: "grid",
-                      gridTemplateColumns: "1fr 220px",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                       gap: 10,
                       alignItems: "center",
                     }}
                   >
-                    <div style={{ display: "grid", gap: 2 }}>
+                    <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
                       <div style={{ fontWeight: 900 }}>{label}</div>
                       <div style={subtleText}>Peso na divisão é proporcional ao salário.</div>
                     </div>
@@ -153,7 +206,8 @@ export default function GroupsBaseModal({
                       onChange={(e) => onSalaryChange(m.userId, e.target.value)}
                       onBlur={() => onSalaryBlur(m.userId)}
                       placeholder="Salário (ex: 2500,00)"
-                      style={inputStyle}
+                      disabled={!canEditSalary}
+                      style={{ ...inputStyle, opacity: canEditSalary ? 1 : 0.55, cursor: canEditSalary ? "text" : "not-allowed" }}
                     />
                   </div>
                 );
@@ -164,7 +218,7 @@ export default function GroupsBaseModal({
           {splitMode === "MANUAL" && (
             <div style={{ display: "grid", gap: 10 }}>
               {members.map((m) => {
-                const label = safeName(m.name, m.email, m.userId);
+                const label = safeName(m.displayName || m.name, m.email, m.userId);
                 const currentText = manualPercentInputByUserId[m.userId] ?? "";
 
                 return (
@@ -176,12 +230,12 @@ export default function GroupsBaseModal({
                       border: "1px solid rgba(255,255,255,0.10)",
                       background: "rgba(255,255,255,0.02)",
                       display: "grid",
-                      gridTemplateColumns: "1fr 220px",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                       gap: 10,
                       alignItems: "center",
                     }}
                   >
-                    <div style={{ display: "grid", gap: 2 }}>
+                    <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
                       <div style={{ fontWeight: 900 }}>{label}</div>
                       <div style={subtleText}>Exemplo: 60,00 para 60%.</div>
                     </div>
@@ -234,6 +288,7 @@ export default function GroupsBaseModal({
           <div style={{ ...subtleText, marginTop: 2 }}>Você pode fechar e ajustar depois. O resumo do mês usa a última base salva.</div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

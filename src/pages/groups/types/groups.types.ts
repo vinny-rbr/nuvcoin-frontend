@@ -22,6 +22,7 @@ export type GroupMemberItemDto = {
   accessStartUtc?: string | null; // Pode vir null
   accessEndUtc?: string | null; // Pode vir null
   createdAtUtc?: string; // Pode vir
+  displayName?: string | null;
   name?: string | null;
   email?: string | null;
 };

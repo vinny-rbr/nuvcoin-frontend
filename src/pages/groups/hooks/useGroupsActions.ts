@@ -22,7 +22,7 @@ type UseGroupsActionsParams = {
 
   handleCreateGroup: (payload: { name: string }) => Promise<boolean>; // Função central de criar grupo
   handleDeleteGroup: (groupId: string) => Promise<boolean>; // Função central de deletar grupo
-  handleAddMember: (groupId: string, payload: { email: string }) => Promise<boolean>; // Função central de adicionar membro
+  handleAddMember: (groupId: string, payload: { email: string; displayName?: string }) => Promise<boolean>; // Função central de adicionar membro
   handleRemoveMember: (groupId: string, memberId: string) => Promise<boolean>; // Função central de remover membro
   handleCreateExpense: (payload: CreateGroupExpenseRequest) => Promise<boolean>; // Função central de criar despesa
   handleUpdateExpense: (expenseId: string, payload: UpdateGroupExpenseRequest) => Promise<boolean>; // Função central de editar despesa
@@ -59,6 +59,7 @@ type CreateGroupParams = {
 
 type AddMemberParams = {
   addMemberEmail: string; // E-mail digitado
+  addMemberDisplayName?: string; // Nome de exibicao dentro do grupo
   onSuccess?: () => void; // Callback opcional para sucesso
 }; // Parâmetros de adicionar membro
 
@@ -174,7 +175,7 @@ export default function useGroupsActions({
     }
   }
 
-  async function onAddMember({ addMemberEmail, onSuccess }: AddMemberParams): Promise<void> {
+  async function onAddMember({ addMemberEmail, addMemberDisplayName, onSuccess }: AddMemberParams): Promise<void> {
     try {
       setAddMemberError(null); // Limpa erro anterior
       setAddMemberSuccess(null); // Limpa sucesso anterior
@@ -185,13 +186,14 @@ export default function useGroupsActions({
       }
 
       const email = addMemberEmail.trim(); // Limpa input
+      const displayName = (addMemberDisplayName ?? "").trim(); // Nome de exibicao
 
       if (!isEmail(email)) {
         setAddMemberError("Digite um e-mail válido."); // Valida e-mail
         return; // Interrompe fluxo
       }
 
-      const ok = await handleAddMember(selectedGroupId, { email }); // Executa inclusão do membro
+      const ok = await handleAddMember(selectedGroupId, { email, displayName: displayName || undefined }); // Executa inclusão do membro
 
       if (!ok) {
         setAddMemberError("Não foi possível adicionar o membro."); // Erro amigável

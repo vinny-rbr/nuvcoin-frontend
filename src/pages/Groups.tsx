@@ -134,6 +134,7 @@ export default function Groups() {
 
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [addMemberEmail, setAddMemberEmail] = useState("");
+  const [addMemberDisplayName, setAddMemberDisplayName] = useState("");
   const [addMemberError, setAddMemberError] = useState<string | null>(null);
   const [addMemberSuccess, setAddMemberSuccess] = useState<string | null>(null);
   const [removeMemberError, setRemoveMemberError] = useState<string | null>(null);
@@ -208,6 +209,8 @@ export default function Groups() {
     splitMode,
     manualPercentInputByUserId,
     salaryByUserId,
+    currentUserId,
+    canManageAllSalaries,
     setSalaryError,
     setSalarySuccess,
     clearBaseFeedback,
@@ -364,6 +367,7 @@ export default function Groups() {
     createGroup.close();
     setAddMemberError(null);
     setAddMemberSuccess(null);
+    setAddMemberDisplayName("");
     setRemoveMemberError(null);
     closeHeaderActionModal();
 
@@ -772,6 +776,7 @@ export default function Groups() {
           removeMemberError={removeMemberError}
           addMemberOpen={addMemberOpen}
           addMemberEmail={addMemberEmail}
+          addMemberDisplayName={addMemberDisplayName}
           submittingMember={submittingMember}
           addMemberError={addMemberError}
           addMemberSuccess={addMemberSuccess}
@@ -781,6 +786,8 @@ export default function Groups() {
           salaryTotal={salaryTotal}
           manualPercentInputByUserId={manualPercentInputByUserId}
           salaryByUserId={salaryByUserId}
+          currentUserId={currentUserId}
+          canManageAllSalaries={canManageAllSalaries}
           manualPercentTotal={manualPercentTotal}
           isManualConfigValid={isManualConfigValid}
           currentMonthKey={currentMonthKey}
@@ -893,11 +900,14 @@ export default function Groups() {
           onCloseHeaderActionModal={closeHeaderActionModal}
           onToggleAddMember={() => setAddMemberOpen((value) => !value)}
           onSetAddMemberEmail={setAddMemberEmail}
+          onSetAddMemberDisplayName={setAddMemberDisplayName}
           onAddMember={() =>
             onAddMember({
               addMemberEmail,
+              addMemberDisplayName,
               onSuccess: () => {
                 setAddMemberEmail("");
+                setAddMemberDisplayName("");
                 setAddMemberOpen(false);
               },
             })
@@ -905,7 +915,9 @@ export default function Groups() {
           onRemoveMember={(memberId, role) => onRemoveMember({ memberId, role })}
           onOpenBaseConfigFromHeaderAction={() => {
             closeHeaderActionModal();
-            openBaseConfigModal();
+            window.setTimeout(() => {
+              openBaseConfigModal();
+            }, 0);
           }}
           onOpenHouseExpenseFlow={() => {
             closeHeaderActionModal();

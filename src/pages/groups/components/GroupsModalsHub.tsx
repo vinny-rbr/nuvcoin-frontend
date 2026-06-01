@@ -45,6 +45,7 @@ type GroupsModalsHubProps = {
   removeMemberError: string | null;
   addMemberOpen: boolean;
   addMemberEmail: string;
+  addMemberDisplayName: string;
   submittingMember: boolean;
   addMemberError: string | null;
   addMemberSuccess: string | null;
@@ -54,6 +55,8 @@ type GroupsModalsHubProps = {
   salaryTotal: number;
   manualPercentInputByUserId: Record<string, string>;
   salaryByUserId: Record<string, number>;
+  currentUserId: string;
+  canManageAllSalaries: boolean;
   manualPercentTotal: number;
   isManualConfigValid: boolean;
   currentMonthKey: string;
@@ -135,12 +138,13 @@ type GroupsModalsHubProps = {
   onResetSalaries: () => void;
   onSplitEqual: () => void;
   onSaveBaseConfig: () => void;
-  safeName: (value: string | null | undefined) => string;
+  safeName: (name?: string | null, email?: string | null, userId?: string | null) => string;
   salaryError: string | null;
   salarySuccess: string | null;
   onCloseHeaderActionModal: () => void;
   onToggleAddMember: () => void;
   onSetAddMemberEmail: (value: string) => void;
+  onSetAddMemberDisplayName: (value: string) => void;
   onAddMember: () => void;
   onRemoveMember: (memberId: string, role: string) => void;
   onOpenBaseConfigFromHeaderAction: () => void;
@@ -171,6 +175,7 @@ export default function GroupsModalsHub({
   removeMemberError,
   addMemberOpen,
   addMemberEmail,
+  addMemberDisplayName,
   submittingMember,
   addMemberError,
   addMemberSuccess,
@@ -180,6 +185,8 @@ export default function GroupsModalsHub({
   salaryTotal,
   manualPercentInputByUserId,
   salaryByUserId,
+  currentUserId,
+  canManageAllSalaries,
   manualPercentTotal,
   isManualConfigValid,
   currentMonthKey,
@@ -267,6 +274,7 @@ export default function GroupsModalsHub({
   onCloseHeaderActionModal,
   onToggleAddMember,
   onSetAddMemberEmail,
+  onSetAddMemberDisplayName,
   onAddMember,
   onRemoveMember,
   onOpenBaseConfigFromHeaderAction,
@@ -357,8 +365,11 @@ export default function GroupsModalsHub({
         open={isBaseConfigModalOpen}
         selectedGroupId={selectedGroupId}
         balances={balances}
+        membersInfo={membersInfo}
         splitMode={splitMode}
         salaryByUserId={salaryByUserId}
+        currentUserId={currentUserId}
+        canManageAllSalaries={canManageAllSalaries}
         manualPercentInputByUserId={manualPercentInputByUserId}
         manualPercentTotal={manualPercentTotal}
         recommendedLimitPercent={recommendedLimitPercent}
@@ -396,6 +407,7 @@ export default function GroupsModalsHub({
         removeMemberError={removeMemberError}
         addMemberOpen={addMemberOpen}
         addMemberEmail={addMemberEmail}
+        addMemberDisplayName={addMemberDisplayName}
         submittingMember={submittingMember}
         addMemberError={addMemberError}
         addMemberSuccess={addMemberSuccess}
@@ -415,6 +427,7 @@ export default function GroupsModalsHub({
         onClose={onCloseHeaderActionModal}
         onToggleAddMember={onToggleAddMember}
         onAddMemberEmailChange={onSetAddMemberEmail}
+        onAddMemberDisplayNameChange={onSetAddMemberDisplayName}
         onAddMember={onAddMember}
         onRemoveMember={onRemoveMember}
         onOpenBaseConfigModal={onOpenBaseConfigFromHeaderAction}

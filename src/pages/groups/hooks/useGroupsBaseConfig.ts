@@ -40,6 +40,10 @@ export default function useGroupsBaseConfig({
   const [splitMode, setSplitMode] = useState<GroupSplitMode>("SALARY");
   const [manualPercentInputByUserId, setManualPercentInputByUserId] = useState<Record<string, string>>({});
   const [salaryByUserId, setSalaryByUserId] = useState<Record<string, number>>({});
+  const currentUserId =
+    typeof window === "undefined" ? "" : window.localStorage.getItem("conciliaai_userId") ?? "";
+  const currentMember = (membersInfo?.members ?? []).find((member) => member.userId === currentUserId);
+  const canManageAllSalaries = currentMember?.role === "Admin" || membersInfo?.ownerUserId === currentUserId;
 
   const memberIds = useMemo(() => {
     const idsFromMembers = (membersInfo?.members ?? []).map((member) => member.userId);
@@ -179,7 +183,14 @@ export default function useGroupsBaseConfig({
           return;
         }
 
-        const salaries = memberIds.map((userId) => ({
+        const idsToSave = canManageAllSalaries ? memberIds : memberIds.filter((id) => id === currentUserId);
+
+        if (idsToSave.length === 0) {
+          setSalaryError("Nao foi possivel identificar seu usuario neste grupo.");
+          return;
+        }
+
+        const salaries = idsToSave.map((userId) => ({
           userId,
           salaryCents: Math.round((Number(salaryByUserId[userId] ?? 0) || 0) * 100),
         }));
@@ -226,6 +237,8 @@ export default function useGroupsBaseConfig({
     splitMode,
     manualPercentInputByUserId,
     salaryByUserId,
+    currentUserId,
+    canManageAllSalaries,
     setSalaryError,
     setSalarySuccess,
     setSplitMode,
