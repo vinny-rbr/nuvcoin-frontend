@@ -214,6 +214,30 @@ export async function addMember(
   }
 }
 
+// ==============================
+// ACCEPT GROUP INVITE
+// ==============================
+
+export async function acceptGroupInvite(code: string): Promise<void> {
+
+  const token = getAuthTokenOrThrow();
+
+  const response = await fetch(apiUrl("/api/groups/invites/accept"), {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ code }),
+  });
+
+  if (!response.ok) {
+    const message = await readApiError(response, "Nao foi possivel aceitar o convite.");
+    throw new Error(`Erro ao aceitar convite: ${message}`);
+  }
+}
+
 
 // ==============================
 // REMOVE MEMBER

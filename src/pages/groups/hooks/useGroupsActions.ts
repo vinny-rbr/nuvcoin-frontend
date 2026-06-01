@@ -198,7 +198,7 @@ export default function useGroupsActions({
         return; // Interrompe fluxo
       }
 
-      setAddMemberSuccess("Membro adicionado."); // Define sucesso
+      setAddMemberSuccess("Convite enviado. A pessoa precisa informar o codigo recebido para entrar."); // Define sucesso
       onSuccess?.(); // Executa callback opcional
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro desconhecido"; // Extrai mensagem de erro

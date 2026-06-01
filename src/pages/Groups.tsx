@@ -5,6 +5,7 @@ import GroupsDashboardContent from "./groups/components/GroupsDashboardContent";
 import GroupsGroupsLane from "./groups/components/GroupsGroupsLane";
 import GroupsHeaderActions from "./groups/components/GroupsHeaderActions";
 import GroupsModalsHub from "./groups/components/GroupsModalsHub";
+import { acceptGroupInvite } from "./groups/services/groups.api";
 
 import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de aÃ§Ãµes do mÃ³dulo
 import useGroupsBaseConfig from "./groups/hooks/useGroupsBaseConfig"; // Hook da base salarial / percentual
@@ -136,6 +137,10 @@ export default function Groups() {
   const [addMemberError, setAddMemberError] = useState<string | null>(null);
   const [addMemberSuccess, setAddMemberSuccess] = useState<string | null>(null);
   const [removeMemberError, setRemoveMemberError] = useState<string | null>(null);
+  const [inviteCode, setInviteCode] = useState("");
+  const [inviteCodeError, setInviteCodeError] = useState<string | null>(null);
+  const [inviteCodeSuccess, setInviteCodeSuccess] = useState<string | null>(null);
+  const [inviteCodeLoading, setInviteCodeLoading] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [pageReady, setPageReady] = useState(false);
   const [animationKey, setAnimationKey] = useState(0); // forÃ§a nova execuÃ§Ã£o visual
@@ -566,6 +571,30 @@ export default function Groups() {
     }
   }
 
+  async function handleAcceptInviteCode() {
+    const code = inviteCode.trim();
+    setInviteCodeError(null);
+    setInviteCodeSuccess(null);
+
+    if (!code) {
+      setInviteCodeError("Digite o codigo recebido no e-mail.");
+      return;
+    }
+
+    try {
+      setInviteCodeLoading(true);
+      await acceptGroupInvite(code);
+      setInviteCode("");
+      setInviteCodeSuccess("Convite aceito. O grupo compartilhado ja esta disponivel.");
+      await reloadGroups();
+      await reloadSelectedGroupData();
+    } catch (err) {
+      setInviteCodeError(err instanceof Error ? err.message : "Nao foi possivel aceitar o convite.");
+    } finally {
+      setInviteCodeLoading(false);
+    }
+  }
+
   return (
     <div
       style={{
@@ -645,6 +674,55 @@ export default function Groups() {
             </div>
           </div>
         )}
+
+        <div style={getClockEntryStyle(state.groups.length > 0 ? 2 : 1)}>
+          <div
+            style={{
+              ...responsiveSectionCard,
+              display: "grid",
+              gap: 12,
+              border: "1px solid rgba(91,140,255,0.20)",
+              background: "linear-gradient(135deg, rgba(30,64,175,0.16), rgba(15,23,42,0.72))",
+            }}
+          >
+            <div style={{ display: "grid", gap: 3 }}>
+              <div style={{ ...responsivePanelTitle, fontSize: isMobileViewport ? 15 : 18 }}>
+                Entrar em grupo compartilhado
+              </div>
+              <div style={subtleText}>Recebeu um convite? Informe o codigo para liberar somente esse grupo.</div>
+            </div>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(220px, 320px) auto",
+                gap: 10,
+                alignItems: "center",
+              }}
+            >
+              <input
+                value={inviteCode}
+                onChange={(event) => setInviteCode(event.target.value)}
+                placeholder="Codigo do convite"
+                inputMode="numeric"
+                style={inputStyle}
+              />
+              <button
+                type="button"
+                onClick={handleAcceptInviteCode}
+                disabled={inviteCodeLoading}
+                style={{
+                  ...primaryButton,
+                  cursor: inviteCodeLoading ? "not-allowed" : "pointer",
+                  opacity: inviteCodeLoading ? 0.7 : 1,
+                }}
+              >
+                {inviteCodeLoading ? "Validando..." : "Entrar no grupo"}
+              </button>
+            </div>
+            {inviteCodeError && <div style={{ ...subtleText, color: "#fecaca" }}>{inviteCodeError}</div>}
+            {inviteCodeSuccess && <div style={{ ...subtleText, color: "#86efac" }}>{inviteCodeSuccess}</div>}
+          </div>
+        </div>
 
         <GroupsDashboardContent
           selectedGroupId={selectedGroupId}

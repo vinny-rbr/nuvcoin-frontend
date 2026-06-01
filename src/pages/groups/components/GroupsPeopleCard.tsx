@@ -69,7 +69,7 @@ export default function GroupsPeopleCard({
         </div>
 
         <button type="button" onClick={onToggleAddMember} style={softButton}>
-          {addMemberOpen ? "Fechar" : "Adicionar pessoa"}
+          {addMemberOpen ? "Fechar" : "Convidar pessoa"}
         </button>
       </div>
 
@@ -148,8 +148,8 @@ export default function GroupsPeopleCard({
       {addMemberOpen && (
         <div style={{ display: "grid", gap: 10, marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <div style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontWeight: 800, opacity: 0.95 }}>Adicionar pessoa</div>
-            <div style={subtleText}>Digite o e-mail da pessoa para adicionar ao grupo.</div>
+            <div style={{ fontWeight: 800, opacity: 0.95 }}>Convidar pessoa</div>
+            <div style={subtleText}>Digite o e-mail da pessoa. Ela recebera um codigo para entrar apenas neste grupo.</div>
             <input value={addMemberEmail} onChange={(e) => onAddMemberEmailChange(e.target.value)} placeholder="E-mail" style={inputStyle} />
           </div>
 
@@ -171,7 +171,7 @@ export default function GroupsPeopleCard({
               opacity: addMemberLoading ? 0.7 : 1,
             }}
           >
-            {addMemberLoading ? "Adicionando…" : "Adicionar"}
+            {addMemberLoading ? "Enviando..." : "Enviar convite"}
           </button>
         </div>
       )}
