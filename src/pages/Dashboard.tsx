@@ -15,7 +15,7 @@ import {
   Cell,
 } from "recharts";
 
-import type { FinanceItem, PaymentType } from "../types/finance";
+import type { FinanceCategoryOption, FinanceItem, PaymentType } from "../types/finance";
 
 import {
   financeList,
@@ -26,6 +26,7 @@ import {
   calculateMonthComparison,
   calculateSummary,
 } from "../lib/financeCalculations";
+import { listFinanceCategories } from "../lib/financeCategoriesService";
 
 type PeriodKey = "MONTH" | "LAST_3" | "YEAR" | "ALL";
 type DashboardViewMode = "CONFRONTO" | "GASTOS" | "RECEITAS" | "PAGAMENTO";
@@ -177,8 +178,18 @@ function groupByCategory(items: FinanceItem[], type: "RECEITA" | "DESPESA"): Don
   );
 }
 
-function summarizeParentCategories(items: FinanceItem[]): ParentCategorySummary[] {
+function summarizeParentCategories(items: FinanceItem[], registeredParentNames: string[]): ParentCategorySummary[] {
   const map = new Map<string, ParentCategorySummary>();
+
+  for (const name of registeredParentNames) {
+    map.set(name, {
+      name,
+      receitasCents: 0,
+      despesasCents: 0,
+      saldoCents: 0,
+      totalCents: 0,
+    });
+  }
 
   for (const item of items) {
     const name = getParentCategoryName(item.category);
@@ -203,7 +214,19 @@ function summarizeParentCategories(items: FinanceItem[]): ParentCategorySummary[
     map.set(name, current);
   }
 
-  return Array.from(map.values()).sort((a, b) => b.totalCents - a.totalCents);
+  if (registeredParentNames.length === 0) {
+    return Array.from(map.values()).sort((a, b) => b.totalCents - a.totalCents);
+  }
+
+  const registeredSet = new Set(registeredParentNames);
+  const registeredSummaries = registeredParentNames
+    .map((name) => map.get(name))
+    .filter((item): item is ParentCategorySummary => Boolean(item));
+  const extraSummaries = Array.from(map.values())
+    .filter((item) => !registeredSet.has(item.name))
+    .sort((a, b) => b.totalCents - a.totalCents);
+
+  return [...registeredSummaries, ...extraSummaries];
 }
 
 function groupByPayment(items: FinanceItem[]): DonutItem[] {
@@ -440,6 +463,7 @@ function DonutDashboardCard({
 
 export default function Dashboard() {
   const [items, setItems] = useState<FinanceItem[]>([]);
+  const [registeredCategories, setRegisteredCategories] = useState<FinanceCategoryOption[]>([]);
   const [period, setPeriod] = useState<PeriodKey>("LAST_3");
   const [viewMode, setViewMode] = useState<DashboardViewMode>("CONFRONTO");
   const [parentDashboardA, setParentDashboardA] = useState("");
@@ -456,6 +480,30 @@ export default function Dashboard() {
 
     return () => {
       unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCategories() {
+      try {
+        const loadedCategories = await listFinanceCategories();
+
+        if (isMounted) {
+          setRegisteredCategories(loadedCategories);
+        }
+      } catch {
+        if (isMounted) {
+          setRegisteredCategories([]);
+        }
+      }
+    }
+
+    void loadCategories();
+
+    return () => {
+      isMounted = false;
     };
   }, []);
 
@@ -571,7 +619,27 @@ export default function Dashboard() {
 
   const receitasByCategory = useMemo(() => groupByCategory(filteredItems, "RECEITA"), [filteredItems]);
   const paymentData = useMemo(() => groupByPayment(filteredItems), [filteredItems]);
-  const parentCategorySummaries = useMemo(() => summarizeParentCategories(filteredItems), [filteredItems]);
+  const registeredParentCategoryNames = useMemo(() => {
+    const names = new Map<string, string>();
+
+    for (const category of registeredCategories) {
+      if (category.parentId || (category.level ?? 1) !== 1) continue;
+
+      const trimmedName = category.name.trim();
+      if (!trimmedName) continue;
+
+      const key = trimmedName.toLocaleLowerCase("pt-BR");
+      if (!names.has(key)) {
+        names.set(key, trimmedName);
+      }
+    }
+
+    return Array.from(names.values());
+  }, [registeredCategories]);
+  const parentCategorySummaries = useMemo(
+    () => summarizeParentCategories(filteredItems, registeredParentCategoryNames),
+    [filteredItems, registeredParentCategoryNames],
+  );
   const parentCategoryNames = useMemo(() => parentCategorySummaries.map((item) => item.name), [parentCategorySummaries]);
 
   useEffect(() => {
