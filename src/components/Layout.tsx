@@ -96,6 +96,7 @@ export default function Layout({ children }: Props) {
   const location = useLocation();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [isActivatePlanModalOpen, setIsActivatePlanModalOpen] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [isCheckingSubscriptionStatus, setIsCheckingSubscriptionStatus] = useState(true);
@@ -107,6 +108,7 @@ export default function Layout({ children }: Props) {
     return window.innerWidth < 768;
   });
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
+  const quickAddRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
   const profilePhotoInputRef = useRef<HTMLInputElement | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
@@ -200,8 +202,14 @@ export default function Layout({ children }: Props) {
   useEffect(() => {
     if (!isMobile) {
       setIsMobileMenuOpen(false);
+      setIsQuickAddOpen(false);
     }
   }, [isMobile]);
+
+  useEffect(() => {
+    setIsQuickAddOpen(false);
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!isMobileMenuOpen) return undefined;
@@ -229,6 +237,33 @@ export default function Layout({ children }: Props) {
       document.removeEventListener("keydown", handleEscape);
     };
   }, [isMobileMenuOpen]);
+
+  useEffect(() => {
+    if (!isQuickAddOpen) return undefined;
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      if (!quickAddRef.current) return;
+      if (quickAddRef.current.contains(event.target as Node)) return;
+
+      setIsQuickAddOpen(false);
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsQuickAddOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isQuickAddOpen]);
 
   useEffect(() => {
     return subscribeToSubscriptionStatus(setSubscriptionStatus);
@@ -379,6 +414,37 @@ export default function Layout({ children }: Props) {
     event.preventDefault();
     window.alert(INACTIVE_SUBSCRIPTION_MESSAGE);
     handleMobileMenuClose();
+    setIsQuickAddOpen(false);
+  }
+
+  function canOpenPremiumRoute(): boolean {
+    return subscriptionStatus !== "inactive";
+  }
+
+  function handleMobileRoute(to: string, requiresActiveSubscription = true) {
+    if (requiresActiveSubscription && !canOpenPremiumRoute()) {
+      window.alert(INACTIVE_SUBSCRIPTION_MESSAGE);
+      setIsQuickAddOpen(false);
+      return;
+    }
+
+    logClientEvent({
+      event: "navigation.mobile_bottom.open",
+      message: "Navegacao pelo menu inferior",
+      data: { to },
+    });
+    setIsQuickAddOpen(false);
+    navigate(to);
+  }
+
+  function handleQuickAddToggle(event: ReactMouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    logClientEvent({
+      event: "navigation.quick_add.toggle",
+      message: "Menu rapido de lancamento alternado",
+      data: { nextOpen: !isQuickAddOpen },
+    });
+    setIsQuickAddOpen((current) => !current);
   }
 
   function handleActivatePlan() {
@@ -866,6 +932,74 @@ export default function Layout({ children }: Props) {
             zIndex: 39,
           }}
         />
+      ) : null}
+
+      {isMobile ? (
+        <nav className="mobile-bottom-nav" aria-label="Menu principal mobile">
+          <button
+            type="button"
+            className={location.pathname === "/dashboard" ? "is-active" : ""}
+            onClick={() => handleMobileRoute("/dashboard")}
+          >
+            <span className="mobile-bottom-icon mobile-bottom-icon-grid" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <span />
+            </span>
+            <span>Início</span>
+          </button>
+
+          <button
+            type="button"
+            className={location.pathname === "/categorias" ? "is-active" : ""}
+            onClick={() => handleMobileRoute("/categorias")}
+          >
+            <span className="mobile-bottom-icon mobile-bottom-icon-tag" aria-hidden="true" />
+            <span>Categorias</span>
+          </button>
+
+          <div className="mobile-quick-add-shell" ref={quickAddRef}>
+            <button
+              type="button"
+              className={`mobile-quick-add-button${isQuickAddOpen ? " is-open" : ""}`}
+              aria-label={isQuickAddOpen ? "Fechar lancamento rapido" : "Abrir lancamento rapido"}
+              aria-expanded={isQuickAddOpen}
+              onClick={handleQuickAddToggle}
+            >
+              <span aria-hidden="true">+</span>
+            </button>
+
+            <div className={`mobile-quick-add-menu${isQuickAddOpen ? " is-open" : ""}`}>
+              <button type="button" onClick={() => handleMobileRoute("/receitas")}>
+                <span className="quick-add-dot quick-add-dot-income" aria-hidden="true" />
+                Nova receita
+              </button>
+              <button type="button" onClick={() => handleMobileRoute("/despesas")}>
+                <span className="quick-add-dot quick-add-dot-expense" aria-hidden="true" />
+                Nova despesa
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className={location.pathname === "/groups" ? "is-active" : ""}
+            onClick={() => handleMobileRoute("/groups", false)}
+          >
+            <span className="mobile-bottom-icon mobile-bottom-icon-users" aria-hidden="true" />
+            <span>Grupos</span>
+          </button>
+
+          <button
+            type="button"
+            className={isProfileMenuOpen ? "is-active" : ""}
+            onClick={() => setIsProfileMenuOpen((current) => !current)}
+          >
+            <span className="mobile-bottom-icon mobile-bottom-icon-user" aria-hidden="true" />
+            <span>Eu</span>
+          </button>
+        </nav>
       ) : null}
 
       {isLoggingOut ? (
