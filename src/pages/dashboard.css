@@ -585,15 +585,26 @@
   margin-top: 10px;
 }
 
-.parent-category-mini-values div {
+.parent-category-mini-values button {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
   padding: 10px 12px;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.08);
   background: rgba(15, 23, 42, 0.34);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.parent-category-mini-values button:hover,
+.parent-category-mini-values button.is-active {
+  transform: translateY(-1px);
+  border-color: rgba(96, 165, 250, 0.28);
+  background: rgba(37, 99, 235, 0.16);
 }
 
 .parent-category-mini-values span {
@@ -604,6 +615,77 @@
 
 .parent-category-mini-values strong {
   white-space: nowrap;
+}
+
+.parent-category-detail-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(96, 165, 250, 0.14);
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.parent-category-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.parent-category-detail-head > strong {
+  color: var(--text-main);
+}
+
+.parent-category-detail-head button {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(30, 41, 59, 0.78);
+  color: var(--text-main);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.parent-category-detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.parent-category-detail-row div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.parent-category-detail-row div strong {
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.parent-category-detail-row span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.parent-category-detail-row > strong {
+  white-space: nowrap;
+}
+
+.parent-category-detail-empty {
+  padding: 10px;
+  border-radius: 12px;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .dashboard-donut-card {
@@ -1197,10 +1279,15 @@
     font-size: 16px;
   }
 
-  .parent-category-mini-values div {
+  .parent-category-mini-values button,
+  .parent-category-detail-row {
     align-items: flex-start;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .parent-category-detail-row > strong {
+    white-space: normal;
   }
 
   .dashboard-donut-center strong {

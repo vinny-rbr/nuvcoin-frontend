@@ -45,6 +45,8 @@ type ParentCategorySummary = {
   despesasCents: number;
   saldoCents: number;
   totalCents: number;
+  receitaItems: FinanceItem[];
+  despesaItems: FinanceItem[];
 };
 
 function formatBRLFromCents(valueCents: number): string {
@@ -188,6 +190,8 @@ function summarizeParentCategories(items: FinanceItem[], registeredParentNames: 
       despesasCents: 0,
       saldoCents: 0,
       totalCents: 0,
+      receitaItems: [],
+      despesaItems: [],
     });
   }
 
@@ -201,12 +205,16 @@ function summarizeParentCategories(items: FinanceItem[], registeredParentNames: 
         despesasCents: 0,
         saldoCents: 0,
         totalCents: 0,
+        receitaItems: [],
+        despesaItems: [],
       };
 
     if (item.type === "RECEITA") {
       current.receitasCents += item.amountCents;
+      current.receitaItems.push(item);
     } else {
       current.despesasCents += item.amountCents;
+      current.despesaItems.push(item);
     }
 
     current.saldoCents = current.receitasCents - current.despesasCents;
@@ -257,6 +265,7 @@ function ParentCategoryMiniDashboard({
   label: string;
   summary: ParentCategorySummary | null;
 }) {
+  const [openType, setOpenType] = useState<"RECEITA" | "DESPESA" | null>(null);
   const saldoClass = summary && summary.saldoCents >= 0 ? "green" : "red";
   const data = summary
     ? toDonutData([
@@ -264,6 +273,17 @@ function ParentCategoryMiniDashboard({
         { name: "Despesas", valueCents: summary.despesasCents },
       ])
     : [];
+  const openItems =
+    openType === "RECEITA"
+      ? summary?.receitaItems ?? []
+      : openType === "DESPESA"
+        ? summary?.despesaItems ?? []
+        : [];
+  const openLabel = openType === "RECEITA" ? "Receitas" : "Despesas";
+
+  useEffect(() => {
+    setOpenType(null);
+  }, [summary?.name]);
 
   return (
     <div className="parent-category-mini-dashboard">
@@ -301,15 +321,56 @@ function ParentCategoryMiniDashboard({
           </div>
 
           <div className="parent-category-mini-values">
-            <div>
+            <button
+              type="button"
+              className={openType === "RECEITA" ? "is-active" : ""}
+              onClick={() => setOpenType((current) => (current === "RECEITA" ? null : "RECEITA"))}
+            >
               <span>Receitas</span>
               <strong className="green">{formatBRLFromCents(summary.receitasCents)}</strong>
-            </div>
-            <div>
+            </button>
+            <button
+              type="button"
+              className={openType === "DESPESA" ? "is-active" : ""}
+              onClick={() => setOpenType((current) => (current === "DESPESA" ? null : "DESPESA"))}
+            >
               <span>Despesas</span>
               <strong className="red">{formatBRLFromCents(summary.despesasCents)}</strong>
-            </div>
+            </button>
           </div>
+
+          {openType ? (
+            <div className="parent-category-detail-list">
+              <div className="parent-category-detail-head">
+                <strong>{openLabel}</strong>
+                <button type="button" onClick={() => setOpenType(null)}>
+                  Fechar
+                </button>
+              </div>
+
+              {openItems.length === 0 ? (
+                <div className="parent-category-detail-empty">Nenhum lançamento encontrado nessa categoria.</div>
+              ) : (
+                openItems
+                  .slice()
+                  .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+                  .map((item) => (
+                    <div key={item.id} className="parent-category-detail-row">
+                      <div>
+                        <strong>{item.title}</strong>
+                        <span>
+                          {item.category} • {formatDateBR(item.dateISO)}
+                        </span>
+                      </div>
+                      <strong className={item.type === "RECEITA" ? "green" : "red"}>
+                        {item.type === "RECEITA" ? "+ " : "- "}
+                        {formatBRLFromCents(item.amountCents)}
+                      </strong>
+                    </div>
+                  ))
+              )}
+            </div>
+          ) : null}
         </>
       ) : (
         <div className="dashboard-empty-panel">Sem categoria para comparar.</div>
