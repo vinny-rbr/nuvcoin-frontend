@@ -222,6 +222,8 @@ export default function Groups() {
   } = useGroupsBaseConfig({
     selectedGroupId,
     balances,
+    membersInfo,
+    onAfterSave: reloadSelectedGroupData,
   });
 
   // ==============================

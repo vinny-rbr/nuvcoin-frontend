@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react"; // Hooks do React
+import { useEffect, useMemo, useState } from "react";
 
-import type { GroupSplitMode } from "../types/groups.types"; // Tipo do modo de divisão
-
+import { updateGroupMemberSalaries } from "../services/groups.api";
+import type { GroupMembersResponse, GroupSplitMode } from "../types/groups.types";
 import {
   buildDefaultManualPercentBase,
   loadStoredManualPercentBase,
@@ -11,197 +11,214 @@ import {
   saveStoredManualPercentBase,
   saveStoredSalaryBase,
   saveStoredSplitMode,
-} from "../utils/groups.storage"; // Helpers de persistência local
-
+} from "../utils/groups.storage";
 import {
   normalizePercentInputText,
   percentNumberToInput,
   percentTextToNumber,
-} from "../utils/groups.helpers"; // Helpers de normalização e conversão
+} from "../utils/groups.helpers";
 
 type UseGroupsBaseConfigParams = {
-  selectedGroupId: string | null; // Id do grupo selecionado
+  selectedGroupId: string | null;
   balances: {
     members?: Array<{
-      userId: string; // Id do usuário no grupo
+      userId: string;
     }>;
-  } | null; // Balances do grupo atual
-}; // Parâmetros do hook
+  } | null;
+  membersInfo?: GroupMembersResponse | null;
+  onAfterSave?: () => Promise<void> | void;
+};
 
 export default function useGroupsBaseConfig({
   selectedGroupId,
   balances,
+  membersInfo,
+  onAfterSave,
 }: UseGroupsBaseConfigParams) {
-  const [salaryError, setSalaryError] = useState<string | null>(null); // Erro do modal da base
-  const [salarySuccess, setSalarySuccess] = useState<string | null>(null); // Sucesso do modal da base
-  const [splitMode, setSplitMode] = useState<GroupSplitMode>("SALARY"); // Modo atual de divisão
-  const [manualPercentInputByUserId, setManualPercentInputByUserId] = useState<Record<string, string>>({}); // Inputs manuais por usuário
-  const [salaryByUserId, setSalaryByUserId] = useState<Record<string, number>>({}); // Salários por usuário
+  const [salaryError, setSalaryError] = useState<string | null>(null);
+  const [salarySuccess, setSalarySuccess] = useState<string | null>(null);
+  const [splitMode, setSplitMode] = useState<GroupSplitMode>("SALARY");
+  const [manualPercentInputByUserId, setManualPercentInputByUserId] = useState<Record<string, string>>({});
+  const [salaryByUserId, setSalaryByUserId] = useState<Record<string, number>>({});
 
   const memberIds = useMemo(() => {
-    return (balances?.members ?? []).map((member) => member.userId); // Extrai ids dos membros do grupo atual
-  }, [balances]); // Recalcula quando balances mudar
+    const idsFromMembers = (membersInfo?.members ?? []).map((member) => member.userId);
+    if (idsFromMembers.length > 0) return idsFromMembers;
+
+    return (balances?.members ?? []).map((member) => member.userId);
+  }, [balances, membersInfo]);
 
   function getManualPercentNumberMap(ids: string[]) {
-    const next: Record<string, number> = {}; // Mapa final numérico
+    const next: Record<string, number> = {};
 
     for (const id of ids) {
-      next[id] = percentTextToNumber(manualPercentInputByUserId[id] ?? "0"); // Converte cada input textual para número
+      next[id] = percentTextToNumber(manualPercentInputByUserId[id] ?? "0");
     }
 
-    return next; // Retorna mapa convertido
+    return next;
   }
 
   function loadSplitMode(groupId: string) {
-    const mode = loadStoredSplitMode(groupId); // Lê modo salvo do storage
-    setSplitMode(mode); // Atualiza estado local
+    setSplitMode(loadStoredSplitMode(groupId));
   }
 
   function saveSplitMode(groupId: string, mode: GroupSplitMode) {
-    saveStoredSplitMode(groupId, mode); // Persiste modo no storage
+    saveStoredSplitMode(groupId, mode);
   }
 
   function loadManualPercentBase(groupId: string, ids: string[]) {
-    const inputMap = loadStoredManualPercentBase(groupId, ids); // Lê percentuais manuais salvos
-    setManualPercentInputByUserId(inputMap); // Atualiza inputs do estado
+    setManualPercentInputByUserId(loadStoredManualPercentBase(groupId, ids));
   }
 
   function saveManualPercentBase(groupId: string, map: Record<string, number>) {
-    saveStoredManualPercentBase(groupId, map); // Persiste percentuais manuais
+    saveStoredManualPercentBase(groupId, map);
   }
 
   function loadSalaryBase(groupId: string, ids: string[]) {
-    const next = loadStoredSalaryBase(groupId, ids); // Lê salários salvos
-    setSalaryByUserId(next); // Atualiza estado local
+    const stored = loadStoredSalaryBase(groupId, ids);
+    const membersById = new Map((membersInfo?.members ?? []).map((member) => [member.userId, member]));
+    const next: Record<string, number> = {};
+
+    for (const id of ids) {
+      const salaryCents = Number(membersById.get(id)?.salaryCents ?? 0);
+      next[id] = salaryCents > 0 ? salaryCents / 100 : stored[id] ?? 0;
+    }
+
+    setSalaryByUserId(next);
   }
 
   function saveSalaryBase(groupId: string, map: Record<string, number>) {
-    saveStoredSalaryBase(groupId, map); // Persiste salários
+    saveStoredSalaryBase(groupId, map);
   }
 
   function clearBaseFeedback() {
-    setSalaryError(null); // Limpa erro da base
-    setSalarySuccess(null); // Limpa sucesso da base
+    setSalaryError(null);
+    setSalarySuccess(null);
   }
 
   function onSplitModeChange(mode: GroupSplitMode) {
-    setSplitMode(mode); // Atualiza modo selecionado
+    setSplitMode(mode);
   }
 
   function onSalaryChange(userId: string, value: string) {
-    const raw = (value ?? "").replace(/\./g, "").replace(",", "."); // Normaliza entrada BR para número JS
-    const num = Number(raw); // Converte para número
+    const raw = (value ?? "").replace(/\./g, "").replace(",", ".");
+    const num = Number(raw);
 
     setSalaryByUserId((prev) => ({
       ...prev,
-      [userId]: Number.isFinite(num) && num >= 0 ? num : 0, // Mantém apenas número válido e não negativo
-    })); // Atualiza salário do usuário
+      [userId]: Number.isFinite(num) && num >= 0 ? num : 0,
+    }));
 
-    clearBaseFeedback(); // Limpa mensagens antigas ao editar
+    clearBaseFeedback();
   }
 
   function onSalaryBlur(userId: string) {
-    const value = Number(salaryByUserId[userId] ?? 0) || 0; // Garante valor final numérico
+    const value = Number(salaryByUserId[userId] ?? 0) || 0;
 
     setSalaryByUserId((prev) => ({
       ...prev,
-      [userId]: value, // Regrava valor já normalizado
-    })); // Atualiza estado final
+      [userId]: value,
+    }));
 
-    clearBaseFeedback(); // Limpa mensagens antigas
+    clearBaseFeedback();
   }
 
   function onManualPercentChange(userId: string, value: string) {
-    const raw = normalizePercentInputText(value); // Normaliza texto digitado no percentual
-
     setManualPercentInputByUserId((prev) => ({
       ...prev,
-      [userId]: raw, // Atualiza input do usuário
-    })); // Salva no estado
+      [userId]: normalizePercentInputText(value),
+    }));
 
-    clearBaseFeedback(); // Limpa mensagens antigas ao editar
+    clearBaseFeedback();
   }
 
   function onManualPercentBlur(userId: string) {
-    const parsed = percentTextToNumber(manualPercentInputByUserId[userId] ?? "0"); // Converte input para número
+    const parsed = percentTextToNumber(manualPercentInputByUserId[userId] ?? "0");
 
     setManualPercentInputByUserId((prev) => ({
       ...prev,
-      [userId]: percentNumberToInput(parsed), // Regrava no formato padrão visual
-    })); // Atualiza input formatado
+      [userId]: percentNumberToInput(parsed),
+    }));
 
-    clearBaseFeedback(); // Limpa mensagens antigas
+    clearBaseFeedback();
   }
 
   function onResetSalaries() {
-    const next: Record<string, number> = {}; // Objeto para zerar salários
+    const next: Record<string, number> = {};
 
     for (const userId of memberIds) {
-      next[userId] = 0; // Zera salário de cada membro
+      next[userId] = 0;
     }
 
-    setSalaryByUserId(next); // Atualiza salários zerados
-    clearBaseFeedback(); // Limpa mensagens
+    setSalaryByUserId(next);
+    clearBaseFeedback();
   }
 
   function onSplitEqual() {
-    const defaults = buildDefaultManualPercentBase(memberIds); // Gera divisão igual entre todos
-    setManualPercentInputByUserId(numberMapToInputMap(defaults)); // Atualiza inputs formatados
-    clearBaseFeedback(); // Limpa mensagens
+    const defaults = buildDefaultManualPercentBase(memberIds);
+    setManualPercentInputByUserId(numberMapToInputMap(defaults));
+    clearBaseFeedback();
   }
 
-  function onSave(onSuccess?: () => void) {
+  async function onSave(onSuccess?: () => void) {
     try {
-      clearBaseFeedback(); // Limpa feedback anterior
+      clearBaseFeedback();
 
       if (!selectedGroupId) {
-        setSalaryError("Selecione um grupo."); // Valida grupo
-        return; // Interrompe fluxo
+        setSalaryError("Selecione um grupo.");
+        return;
       }
 
       if (splitMode === "SALARY") {
         const total = memberIds.reduce((acc, userId) => {
-          return acc + (Number(salaryByUserId[userId] ?? 0) || 0); // Soma salários válidos
-        }, 0); // Total de salários
+          return acc + (Number(salaryByUserId[userId] ?? 0) || 0);
+        }, 0);
 
         if (total <= 0) {
-          setSalaryError("Informe pelo menos um salário maior que 0."); // Valida base salarial mínima
-          return; // Interrompe fluxo
+          setSalaryError("Informe pelo menos um salario maior que 0.");
+          return;
         }
 
-        saveSalaryBase(selectedGroupId, salaryByUserId); // Salva salários
-        saveSplitMode(selectedGroupId, "SALARY"); // Salva modo
-        setSalarySuccess("Base salarial salva."); // Feedback positivo
-        onSuccess?.(); // Executa callback externo
-        return; // Finaliza fluxo salary
+        const salaries = memberIds.map((userId) => ({
+          userId,
+          salaryCents: Math.round((Number(salaryByUserId[userId] ?? 0) || 0) * 100),
+        }));
+
+        await updateGroupMemberSalaries(selectedGroupId, { salaries });
+        saveSalaryBase(selectedGroupId, salaryByUserId);
+        saveSplitMode(selectedGroupId, "SALARY");
+        await onAfterSave?.();
+        setSalarySuccess("Base salarial salva.");
+        onSuccess?.();
+        return;
       }
 
-      const currentManualMap = getManualPercentNumberMap(memberIds); // Lê mapa manual atual
-      const currentTotal = Object.values(currentManualMap).reduce((acc, value) => acc + value, 0); // Soma percentuais
+      const currentManualMap = getManualPercentNumberMap(memberIds);
+      const currentTotal = Object.values(currentManualMap).reduce((acc, value) => acc + value, 0);
 
       if (currentTotal <= 0 || Math.abs(currentTotal - 100) >= 0.01) {
-        setSalaryError("No modo manual, a soma dos percentuais precisa fechar 100%."); // Validação do modo manual
-        return; // Interrompe fluxo
+        setSalaryError("No modo manual, a soma dos percentuais precisa fechar 100%.");
+        return;
       }
 
-      saveManualPercentBase(selectedGroupId, currentManualMap); // Salva base manual
-      saveSplitMode(selectedGroupId, "MANUAL"); // Salva modo manual
-      setManualPercentInputByUserId(numberMapToInputMap(currentManualMap)); // Regrava valores já formatados
-      setSalarySuccess("Base manual salva."); // Feedback positivo
-      onSuccess?.(); // Executa callback externo
+      saveManualPercentBase(selectedGroupId, currentManualMap);
+      saveSplitMode(selectedGroupId, "MANUAL");
+      setManualPercentInputByUserId(numberMapToInputMap(currentManualMap));
+      setSalarySuccess("Base manual salva.");
+      onSuccess?.();
     } catch {
-      setSalaryError("Não foi possível salvar a base do grupo."); // Erro amigável
+      setSalaryError("Nao foi possivel salvar a base do grupo.");
     }
   }
 
   useEffect(() => {
-    if (!selectedGroupId) return; // Sai se não houver grupo selecionado
-    if (memberIds.length === 0) return; // Sai se não houver membros
+    if (!selectedGroupId) return;
+    if (memberIds.length === 0) return;
 
-    loadSalaryBase(selectedGroupId, memberIds); // Carrega salários do grupo
-    loadManualPercentBase(selectedGroupId, memberIds); // Carrega base manual do grupo
-    loadSplitMode(selectedGroupId); // Carrega modo salvo
-  }, [selectedGroupId, memberIds.length]); // Recarrega ao trocar grupo ou quantidade de membros
+    loadSalaryBase(selectedGroupId, memberIds);
+    loadManualPercentBase(selectedGroupId, memberIds);
+    loadSplitMode(selectedGroupId);
+  }, [selectedGroupId, memberIds.length, membersInfo]);
 
   return {
     salaryError,
@@ -223,15 +240,5 @@ export default function useGroupsBaseConfig({
     onResetSalaries,
     onSplitEqual,
     onSave,
-  }; // Retorna tudo que o Groups.tsx e o modal precisam
+  };
 }
-
-// Desenvolvido por Lucas Vinicius
-// lucassousa@gmail.com
-//
-// Hook criado nesta etapa:
-// - ✅ extrai toda a lógica de base salarial e percentual manual
-// - ✅ centraliza load/save no localStorage
-// - ✅ centraliza validação do modo SALARY e MANUAL
-// - ✅ centraliza handlers do modal da base
-// - ✅ deixa o Groups.tsx mais limpo e focado em UI

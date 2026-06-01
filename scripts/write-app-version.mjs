@@ -24,3 +24,4 @@ const payload = {
 
 mkdirSync(join(rootDir, "public"), { recursive: true });
 writeFileSync(join(rootDir, "public", "version.json"), `${JSON.stringify(payload, null, 2)}\n`);
+writeFileSync(join(rootDir, "src", "lib", "appVersion.ts"), `export const APP_VERSION = "${packageJson.version}";\n`);

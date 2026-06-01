@@ -18,9 +18,12 @@ export type GroupMemberItemDto = {
   userId: string; // Id do usuário
   role: string; // "Admin" | "Member"
   defaultSharePercent?: number | null; // Pode vir null
+  salaryCents?: number;
   accessStartUtc?: string | null; // Pode vir null
   accessEndUtc?: string | null; // Pode vir null
   createdAtUtc?: string; // Pode vir
+  name?: string | null;
+  email?: string | null;
 };
 
 export type GroupMembersResponse = {

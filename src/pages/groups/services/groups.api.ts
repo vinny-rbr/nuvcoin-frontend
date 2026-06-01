@@ -19,6 +19,13 @@ type AddGroupMemberRequest = {
   email?: string;
 };
 
+type UpdateGroupMemberSalariesRequest = {
+  salaries: Array<{
+    userId: string;
+    salaryCents: number;
+  }>;
+};
+
 async function readApiError(response: Response, fallback: string): Promise<string> {
   const text = await response.text();
 
@@ -211,6 +218,33 @@ export async function addMember(
   if (!response.ok) {
     const message = await readApiError(response, "Adicionar membros ainda nao esta disponivel nesta API.");
     throw new Error(`Erro ao adicionar membro: ${message}`);
+  }
+}
+
+// ==============================
+// UPDATE MEMBER SALARIES
+// ==============================
+
+export async function updateGroupMemberSalaries(
+  groupId: string,
+  payload: UpdateGroupMemberSalariesRequest
+): Promise<void> {
+
+  const token = getAuthTokenOrThrow();
+
+  const response = await fetch(apiUrl(`/api/groups/${groupId}/members/salaries`), {
+    method: "PUT",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const message = await readApiError(response, "Nao foi possivel salvar os salarios do grupo.");
+    throw new Error(`Erro ao salvar salarios: ${message}`);
   }
 }
 

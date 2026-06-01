@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 type GroupsHeaderActionModalShellProps = {
   title: string;
@@ -25,6 +25,7 @@ export default function GroupsHeaderActionModalShell({
   ghostButton,
   children,
 }: GroupsHeaderActionModalShellProps) {
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 768;
@@ -47,12 +48,18 @@ export default function GroupsHeaderActionModalShell({
     };
   }, []);
 
+  useEffect(() => {
+    bodyRef.current?.scrollTo({ top: 0, behavior: "auto" });
+  }, [title, children]);
+
   return (
     <div
       style={{
         ...modalOverlay,
         zIndex: 1150,
         padding: isMobile ? 10 : 24,
+        placeItems: isMobile ? "start center" : modalOverlay.placeItems,
+        overflowY: "auto",
       }}
       onClick={onClose}
     >
@@ -90,6 +97,7 @@ export default function GroupsHeaderActionModalShell({
         </div>
 
         <div
+          ref={bodyRef}
           style={{
             ...modalBody,
             overflowY: "auto",
