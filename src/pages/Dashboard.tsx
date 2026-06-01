@@ -38,6 +38,14 @@ type DonutItem = {
   detailItems: FinanceItem[];
 };
 
+type ParentCategorySummary = {
+  name: string;
+  receitasCents: number;
+  despesasCents: number;
+  saldoCents: number;
+  totalCents: number;
+};
+
 function formatBRLFromCents(valueCents: number): string {
   const value = valueCents / 100;
   return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -127,6 +135,13 @@ function getPaymentLabel(paymentType: PaymentType): string {
   return "Crédito";
 }
 
+function getParentCategoryName(category: string): string {
+  return category
+    .split(">")
+    .map((part) => part.trim())
+    .filter(Boolean)[0] || "Outros";
+}
+
 function toDonutData(entries: Array<{ name: string; valueCents: number; detailItems?: FinanceItem[] }>): DonutItem[] {
   const total = entries.reduce((sum, item) => sum + item.valueCents, 0);
 
@@ -162,6 +177,35 @@ function groupByCategory(items: FinanceItem[], type: "RECEITA" | "DESPESA"): Don
   );
 }
 
+function summarizeParentCategories(items: FinanceItem[]): ParentCategorySummary[] {
+  const map = new Map<string, ParentCategorySummary>();
+
+  for (const item of items) {
+    const name = getParentCategoryName(item.category);
+    const current =
+      map.get(name) ??
+      {
+        name,
+        receitasCents: 0,
+        despesasCents: 0,
+        saldoCents: 0,
+        totalCents: 0,
+      };
+
+    if (item.type === "RECEITA") {
+      current.receitasCents += item.amountCents;
+    } else {
+      current.despesasCents += item.amountCents;
+    }
+
+    current.saldoCents = current.receitasCents - current.despesasCents;
+    current.totalCents = current.receitasCents + current.despesasCents;
+    map.set(name, current);
+  }
+
+  return Array.from(map.values()).sort((a, b) => b.totalCents - a.totalCents);
+}
+
 function groupByPayment(items: FinanceItem[]): DonutItem[] {
   const map = new Map<string, { valueCents: number; detailItems: FinanceItem[] }>();
 
@@ -180,6 +224,74 @@ function groupByPayment(items: FinanceItem[]): DonutItem[] {
       valueCents: value.valueCents,
       detailItems: value.detailItems,
     }))
+  );
+}
+
+function ParentCategoryMiniDashboard({
+  label,
+  summary,
+}: {
+  label: string;
+  summary: ParentCategorySummary | null;
+}) {
+  const saldoClass = summary && summary.saldoCents >= 0 ? "green" : "red";
+  const data = summary
+    ? toDonutData([
+        { name: "Receitas", valueCents: summary.receitasCents },
+        { name: "Despesas", valueCents: summary.despesasCents },
+      ])
+    : [];
+
+  return (
+    <div className="parent-category-mini-dashboard">
+      <div className="parent-category-mini-head">
+        <span>{label}</span>
+        <strong>{summary?.name ?? "Escolha uma categoria"}</strong>
+      </div>
+
+      {summary ? (
+        <>
+          <div className="parent-category-mini-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius="62%"
+                  outerRadius="86%"
+                  paddingAngle={2}
+                  stroke="rgba(241,245,249,0.8)"
+                  strokeWidth={2}
+                >
+                  {data.map((item) => (
+                    <Cell key={item.name} fill={item.name === "Receitas" ? "#22C55E" : "#EF4444"} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+
+            <div className="parent-category-mini-center">
+              <span>Saldo</span>
+              <strong className={saldoClass}>{formatBRLFromCents(summary.saldoCents)}</strong>
+            </div>
+          </div>
+
+          <div className="parent-category-mini-values">
+            <div>
+              <span>Receitas</span>
+              <strong className="green">{formatBRLFromCents(summary.receitasCents)}</strong>
+            </div>
+            <div>
+              <span>Despesas</span>
+              <strong className="red">{formatBRLFromCents(summary.despesasCents)}</strong>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="dashboard-empty-panel">Sem categoria para comparar.</div>
+      )}
+    </div>
   );
 }
 
@@ -330,6 +442,8 @@ export default function Dashboard() {
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [period, setPeriod] = useState<PeriodKey>("LAST_3");
   const [viewMode, setViewMode] = useState<DashboardViewMode>("CONFRONTO");
+  const [parentDashboardA, setParentDashboardA] = useState("");
+  const [parentDashboardB, setParentDashboardB] = useState("");
   const [animate, setAnimate] = useState(false);
 
   useEffect(() => {
@@ -457,6 +571,31 @@ export default function Dashboard() {
 
   const receitasByCategory = useMemo(() => groupByCategory(filteredItems, "RECEITA"), [filteredItems]);
   const paymentData = useMemo(() => groupByPayment(filteredItems), [filteredItems]);
+  const parentCategorySummaries = useMemo(() => summarizeParentCategories(filteredItems), [filteredItems]);
+  const parentCategoryNames = useMemo(() => parentCategorySummaries.map((item) => item.name), [parentCategorySummaries]);
+
+  useEffect(() => {
+    if (parentCategoryNames.length === 0) {
+      setParentDashboardA("");
+      setParentDashboardB("");
+      return;
+    }
+
+    setParentDashboardA((current) => (current && parentCategoryNames.includes(current) ? current : parentCategoryNames[0]));
+    setParentDashboardB((current) => {
+      if (current && parentCategoryNames.includes(current)) return current;
+      return parentCategoryNames[1] ?? parentCategoryNames[0];
+    });
+  }, [parentCategoryNames]);
+
+  const selectedParentDashboardA = useMemo(
+    () => parentCategorySummaries.find((item) => item.name === parentDashboardA) ?? null,
+    [parentCategorySummaries, parentDashboardA],
+  );
+  const selectedParentDashboardB = useMemo(
+    () => parentCategorySummaries.find((item) => item.name === parentDashboardB) ?? null,
+    [parentCategorySummaries, parentDashboardB],
+  );
 
   const confrontationData = useMemo(() => {
     return toDonutData([
@@ -684,6 +823,55 @@ export default function Dashboard() {
           />
         </div>
       </section>
+
+      {parentCategorySummaries.length > 0 ? (
+        <section className="parent-category-compare-shell dashboard-panel">
+          <div className="parent-category-compare-head">
+            <div>
+              <span className="dashboard-kicker">Categorias pai</span>
+              <h3>Compare dois blocos financeiros</h3>
+              <p>Escolha duas categorias principais para ver quanto cada uma recebeu, gastou e manteve de saldo.</p>
+            </div>
+          </div>
+
+          <div className="parent-category-select-grid">
+            <label>
+              <span>Dashboard 1</span>
+              <select
+                className="period-select"
+                value={parentDashboardA}
+                onChange={(event) => setParentDashboardA(event.target.value)}
+              >
+                {parentCategoryNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Dashboard 2</span>
+              <select
+                className="period-select"
+                value={parentDashboardB}
+                onChange={(event) => setParentDashboardB(event.target.value)}
+              >
+                {parentCategoryNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="parent-category-dashboard-grid">
+            <ParentCategoryMiniDashboard label="Dashboard 1" summary={selectedParentDashboardA} />
+            <ParentCategoryMiniDashboard label="Dashboard 2" summary={selectedParentDashboardB} />
+          </div>
+        </section>
+      ) : null}
 
       <div className="dashboard-charts">
         <div className="chart-card dashboard-panel">
