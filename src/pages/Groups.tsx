@@ -377,6 +377,20 @@ export default function Groups() {
     setIsDeleteGroupConfirmOpen(false);
   }, [selectedGroupId]);
 
+  useEffect(() => {
+    function handleOpenGroupExpense() {
+      closeHeaderActionModal();
+      prepareQuickExpenseFlow();
+      openCreateExpenseModal();
+    }
+
+    window.addEventListener("conciliaai:open-group-expense", handleOpenGroupExpense);
+
+    return () => {
+      window.removeEventListener("conciliaai:open-group-expense", handleOpenGroupExpense);
+    };
+  }, [closeHeaderActionModal, openCreateExpenseModal, prepareQuickExpenseFlow]);
+
   // ==============================
   // EFFECT: animaÃ§Ã£o ao entrar/trocar grupo
   // ==============================

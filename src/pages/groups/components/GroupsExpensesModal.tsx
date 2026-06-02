@@ -1,4 +1,5 @@
-import type { CSSProperties } from "react";
+import { useEffect, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 
 import type { GroupSplitMode } from "../types/groups.types";
 
@@ -93,17 +94,41 @@ export default function GroupsExpensesModal({
   primaryButton,
   tabButton,
 }: GroupsExpensesModalProps) {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   if (!open || !selectedGroupId) return null;
 
-  return (
+  return createPortal(
     <div
-      style={modalOverlay}
+      style={{
+        ...modalOverlay,
+        alignItems: "flex-start",
+        justifyItems: "center",
+        overflowY: "auto",
+        padding: "14px 12px",
+        zIndex: 130,
+      }}
       onClick={() => {
         onClose();
       }}
     >
       <div
-        style={modalCard}
+        style={{
+          ...modalCard,
+          width: "min(720px, 100%)",
+          maxHeight: "calc(100dvh - 28px)",
+          display: "grid",
+          gridTemplateRows: "auto minmax(0, 1fr)",
+        }}
         onClick={(e) => {
           e.stopPropagation();
         }}
@@ -121,7 +146,14 @@ export default function GroupsExpensesModal({
           </button>
         </div>
 
-        <div style={modalBody}>
+        <div
+          style={{
+            ...modalBody,
+            minHeight: 0,
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button type="button" onClick={() => onChangeTab("HOUSE")} style={tabButton(expensesTab === "HOUSE")}>
               Conta do mês
@@ -145,7 +177,7 @@ export default function GroupsExpensesModal({
                 <input value={houseName} onChange={(e) => onHouseNameChange(e.target.value)} placeholder="Ex: Aluguel" style={inputStyle} />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
                 <div style={{ display: "grid", gap: 6 }}>
                   <div style={{ fontWeight: 800, opacity: 0.95 }}>Valor</div>
                   <input
@@ -201,7 +233,7 @@ export default function GroupsExpensesModal({
                 <input value={quickDesc} onChange={(e) => onQuickDescChange(e.target.value)} placeholder="Ex: Mercado" style={inputStyle} />
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
                 <div style={{ display: "grid", gap: 6 }}>
                   <div style={{ fontWeight: 800, opacity: 0.95 }}>Valor</div>
                   <input
@@ -252,6 +284,7 @@ export default function GroupsExpensesModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

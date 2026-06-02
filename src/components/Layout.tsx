@@ -447,6 +447,15 @@ export default function Layout({ children }: Props) {
     setIsQuickAddOpen((current) => !current);
   }
 
+  function handleGroupExpenseQuickAdd() {
+    logClientEvent({
+      event: "navigation.quick_add.group_expense",
+      message: "Abriu lancamento rapido de despesa de grupo",
+    });
+    setIsQuickAddOpen(false);
+    window.dispatchEvent(new CustomEvent("conciliaai:open-group-expense"));
+  }
+
   function handleActivatePlan() {
     logClientEvent({ event: "subscription.activate.open", message: "Abriu modal de ativar plano" });
     setIsActivatePlanModalOpen(true);
@@ -971,14 +980,23 @@ export default function Layout({ children }: Props) {
             </button>
 
             <div className={`mobile-quick-add-menu${isQuickAddOpen ? " is-open" : ""}`}>
-              <button type="button" onClick={() => handleMobileRoute("/receitas")}>
-                <span className="quick-add-dot quick-add-dot-income" aria-hidden="true" />
-                Nova receita
-              </button>
-              <button type="button" onClick={() => handleMobileRoute("/despesas")}>
-                <span className="quick-add-dot quick-add-dot-expense" aria-hidden="true" />
-                Nova despesa
-              </button>
+              {location.pathname === "/groups" ? (
+                <button type="button" onClick={handleGroupExpenseQuickAdd}>
+                  <span className="quick-add-dot quick-add-dot-group" aria-hidden="true" />
+                  Lançar despesa de grupo
+                </button>
+              ) : (
+                <>
+                  <button type="button" onClick={() => handleMobileRoute("/receitas")}>
+                    <span className="quick-add-dot quick-add-dot-income" aria-hidden="true" />
+                    Nova receita
+                  </button>
+                  <button type="button" onClick={() => handleMobileRoute("/despesas")}>
+                    <span className="quick-add-dot quick-add-dot-expense" aria-hidden="true" />
+                    Nova despesa
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
