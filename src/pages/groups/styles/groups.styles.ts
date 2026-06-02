@@ -14,7 +14,7 @@ export const shellStyle: CSSProperties = {
   minWidth: 0,
   maxWidth: 1280,
   margin: "0 auto",
-  padding: "18px 0 34px",
+  padding: "18px 0 38px",
   boxSizing: "border-box",
   display: "grid",
   gap: 22,
@@ -31,22 +31,22 @@ export const subtleText: CSSProperties = {
 
 export const pageHeroStyle: CSSProperties = {
   padding: 28,
-  borderRadius: 24,
-  border: "1px solid rgba(96,165,250,0.18)",
+  borderRadius: 28,
+  border: "1px solid rgba(96,165,250,0.20)",
   background:
-    "radial-gradient(circle at 18% 0%, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0) 34%), linear-gradient(135deg, rgba(30,41,59,0.98) 0%, rgba(17,24,39,0.92) 50%, rgba(30,58,138,0.28) 100%)",
-  boxShadow: "0 24px 58px rgba(2,6,23,0.32), inset 0 1px 0 rgba(255,255,255,0.06)",
+    "radial-gradient(circle at 18% 0%, rgba(96,165,250,0.24) 0%, rgba(96,165,250,0) 34%), radial-gradient(circle at 86% 18%, rgba(34,197,94,0.10) 0%, rgba(34,197,94,0) 38%), linear-gradient(135deg, rgba(30,41,59,0.98) 0%, rgba(17,24,39,0.92) 50%, rgba(30,58,138,0.30) 100%)",
+  boxShadow: "0 28px 74px rgba(2,6,23,0.38), inset 0 1px 0 rgba(255,255,255,0.07)",
   overflow: "hidden",
 };
 
 export const sectionCard: CSSProperties = {
   padding: 22,
-  borderRadius: 22,
-  border: "1px solid rgba(148,163,184,0.12)",
+  borderRadius: 24,
+  border: "1px solid rgba(148,163,184,0.13)",
   background:
-    "linear-gradient(180deg, rgba(30,41,59,0.76) 0%, rgba(15,23,42,0.62) 100%)",
-  boxShadow: "0 18px 42px rgba(2,6,23,0.26), inset 0 1px 0 rgba(255,255,255,0.035)",
-  backdropFilter: "blur(12px)",
+    "radial-gradient(circle at 16% 0%, rgba(96,165,250,0.10), transparent 38%), linear-gradient(180deg, rgba(30,41,59,0.78) 0%, rgba(15,23,42,0.64) 100%)",
+  boxShadow: "0 22px 56px rgba(2,6,23,0.32), inset 0 1px 0 rgba(255,255,255,0.045)",
+  backdropFilter: "blur(14px)",
 };
 
 export const sidebarCard: CSSProperties = {
@@ -67,14 +67,14 @@ export function metricCard(accent?: "blue" | "green" | "red" | "purple"): CSSPro
 
   return {
     padding: 18,
-    borderRadius: 18,
+    borderRadius: 20,
     border: "1px solid rgba(148,163,184,0.12)",
-    background: `radial-gradient(circle at top left, ${accentMap[accent ?? "blue"]} 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, rgba(30,41,59,0.74) 0%, rgba(15,23,42,0.58) 100%)`,
+    background: `radial-gradient(circle at top left, ${accentMap[accent ?? "blue"]} 0%, rgba(255,255,255,0) 42%), linear-gradient(180deg, rgba(30,41,59,0.80) 0%, rgba(15,23,42,0.62) 100%)`,
     minHeight: 102,
     display: "grid",
     alignContent: "space-between",
     gap: 10,
-    boxShadow: "0 16px 34px rgba(2,6,23,0.24), inset 0 1px 0 rgba(255,255,255,0.04)",
+    boxShadow: "0 18px 42px rgba(2,6,23,0.28), inset 0 1px 0 rgba(255,255,255,0.045)",
   };
 }
 
@@ -86,13 +86,13 @@ export const panelTitle: CSSProperties = {
 
 export const primaryButton: CSSProperties = {
   cursor: "pointer",
-  borderRadius: 14,
+  borderRadius: 16,
   border: "1px solid rgba(96,165,250,0.42)",
   padding: "12px 14px",
   background: "linear-gradient(135deg, rgba(59,130,246,0.96) 0%, rgba(37,99,235,0.78) 100%)",
   color: "inherit",
   fontWeight: 900,
-  boxShadow: "0 14px 30px rgba(37,99,235,0.26)",
+  boxShadow: "0 16px 36px rgba(37,99,235,0.34), inset 0 1px 0 rgba(255,255,255,0.22)",
 };
 
 export const ghostButton: CSSProperties = {

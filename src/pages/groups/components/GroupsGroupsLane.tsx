@@ -66,11 +66,11 @@ export default function GroupsGroupsLane({
       ref={ref}
       style={{
         ...sectionCard,
-        padding: 16,
+        padding: 18,
         position: "relative",
-        border: "1px solid rgba(96,165,250,0.16)",
+        border: "1px solid rgba(96,165,250,0.18)",
         background:
-          "radial-gradient(circle at 0% 0%, rgba(91,140,255,0.12), rgba(91,140,255,0) 34%), linear-gradient(180deg, rgba(30,41,59,0.76), rgba(15,23,42,0.64))",
+          "radial-gradient(circle at 0% 0%, rgba(91,140,255,0.16), rgba(91,140,255,0) 34%), radial-gradient(circle at 92% 8%, rgba(34,197,94,0.08), rgba(34,197,94,0) 38%), linear-gradient(180deg, rgba(30,41,59,0.80), rgba(15,23,42,0.66))",
         animation: isGroupsLaneAnimating ? "conciliaai-groups-lane-reflow 0.62s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
       }}
     >
@@ -88,9 +88,11 @@ export default function GroupsGroupsLane({
             style={{
               width: 42,
               height: 42,
-              borderRadius: 14,
+              borderRadius: 15,
               border: "1px solid rgba(148,163,184,0.16)",
-              background: isOpen ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.035)",
+              background: isOpen
+                ? "linear-gradient(135deg, rgba(59,130,246,0.42), rgba(37,99,235,0.26))"
+                : "rgba(255,255,255,0.035)",
               color: "inherit",
               display: "grid",
               placeItems: "center",
@@ -111,12 +113,13 @@ export default function GroupsGroupsLane({
             textAlign: "left",
             padding: 12,
             borderRadius: 18,
-            border: "1px solid rgba(96,165,250,0.28)",
+            border: "1px solid rgba(96,165,250,0.32)",
             background:
-              "linear-gradient(110deg, rgba(59,130,246,0.24), rgba(30,41,59,0.72), rgba(96,165,250,0.12))",
+              "linear-gradient(110deg, rgba(59,130,246,0.28), rgba(30,41,59,0.78), rgba(96,165,250,0.14))",
             color: "inherit",
-            boxShadow: "0 16px 34px rgba(37,99,235,0.18), inset 0 1px 0 rgba(255,255,255,0.05)",
+            boxShadow: "0 18px 42px rgba(37,99,235,0.22), inset 0 1px 0 rgba(255,255,255,0.06)",
             minWidth: 0,
+            transition: "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
@@ -158,8 +161,9 @@ export default function GroupsGroupsLane({
               padding: 8,
               borderRadius: 18,
               border: "1px solid rgba(148,163,184,0.16)",
-              background: "rgba(12,16,25,0.98)",
-              boxShadow: "0 24px 70px rgba(0,0,0,0.48)",
+              background:
+                "radial-gradient(circle at 18% 0%, rgba(96,165,250,0.14), transparent 42%), rgba(12,16,25,0.98)",
+              boxShadow: "0 28px 80px rgba(0,0,0,0.54)",
               display: "grid",
               gap: 6,
               maxHeight: 280,

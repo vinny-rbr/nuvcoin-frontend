@@ -604,6 +604,7 @@ export default function GroupsHeaderActions({
                 lineHeight: 1.05,
                 letterSpacing: -0.8,
                 overflowWrap: "anywhere",
+                fontFamily: "var(--display)",
               }}
             >
               Dashboard de grupos

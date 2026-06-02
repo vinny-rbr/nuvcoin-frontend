@@ -152,12 +152,15 @@ export default function GroupsDashboardContent({
           style={{
             ...sectionCard,
             border: selectedGroupId
-              ? "1px solid rgba(96,165,250,0.20)"
+              ? "1px solid rgba(96,165,250,0.22)"
               : sectionCard.border,
             background: selectedGroupId
-              ? "radial-gradient(circle at 0% 0%, rgba(91,140,255,0.16), rgba(91,140,255,0) 36%), linear-gradient(135deg, rgba(30,41,59,0.88), rgba(15,23,42,0.68))"
+              ? "radial-gradient(circle at 0% 0%, rgba(91,140,255,0.18), rgba(91,140,255,0) 36%), radial-gradient(circle at 94% 12%, rgba(34,197,94,0.08), rgba(34,197,94,0) 38%), linear-gradient(135deg, rgba(30,41,59,0.90), rgba(15,23,42,0.70))"
               : sectionCard.background,
             padding: isMobile ? 16 : sectionCard.padding,
+            boxShadow: selectedGroupId
+              ? "0 24px 68px rgba(2,6,23,0.34), inset 0 1px 0 rgba(255,255,255,0.055)"
+              : sectionCard.boxShadow,
           }}
         >
           <div
@@ -190,10 +193,11 @@ export default function GroupsDashboardContent({
                     fontWeight: 900,
                     fontSize: isMobile ? 25 : 34,
                     letterSpacing: -0.5,
-                    lineHeight: 1.12,
-                    overflowWrap: "anywhere",
-                  }}
-                >
+                  lineHeight: 1.12,
+                  overflowWrap: "anywhere",
+                  fontFamily: "var(--display)",
+                }}
+              >
                   {selectedGroupName ?? "Selecione um grupo"}
                 </div>
 
