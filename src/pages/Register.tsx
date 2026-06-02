@@ -11,6 +11,9 @@ export default function Register() {
   const navigate = useNavigate();
   // Hook para redirecionamento
 
+  const [name, setName] = useState("");
+  // Guarda como a pessoa quer ser chamada
+
   const [email, setEmail] = useState("");
   // Guarda email digitado
 
@@ -26,11 +29,11 @@ export default function Register() {
     logClientEvent({
       event: "auth.register.submit",
       message: "Tentativa de cadastro",
-      data: { email: email.trim() || null },
+      data: { email: email.trim() || null, name: name.trim() || null },
     });
 
-    if (!email || !password) {
-      alert("Preencha email e senha.");
+    if (!name.trim() || !email || !password) {
+      alert("Preencha nome, email e senha.");
       return;
     }
 
@@ -54,6 +57,7 @@ export default function Register() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          name: name.trim(),
           email: email.trim(),
           password: password,
         }),
@@ -64,7 +68,7 @@ export default function Register() {
         logClientEvent({
           event: "auth.register.failed",
           message: "Cadastro falhou",
-          data: { email: email.trim(), status: res.status, error: message },
+          data: { email: email.trim(), name: name.trim(), status: res.status, error: message },
         });
 
         if (res.status === 409) {
@@ -76,10 +80,11 @@ export default function Register() {
       }
 
       alert("Conta criada. Enviamos um codigo para confirmar seu e-mail.");
+      window.localStorage.setItem("conciliaai_name", name.trim());
       logClientEvent({
         event: "auth.register.success",
         message: "Cadastro realizado",
-        data: { email: email.trim() },
+        data: { email: email.trim(), name: name.trim() },
       });
 
       navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
@@ -88,7 +93,7 @@ export default function Register() {
       logClientEvent({
         event: "auth.register.error",
         message: "Erro no cadastro",
-        data: { email: email.trim() || null, error: message },
+        data: { email: email.trim() || null, name: name.trim() || null, error: message },
       });
       alert(message);
     } finally {
@@ -102,6 +107,13 @@ export default function Register() {
       <div className="auth-card">
         <h1 className="auth-title">Conciliaaí</h1>
         <p className="auth-subtitle">Crie sua conta</p>
+
+        <input
+          className="auth-input"
+          placeholder="Como voce quer ser chamado?"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
         <input
           className="auth-input"
