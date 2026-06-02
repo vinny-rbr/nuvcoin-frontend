@@ -104,6 +104,38 @@ export default function GroupsDashboardContent({
     };
   }, []);
 
+  const metricsBlock = (
+    <div style={getClockEntryStyle(isMobile ? 5 : 4)}>
+      <GroupsMetrics
+        monthTotalCents={monthTotalCents}
+        monthExpensesCount={monthExpensesCount}
+        membersCount={membersCount}
+        averagePerPersonCents={averagePerPersonCents}
+        highestBurden={highestBurden}
+        recommendedLimitPercent={recommendedLimitPercent}
+        subtleText={subtleText}
+        metricCard={metricCard}
+      />
+    </div>
+  );
+
+  const chartBlock = (
+    <div style={getClockEntryStyle(isMobile ? 4 : 5)}>
+      <GroupsDivisionChart
+        splitMode={splitMode}
+        canCalculateMonthSplit={canCalculateMonthSplit}
+        monthTotalCents={monthTotalCents}
+        monthSplit={monthSplit}
+        monthSplitChartColors={monthSplitChartColors}
+        monthSplitChartData={monthSplitChartData}
+        monthSplitChartOptions={monthSplitChartOptions}
+        sectionCard={sectionCard}
+        panelTitle={panelTitle}
+        subtleText={subtleText}
+      />
+    </div>
+  );
+
   return (
     <div style={getClockEntryStyle(3)}>
       <div
@@ -222,33 +254,8 @@ export default function GroupsDashboardContent({
 
         {selectedGroupId && (
           <>
-            <div style={getClockEntryStyle(4)}>
-              <GroupsMetrics
-                monthTotalCents={monthTotalCents}
-                monthExpensesCount={monthExpensesCount}
-                membersCount={membersCount}
-                averagePerPersonCents={averagePerPersonCents}
-                highestBurden={highestBurden}
-                recommendedLimitPercent={recommendedLimitPercent}
-                subtleText={subtleText}
-                metricCard={metricCard}
-              />
-            </div>
-
-            <div style={getClockEntryStyle(5)}>
-              <GroupsDivisionChart
-                splitMode={splitMode}
-                canCalculateMonthSplit={canCalculateMonthSplit}
-                monthTotalCents={monthTotalCents}
-                monthSplit={monthSplit}
-                monthSplitChartColors={monthSplitChartColors}
-                monthSplitChartData={monthSplitChartData}
-                monthSplitChartOptions={monthSplitChartOptions}
-                sectionCard={sectionCard}
-                panelTitle={panelTitle}
-                subtleText={subtleText}
-              />
-            </div>
+            {isMobile ? chartBlock : metricsBlock}
+            {isMobile ? metricsBlock : chartBlock}
 
             <div style={getClockEntryStyle(6)}>
               <div style={sectionCard}>

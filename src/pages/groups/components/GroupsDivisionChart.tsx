@@ -80,7 +80,7 @@ export default function GroupsDivisionChart({
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "minmax(260px, 340px) minmax(0, 1fr)",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
               gap: 24,
               alignItems: "center",
               minWidth: 0,
