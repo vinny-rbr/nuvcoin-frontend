@@ -49,9 +49,9 @@ export default function ImportOfx() {
       <section className="finance-hero">
         <div>
           <span className="finance-kicker">Arquivo bancario</span>
-          <h2>Importar OFX</h2>
+          <h2>Importar extrato</h2>
         </div>
-        <p>Envie o extrato exportado pelo banco e o Conciliaai transforma em entradas e saidas automaticamente.</p>
+        <p>Envie OFX, CSV, XLSX ou PDF do banco e o Conciliaai transforma em entradas e saidas automaticamente.</p>
       </section>
 
       <div className="dashboard-grid finance-summary-grid finance-import-summary">
@@ -88,11 +88,11 @@ export default function ImportOfx() {
         <div className="finance-ofx-steps">
           <div>
             <strong>1. Exporte no banco</strong>
-            <span>Baixe o extrato no formato OFX pelo internet banking.</span>
+            <span>Baixe o extrato em OFX, CSV, XLSX ou PDF pelo internet banking.</span>
           </div>
           <div>
             <strong>2. Envie aqui</strong>
-            <span>O sistema le cada movimento do arquivo.</span>
+            <span>O sistema le cada movimento encontrado no arquivo.</span>
           </div>
           <div>
             <strong>3. Lancamentos automaticos</strong>

@@ -1,7 +1,7 @@
 import { useRef, useState, type ChangeEvent } from "react";
 
 import { financeAdd, financeRefreshFromApi } from "../lib/financeService";
-import { parseOfx, toFinanceItem } from "../lib/ofxImport";
+import { parseBankFile, toFinanceItem } from "../lib/ofxImport";
 import type { FinanceItem } from "../types/finance";
 
 type FinanceOfxImportProps = {
@@ -22,14 +22,13 @@ export default function FinanceOfxImport({ incomeCategory, expenseCategory, onIm
     if (!file) return;
 
     setIsImporting(true);
-    setMessage("Lendo arquivo OFX...");
+    setMessage("Lendo arquivo bancario...");
 
     try {
-      const text = await file.text();
-      const parsed = parseOfx(text);
+      const { kind, items: parsed } = await parseBankFile(file);
 
       if (parsed.length === 0) {
-        setMessage("Nao encontrei lancamentos validos nesse OFX.");
+        setMessage(`Nao encontrei lancamentos validos nesse arquivo ${kind}.`);
         return;
       }
 
@@ -45,7 +44,7 @@ export default function FinanceOfxImport({ incomeCategory, expenseCategory, onIm
       }
 
       onImported(updated);
-      setMessage(`Importacao iniciada: ${parsed.length} lancamento(s) encontrados. Atualizando o banco...`);
+      setMessage(`Importacao ${kind} iniciada: ${parsed.length} lancamento(s) encontrados. Atualizando o banco...`);
 
       window.setTimeout(() => {
         void financeRefreshFromApi()
@@ -53,7 +52,7 @@ export default function FinanceOfxImport({ incomeCategory, expenseCategory, onIm
           .catch(() => undefined);
       }, Math.min(1800, Math.max(700, parsed.length * 120)));
     } catch {
-      setMessage("Nao foi possivel importar este arquivo. Confira se ele esta no formato OFX.");
+      setMessage("Nao foi possivel importar este arquivo. Confira se ele esta em OFX, CSV, XLSX ou PDF.");
     } finally {
       setIsImporting(false);
     }
@@ -64,17 +63,23 @@ export default function FinanceOfxImport({ incomeCategory, expenseCategory, onIm
       <div className="finance-section-heading">
         <div>
           <span className="finance-kicker">Importacao bancaria</span>
-          <h3>Importar OFX</h3>
+          <h3>Importar extrato</h3>
         </div>
       </div>
 
       <div className="finance-import-content">
-        <p>Selecione o arquivo OFX exportado pelo banco para lancar automaticamente receitas e despesas.</p>
+        <p>Selecione um extrato OFX, CSV, XLSX ou PDF para lancar automaticamente receitas e despesas.</p>
 
-        <input ref={inputRef} type="file" accept=".ofx,.OFX,application/octet-stream,text/plain" hidden onChange={handleFileChange} />
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".ofx,.OFX,.csv,.CSV,.xlsx,.XLSX,.xls,.XLS,.pdf,.PDF,application/pdf,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,application/octet-stream,text/plain"
+          hidden
+          onChange={handleFileChange}
+        />
 
         <button className="finance-secondary-action" type="button" disabled={isImporting} onClick={() => inputRef.current?.click()}>
-          {isImporting ? "Importando..." : "Escolher arquivo OFX"}
+          {isImporting ? "Importando..." : "Escolher arquivo"}
         </button>
       </div>
 

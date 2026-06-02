@@ -52,7 +52,7 @@ const navItems = [
   { to: "/receitas", label: "Receitas", requiresActiveSubscription: true },
   { to: "/despesas", label: "Despesas", requiresActiveSubscription: true },
   { to: "/categorias", label: "Categorias", requiresActiveSubscription: true },
-  { to: "/importar-ofx", label: "Importar OFX", requiresActiveSubscription: true },
+  { to: "/importar-ofx", label: "Importar extrato", requiresActiveSubscription: true },
   { to: "/groups", label: "Groups", requiresActiveSubscription: false },
 ];
 
@@ -998,7 +998,7 @@ export default function Layout({ children }: Props) {
                   </button>
                   <button type="button" onClick={() => handleMobileRoute("/importar-ofx")}>
                     <span className="quick-add-dot quick-add-dot-import" aria-hidden="true" />
-                    Importar OFX
+                    Importar extrato
                   </button>
                 </>
               )}
