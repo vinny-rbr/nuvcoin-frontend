@@ -5,12 +5,12 @@ import { parseBankFile, toFinanceItem } from "../lib/ofxImport";
 import type { FinanceItem } from "../types/finance";
 
 type FinanceOfxImportProps = {
-  incomeCategory: string;
-  expenseCategory: string;
+  incomeCategories: string[];
+  expenseCategories: string[];
   onImported: (items: FinanceItem[]) => void;
 };
 
-export default function FinanceOfxImport({ incomeCategory, expenseCategory, onImported }: FinanceOfxImportProps) {
+export default function FinanceOfxImport({ incomeCategories, expenseCategories, onImported }: FinanceOfxImportProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -37,8 +37,8 @@ export default function FinanceOfxImport({ incomeCategory, expenseCategory, onIm
       for (const parsedItem of parsed) {
         updated = financeAdd(
           toFinanceItem(parsedItem, {
-            income: incomeCategory || "Outros",
-            expense: expenseCategory || "Outros",
+            income: incomeCategories.length > 0 ? incomeCategories : ["Outros"],
+            expense: expenseCategories.length > 0 ? expenseCategories : ["Outros"],
           }),
         );
       }

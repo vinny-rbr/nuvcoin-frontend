@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import FinanceOfxImport from "../components/FinanceOfxImport";
 import { financeList, financeRefreshFromApi, financeSubscribe } from "../lib/financeService";
-import { DEFAULT_CATEGORIES } from "../lib/financeCategoriesService";
+import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import type { FinanceItem } from "../types/finance";
 
@@ -16,6 +16,8 @@ function formatBRLFromCents(valueCents: number): string {
 export default function ImportOfx() {
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [animate, setAnimate] = useState(false);
+  const [incomeCategories, setIncomeCategories] = useState<string[]>(DEFAULT_CATEGORIES.RECEITA);
+  const [expenseCategories, setExpenseCategories] = useState<string[]>(DEFAULT_CATEGORIES.DESPESA);
 
   useEffect(() => {
     const load = () => {
@@ -29,6 +31,22 @@ export default function ImportOfx() {
 
     return () => {
       unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    void listFinanceCategories()
+      .then((categories) => {
+        if (!isMounted) return;
+        setIncomeCategories(categoriesForType(categories, "RECEITA"));
+        setExpenseCategories(categoriesForType(categories, "DESPESA"));
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
     };
   }, []);
 
@@ -72,8 +90,8 @@ export default function ImportOfx() {
       </div>
 
       <FinanceOfxImport
-        incomeCategory={DEFAULT_CATEGORIES.RECEITA[0] ?? "Outros"}
-        expenseCategory={DEFAULT_CATEGORIES.DESPESA[0] ?? "Outros"}
+        incomeCategories={incomeCategories}
+        expenseCategories={expenseCategories}
         onImported={setItems}
       />
 

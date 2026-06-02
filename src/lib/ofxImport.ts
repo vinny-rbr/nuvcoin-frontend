@@ -18,6 +18,7 @@ export type BankFileKind = "OFX" | "CSV" | "XLSX" | "PDF";
 
 type ParsedRow = Record<string, string | number | undefined>;
 type RawSheetCell = string | number | Date | undefined;
+type CategoryInput = string | string[];
 
 function stripTags(value: string): string {
   return value.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
@@ -106,6 +107,89 @@ function inferTypeFromText(rowText: string, sign: number): FinanceItem["type"] {
   if (/\b(credito|credit|entrada|receita|deposito|dep|recebido|pix recebido)\b/.test(normalized)) return "RECEITA";
   if (/\b(debito|debit|saida|despesa|pagamento|compra|tarifa|pix enviado)\b/.test(normalized)) return "DESPESA";
   return "RECEITA";
+}
+
+const categoryRules: Record<FinanceItem["type"], Array<{ categoryHints: string[]; keywords: RegExp[] }>> = {
+  RECEITA: [
+    {
+      categoryHints: ["salario", "pro labore", "folha"],
+      keywords: [/\bsalario\b/, /\bpro labore\b/, /\bordenado\b/, /\bpagamento.*salario\b/],
+    },
+    {
+      categoryHints: ["vendas", "venda", "recebimento"],
+      keywords: [/\bvenda\b/, /\bvendas\b/, /\bmaquininha\b/, /\bcartao recebido\b/, /\brecebimento\b/],
+    },
+    {
+      categoryHints: ["freelance", "servico", "consultoria"],
+      keywords: [/\bfreela\b/, /\bfreelance\b/, /\bservico\b/, /\bconsultoria\b/, /\bprojeto\b/],
+    },
+  ],
+  DESPESA: [
+    {
+      categoryHints: ["viagem", "transporte", "corrida"],
+      keywords: [/\buber\b/, /\b99\b/, /\btaxi\b/, /\bcorrida\b/, /\bpassagem\b/, /\bviagem\b/, /\btransporte\b/],
+    },
+    {
+      categoryHints: ["alimentacao", "alimentos", "mercado", "comida"],
+      keywords: [
+        /\bmercado\b/,
+        /\bsupermercado\b/,
+        /\bsup\b/,
+        /\brestaurante\b/,
+        /\bifood\b/,
+        /\blanche\b/,
+        /\bpadaria\b/,
+        /\bpizzaria\b/,
+        /\bburger\b/,
+        /\bhamburguer\b/,
+        /\balimentacao\b/,
+        /\bcomida\b/,
+      ],
+    },
+    {
+      categoryHints: ["moradia", "casa", "aluguel"],
+      keywords: [/\baluguel\b/, /\bcondominio\b/, /\benergia\b/, /\bluz\b/, /\bagua\b/, /\binternet\b/, /\bmoradia\b/],
+    },
+    {
+      categoryHints: ["saude", "farmacia", "drogaria"],
+      keywords: [/\bfarmacia\b/, /\bdrogaria\b/, /\bhospital\b/, /\bclinica\b/, /\bmedico\b/, /\bsaude\b/],
+    },
+    {
+      categoryHints: ["lazer", "assinatura", "streaming"],
+      keywords: [/\bnetflix\b/, /\bspotify\b/, /\bcinema\b/, /\blazer\b/, /\bshow\b/, /\bassinatura\b/],
+    },
+    {
+      categoryHints: ["educacao", "curso", "estudo"],
+      keywords: [/\bescola\b/, /\bfaculdade\b/, /\bcurso\b/, /\beducacao\b/, /\bestudo\b/],
+    },
+  ],
+};
+
+function asCategoryList(input: CategoryInput): string[] {
+  return Array.isArray(input) ? input.filter(Boolean) : [input].filter(Boolean);
+}
+
+function leafCategoryName(category: string): string {
+  return category.split(">").at(-1)?.trim() || category;
+}
+
+function findBestCategory(type: FinanceItem["type"], title: string, categories: string[], fallback: string): string {
+  const normalizedTitle = normalizeText(title);
+  const rules = categoryRules[type] ?? [];
+
+  for (const rule of rules) {
+    if (!rule.keywords.some((keyword) => keyword.test(normalizedTitle))) continue;
+
+    const directMatch = categories.find((category) => {
+      const normalizedLeaf = normalizeText(leafCategoryName(category));
+      const normalizedFull = normalizeText(category);
+      return rule.categoryHints.some((hint) => normalizedLeaf.includes(hint) || normalizedFull.includes(hint));
+    });
+
+    if (directMatch) return directMatch;
+  }
+
+  return fallback;
 }
 
 function createParsedItem(input: { title: string; amount: unknown; date: unknown; rowText?: string }): OfxParsedItem | null {
@@ -348,14 +432,25 @@ export async function parseBankFile(file: File): Promise<{ kind: BankFileKind; i
 
 export function toFinanceItem(
   item: OfxParsedItem,
-  categories: { income: string; expense: string },
+  categories: { income: CategoryInput; expense: CategoryInput },
   paymentType: PaymentType = "debit",
 ): FinanceItem {
+  const incomeCategories = asCategoryList(categories.income);
+  const expenseCategories = asCategoryList(categories.expense);
+  const fallbackCategory =
+    item.type === "RECEITA" ? incomeCategories[0] ?? "Outros" : expenseCategories[0] ?? "Outros";
+  const category = findBestCategory(
+    item.type,
+    item.title,
+    item.type === "RECEITA" ? incomeCategories : expenseCategories,
+    fallbackCategory,
+  );
+
   return {
     id: makeId(),
     type: item.type,
     title: item.title,
-    category: item.type === "RECEITA" ? categories.income : categories.expense,
+    category,
     amountCents: item.amountCents,
     dateISO: item.dateISO,
     createdAtISO: new Date().toISOString(),

@@ -12,6 +12,7 @@ import {
   todayISO,
 } from "../lib/financeService";
 import CategoryPicker from "../components/CategoryPicker";
+import FinanceItemEditModal from "../components/FinanceItemEditModal";
 import { categoriesForType, createFinanceCategory, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
@@ -91,6 +92,7 @@ export default function Despesas() {
   const [animate, setAnimate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<FinanceItem | null>(null);
   const savingRef = useRef(false);
 
   useEffect(() => {
@@ -297,6 +299,14 @@ export default function Despesas() {
     const nextStatus: FinanceStatus = item.status === "paid" ? "pending" : "paid";
     const updated = financeUpdate(item.id, { status: nextStatus });
     setItems(updated);
+  }
+
+  function handleEditSaved(updated: FinanceItem[]) {
+    setItems(updated);
+    setFeedback("Despesa atualizada.");
+    window.setTimeout(() => {
+      void financeRefreshFromApi().then(setItems).catch(() => undefined);
+    }, 700);
   }
 
   return (
@@ -506,6 +516,9 @@ export default function Despesas() {
                   <button className="categories-secondary-button" type="button" onClick={() => toggleStatus(d)}>
                     {d.status === "paid" ? "Marcar pendente" : "Marcar pago"}
                   </button>
+                  <button className="categories-secondary-button" type="button" onClick={() => setEditingItem(d)}>
+                    Editar
+                  </button>
                   <button className="finance-danger-button" onClick={() => onDelete(d.id)}>
                     Remover
                   </button>
@@ -515,6 +528,15 @@ export default function Despesas() {
           </div>
         )}
       </div>
+
+      {editingItem ? (
+        <FinanceItemEditModal
+          item={editingItem}
+          categoryOptions={categoryOptions}
+          onClose={() => setEditingItem(null)}
+          onSaved={handleEditSaved}
+        />
+      ) : null}
     </div>
   );
 }

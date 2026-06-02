@@ -11,6 +11,7 @@ import {
   todayISO,
 } from "../lib/financeService";
 import CategoryPicker from "../components/CategoryPicker";
+import FinanceItemEditModal from "../components/FinanceItemEditModal";
 import { categoriesForType, createFinanceCategory, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
@@ -41,6 +42,7 @@ export default function Receitas() {
   const [animate, setAnimate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<FinanceItem | null>(null);
 
   useEffect(() => {
     const load = () => {
@@ -196,6 +198,14 @@ export default function Receitas() {
     setItems(updated);
   }
 
+  function handleEditSaved(updated: FinanceItem[]) {
+    setItems(updated);
+    setFeedback("Receita atualizada.");
+    window.setTimeout(() => {
+      void financeRefreshFromApi().then(setItems).catch(() => undefined);
+    }, 700);
+  }
+
   function handleRemoveAll() {
     if (receitas.length === 0) return;
 
@@ -338,6 +348,10 @@ export default function Receitas() {
                 <div className="finance-row-actions">
                   <div className="finance-row-value green">{formatBRLFromCents(item.amountCents)}</div>
 
+                  <button className="categories-secondary-button" type="button" onClick={() => setEditingItem(item)}>
+                    Editar
+                  </button>
+
                   <button className="finance-danger-button" onClick={() => handleRemove(item.id)}>
                     Remover
                   </button>
@@ -347,6 +361,15 @@ export default function Receitas() {
           </div>
         )}
       </div>
+
+      {editingItem ? (
+        <FinanceItemEditModal
+          item={editingItem}
+          categoryOptions={categoryOptions}
+          onClose={() => setEditingItem(null)}
+          onSaved={handleEditSaved}
+        />
+      ) : null}
     </div>
   );
 }
