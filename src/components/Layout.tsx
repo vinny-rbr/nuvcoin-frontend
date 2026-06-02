@@ -962,11 +962,11 @@ export default function Layout({ children }: Props) {
 
           <button
             type="button"
-            className={location.pathname === "/categorias" ? "is-active" : ""}
-            onClick={() => handleMobileRoute("/categorias")}
+            className={location.pathname === "/receitas" ? "is-active" : ""}
+            onClick={() => handleMobileRoute("/receitas")}
           >
-            <span className="mobile-bottom-icon mobile-bottom-icon-tag" aria-hidden="true" />
-            <span>Categorias</span>
+            <span className="mobile-bottom-icon mobile-bottom-icon-income" aria-hidden="true" />
+            <span>Receitas</span>
           </button>
 
           <div className="mobile-quick-add-shell" ref={quickAddRef}>
@@ -1007,20 +1007,20 @@ export default function Layout({ children }: Props) {
 
           <button
             type="button"
+            className={location.pathname === "/despesas" ? "is-active" : ""}
+            onClick={() => handleMobileRoute("/despesas")}
+          >
+            <span className="mobile-bottom-icon mobile-bottom-icon-expense" aria-hidden="true" />
+            <span>Despesas</span>
+          </button>
+
+          <button
+            type="button"
             className={location.pathname === "/groups" ? "is-active" : ""}
             onClick={() => handleMobileRoute("/groups", false)}
           >
             <span className="mobile-bottom-icon mobile-bottom-icon-users" aria-hidden="true" />
             <span>Grupos</span>
-          </button>
-
-          <button
-            type="button"
-            className={isProfileMenuOpen ? "is-active" : ""}
-            onClick={() => setIsProfileMenuOpen((current) => !current)}
-          >
-            <span className="mobile-bottom-icon mobile-bottom-icon-user" aria-hidden="true" />
-            <span>Eu</span>
           </button>
         </nav>
       ) : null}
