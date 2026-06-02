@@ -779,7 +779,7 @@ export default function Dashboard() {
           title: "Confronto financeiro",
           subtitle: "Receitas, despesas e crédito",
           data: confrontationData,
-          totalCents: summary.totalReceitasCents + summary.totalDespesasCents,
+          totalCents: summary.totalReceitasCents - summary.totalDespesasCents,
           emptyText: "Sem dados para comparar.",
         },
       };
@@ -809,7 +809,7 @@ export default function Dashboard() {
         title: "Confronto de receitas e despesas",
         subtitle: getPeriodLabel(period),
         data: confrontationData,
-        totalCents: summary.totalReceitasCents + summary.totalDespesasCents,
+        totalCents: summary.totalReceitasCents - summary.totalDespesasCents,
         emptyText: "Cadastre receitas ou despesas para montar o confronto.",
       },
       secondary: {
