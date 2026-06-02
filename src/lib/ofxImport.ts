@@ -17,6 +17,7 @@ export type OfxParsedItem = {
 export type BankFileKind = "OFX" | "CSV" | "XLSX" | "PDF";
 
 type ParsedRow = Record<string, string | number | undefined>;
+type RawSheetCell = string | number | Date | undefined;
 
 function stripTags(value: string): string {
   return value.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
@@ -205,7 +206,17 @@ function rowsToParsedItems(rows: ParsedRow[]): OfxParsedItem[] {
       const headers = Object.keys(row);
       const normalizedHeaders = headers.map(normalizeText);
       const dateIndex = columnIndex(normalizedHeaders, [/^data/, /date/]);
-      const descriptionIndex = columnIndex(normalizedHeaders, [/descricao/, /historico/, /lancamento/, /memo/, /nome/, /title/]);
+      const descriptionIndex = columnIndex(normalizedHeaders, [
+        /descricao/,
+        /historico/,
+        /lancamento/,
+        /memo/,
+        /nome/,
+        /title/,
+        /transaction.*type/,
+        /^type$/,
+        /^tipo$/,
+      ]);
       const amountIndex = columnIndex(normalizedHeaders, [/^valor$/, /amount/, /total/]);
       const debitIndex = columnIndex(normalizedHeaders, [/debito/, /saida/, /despesa/]);
       const creditIndex = columnIndex(normalizedHeaders, [/credito/, /entrada/, /receita/]);
@@ -229,21 +240,47 @@ function rowsToParsedItems(rows: ParsedRow[]): OfxParsedItem[] {
     .filter((item): item is OfxParsedItem => Boolean(item));
 }
 
+function scoreHeader(headers: string[]): number {
+  const normalizedHeaders = headers.map(normalizeText);
+  const hasDate = columnIndex(normalizedHeaders, [/^data/, /date/]) >= 0;
+  const hasDescription = columnIndex(normalizedHeaders, [
+    /descricao/,
+    /historico/,
+    /lancamento/,
+    /memo/,
+    /nome/,
+    /title/,
+    /transaction.*type/,
+    /^type$/,
+    /^tipo$/,
+  ]) >= 0;
+  const hasAmount = columnIndex(normalizedHeaders, [/^valor$/, /amount/, /total/, /debito/, /credito/, /entrada/, /saida/]) >= 0;
+
+  return [hasDate, hasDescription, hasAmount].filter(Boolean).length;
+}
+
+function rowsArrayToParsedItems(rawRows: RawSheetCell[][]): OfxParsedItem[] {
+  const headerIndex = rawRows.findIndex((row) => scoreHeader(row.map((cell) => String(cell ?? ""))) >= 2);
+  if (headerIndex < 0) return [];
+
+  const headers = rawRows[headerIndex].map((cell, index) => String(cell || `coluna_${index + 1}`).trim());
+  const rows = rawRows.slice(headerIndex + 1).map((cells) =>
+    headers.reduce<ParsedRow>((row, header, index) => {
+      const value = cells[index];
+      row[header] = value instanceof Date ? value.toISOString().slice(0, 10) : String(value ?? "").trim();
+      return row;
+    }, {}),
+  );
+
+  return rowsToParsedItems(rows);
+}
+
 export function parseCsv(text: string): OfxParsedItem[] {
   const separator = detectCsvSeparator(text);
   const lines = text.split(/\r?\n/).filter((line) => line.trim());
   if (lines.length < 2) return [];
 
-  const headers = splitCsvLine(lines[0], separator).map((header, index) => header || `coluna_${index + 1}`);
-  const rows = lines.slice(1).map((line) => {
-    const cells = splitCsvLine(line, separator);
-    return headers.reduce<ParsedRow>((row, header, index) => {
-      row[header] = cells[index];
-      return row;
-    }, {});
-  });
-
-  return rowsToParsedItems(rows);
+  return rowsArrayToParsedItems(lines.map((line) => splitCsvLine(line, separator)));
 }
 
 export async function parseXlsx(file: File): Promise<OfxParsedItem[]> {
@@ -253,8 +290,8 @@ export async function parseXlsx(file: File): Promise<OfxParsedItem[]> {
   if (!sheetName) return [];
 
   const sheet = workbook.Sheets[sheetName];
-  const rows = XLSX.utils.sheet_to_json<ParsedRow>(sheet, { defval: "" });
-  return rowsToParsedItems(rows);
+  const rows = XLSX.utils.sheet_to_json<RawSheetCell[]>(sheet, { header: 1, defval: "", raw: false });
+  return rowsArrayToParsedItems(rows);
 }
 
 function parsePdfLines(text: string): OfxParsedItem[] {
