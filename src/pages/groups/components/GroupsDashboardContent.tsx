@@ -113,6 +113,7 @@ export default function GroupsDashboardContent({
         averagePerPersonCents={averagePerPersonCents}
         highestBurden={highestBurden}
         recommendedLimitPercent={recommendedLimitPercent}
+        monthSplit={monthSplit}
         subtleText={subtleText}
         metricCard={metricCard}
       />
@@ -151,11 +152,12 @@ export default function GroupsDashboardContent({
           style={{
             ...sectionCard,
             border: selectedGroupId
-              ? "1px solid rgba(96,165,250,0.16)"
+              ? "1px solid rgba(96,165,250,0.20)"
               : sectionCard.border,
             background: selectedGroupId
-              ? "linear-gradient(135deg, rgba(30,41,59,0.82), rgba(15,23,42,0.62))"
+              ? "radial-gradient(circle at 0% 0%, rgba(91,140,255,0.16), rgba(91,140,255,0) 36%), linear-gradient(135deg, rgba(30,41,59,0.88), rgba(15,23,42,0.68))"
               : sectionCard.background,
+            padding: isMobile ? 16 : sectionCard.padding,
           }}
         >
           <div
@@ -169,11 +171,24 @@ export default function GroupsDashboardContent({
             }}
           >
             <div style={{ display: "grid", gap: 8, minWidth: 0 }}>
+              <div
+                style={{
+                  ...subtleText,
+                  opacity: 1,
+                  color: "#93c5fd",
+                  textTransform: "uppercase",
+                  letterSpacing: 1.2,
+                  fontWeight: 900,
+                }}
+              >
+                Grupo ativo
+              </div>
+
               <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 8 : 12, flexWrap: "wrap" }}>
                 <div
                   style={{
                     fontWeight: 900,
-                    fontSize: isMobile ? 24 : 32,
+                    fontSize: isMobile ? 25 : 34,
                     letterSpacing: -0.5,
                     lineHeight: 1.12,
                     overflowWrap: "anywhere",
@@ -200,7 +215,7 @@ export default function GroupsDashboardContent({
                         display: "inline-block",
                       }}
                     />
-                    Grupo ativo
+                    Compartilhado
                   </div>
                 )}
               </div>
@@ -254,8 +269,8 @@ export default function GroupsDashboardContent({
 
         {selectedGroupId && (
           <>
-            {isMobile ? chartBlock : metricsBlock}
-            {isMobile ? metricsBlock : chartBlock}
+            {chartBlock}
+            {metricsBlock}
 
             <div style={getClockEntryStyle(6)}>
               <div style={sectionCard}>

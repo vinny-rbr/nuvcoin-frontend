@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 
 import type { GroupDto } from "../types/groups.types";
 import { getInitials } from "../utils/groups.helpers";
@@ -26,147 +26,202 @@ export default function GroupsGroupsLane({
   subtleText,
   memberAvatarStyle,
 }: GroupsGroupsLaneProps) {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth < 768;
-  });
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined;
+    if (!isOpen || typeof document === "undefined") return undefined;
 
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-
-    function handleMediaChange(event: MediaQueryListEvent) {
-      setIsMobile(event.matches);
+    function handlePointerDown(event: MouseEvent) {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
     }
 
-    setIsMobile(mediaQuery.matches);
-    mediaQuery.addEventListener("change", handleMediaChange);
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      mediaQuery.removeEventListener("change", handleMediaChange);
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [isOpen]);
 
-  if (groups.length === 0) {
+  const selectedGroup = useMemo(() => {
+    return groups.find((group) => group.id === selectedGroupId) ?? groups[0] ?? null;
+  }, [groups, selectedGroupId]);
+
+  if (groups.length === 0 || !selectedGroup) {
     return null;
   }
 
   return (
-    <div style={sectionCard}>
-      <div style={{ display: "grid", gap: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <div style={{ display: "grid", gap: 2 }}>
-            <div style={panelTitle}>Meus grupos</div>
-            <div style={subtleText}>{groups.length} grupo(s) encontrado(s)</div>
+    <div
+      ref={ref}
+      style={{
+        ...sectionCard,
+        padding: 16,
+        position: "relative",
+        border: "1px solid rgba(96,165,250,0.16)",
+        background:
+          "radial-gradient(circle at 0% 0%, rgba(91,140,255,0.12), rgba(91,140,255,0) 34%), linear-gradient(180deg, rgba(30,41,59,0.76), rgba(15,23,42,0.64))",
+        animation: isGroupsLaneAnimating ? "conciliaai-groups-lane-reflow 0.62s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+      }}
+    >
+      <div style={{ display: "grid", gap: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
+            <div style={{ ...panelTitle, fontSize: 16 }}>Meus grupos</div>
+            <div style={subtleText}>{groups.length} grupo(s) disponivel(is)</div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setIsOpen((current) => !current)}
+            aria-expanded={isOpen}
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 14,
+              border: "1px solid rgba(148,163,184,0.16)",
+              background: isOpen ? "rgba(59,130,246,0.18)" : "rgba(255,255,255,0.035)",
+              color: "inherit",
+              display: "grid",
+              placeItems: "center",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontSize: 18,
+            }}
+          >
+            {isOpen ? "x" : "v"}
+          </button>
         </div>
 
-        <div
+        <button
+          type="button"
+          onClick={() => setIsOpen((current) => !current)}
           style={{
-            display: "flex",
-            gap: isMobile ? 10 : 14,
-            overflowX: "auto",
-            padding: isMobile ? "2px 2px 8px" : "2px 2px 6px",
-            scrollbarWidth: "thin",
-            animation: isGroupsLaneAnimating ? "conciliaai-groups-lane-reflow 0.62s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
-            transformOrigin: "left center",
-            willChange: "transform, filter",
+            cursor: "pointer",
+            textAlign: "left",
+            padding: 12,
+            borderRadius: 18,
+            border: "1px solid rgba(96,165,250,0.28)",
+            background:
+              "linear-gradient(110deg, rgba(59,130,246,0.24), rgba(30,41,59,0.72), rgba(96,165,250,0.12))",
+            color: "inherit",
+            boxShadow: "0 16px 34px rgba(37,99,235,0.18), inset 0 1px 0 rgba(255,255,255,0.05)",
+            minWidth: 0,
           }}
         >
-          {groups.map((group) => {
-            const active = group.id === selectedGroupId;
-            const isHighlight = group.id === highlightGroupId;
-            const shouldReactToLane = isGroupsLaneAnimating && !isHighlight;
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div
+              style={{
+                ...memberAvatarStyle,
+                width: 46,
+                height: 46,
+                borderRadius: 16,
+              }}
+            >
+              {getInitials(selectedGroup.name)}
+            </div>
 
-            return (
-              <button
-                key={group.id}
-                type="button"
-                onClick={() => onSelectGroup(group)}
+            <div style={{ display: "grid", gap: 2, minWidth: 0, flex: 1 }}>
+              <div
                 style={{
-                  cursor: "pointer",
-                  textAlign: "left",
-                  padding: isMobile ? "12px 12px" : "14px 16px",
-                  borderRadius: isMobile ? 16 : 20,
-                  border: isHighlight
-                    ? "1px solid rgba(91,140,255,0.95)"
-                    : active
-                      ? "1px solid rgba(96,165,250,0.42)"
-                      : "1px solid rgba(148,163,184,0.12)",
-                  background: isHighlight
-                    ? "linear-gradient(180deg, rgba(91,140,255,0.36) 0%, rgba(255,255,255,0.06) 100%)"
-                    : active
-                      ? "linear-gradient(110deg, rgba(59,130,246,0.24) 0%, rgba(30,41,59,0.72) 42%, rgba(96,165,250,0.18) 50%, rgba(30,41,59,0.72) 58%, rgba(59,130,246,0.24) 100%)"
-                      : "linear-gradient(180deg, rgba(30,41,59,0.58) 0%, rgba(15,23,42,0.42) 100%)",
-                  backgroundSize: active ? "240% 100%" : undefined,
-                  color: "inherit",
-                  boxShadow: isHighlight
-                    ? "0 0 0 2px rgba(91,140,255,0.35), 0 0 40px rgba(91,140,255,0.55), 0 20px 60px rgba(91,140,255,0.45)"
-                    : active
-                      ? "0 16px 34px rgba(37,99,235,0.22), inset 0 1px 0 rgba(255,255,255,0.05)"
-                      : "inset 0 1px 0 rgba(255,255,255,0.035)",
-                  minWidth: isMobile ? "min(220px, calc(100vw - 64px))" : "min(250px, calc(100vw - 80px))",
-                  maxWidth: isMobile ? "calc(100vw - 64px)" : "calc(100vw - 80px)",
-                  flexShrink: 0,
-                  transform: isHighlight
-                    ? "translateY(-6px) scale(1.04)"
-                    : shouldReactToLane
-                      ? "translateX(6px) scale(0.995)"
-                      : active
-                        ? "scale(1.01)"
-                        : "scale(1)",
-                  opacity: isHighlight ? 0 : 1,
-                  animation: isHighlight
-                    ? "conciliaai-group-enter 0.45s ease forwards, conciliaai-group-glow 1.8s ease-in-out infinite"
-                    : shouldReactToLane
-                      ? "conciliaai-group-shift 0.5s ease"
-                      : active
-                        ? "conciliaai-groups-card-shine 3s ease-in-out infinite"
-                        : "none",
-                  transition:
-                    "border 0.35s ease, background 0.35s ease, box-shadow 0.45s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease",
+                  fontWeight: 900,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 10 : 13 }}>
-                  <div
-                    style={{
-                      ...memberAvatarStyle,
-                      width: isMobile ? 44 : memberAvatarStyle.width,
-                      height: isMobile ? 44 : memberAvatarStyle.height,
-                      borderRadius: isMobile ? 16 : memberAvatarStyle.borderRadius,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {getInitials(group.name)}
-                  </div>
+                {selectedGroup.name}
+              </div>
+              <div style={subtleText}>Selecionado para divisao do mes</div>
+            </div>
+          </div>
+        </button>
 
-                  <div style={{ display: "grid", gap: 2, minWidth: 0 }}>
+        {isOpen && (
+          <div
+            style={{
+              position: "absolute",
+              left: 16,
+              right: 16,
+              top: "calc(100% - 6px)",
+              zIndex: 24,
+              padding: 8,
+              borderRadius: 18,
+              border: "1px solid rgba(148,163,184,0.16)",
+              background: "rgba(12,16,25,0.98)",
+              boxShadow: "0 24px 70px rgba(0,0,0,0.48)",
+              display: "grid",
+              gap: 6,
+              maxHeight: 280,
+              overflowY: "auto",
+            }}
+          >
+            {groups.map((group) => {
+              const active = group.id === selectedGroupId;
+              const isHighlight = group.id === highlightGroupId;
+
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => {
+                    onSelectGroup(group);
+                    setIsOpen(false);
+                  }}
+                  style={{
+                    cursor: "pointer",
+                    textAlign: "left",
+                    padding: 10,
+                    borderRadius: 14,
+                    border: active ? "1px solid rgba(96,165,250,0.38)" : "1px solid rgba(148,163,184,0.10)",
+                    background: active ? "rgba(59,130,246,0.16)" : "rgba(255,255,255,0.025)",
+                    color: "inherit",
+                    boxShadow: isHighlight ? "0 0 0 2px rgba(91,140,255,0.28)" : "none",
+                    transition: "background 0.2s ease, border 0.2s ease",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
                     <div
                       style={{
-                        fontWeight: 900,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
+                        ...memberAvatarStyle,
+                        width: 38,
+                        height: 38,
+                        borderRadius: 13,
+                        fontSize: 12,
                       }}
                     >
-                      {group.name}
+                      {getInitials(group.name)}
                     </div>
-                    <div style={subtleText}>
-                      {isHighlight
-                        ? "Recem-criado"
-                        : active
-                          ? "Selecionado"
-                          : "Clique para abrir"}
+                    <div style={{ display: "grid", gap: 2, minWidth: 0, flex: 1 }}>
+                      <div
+                        style={{
+                          fontWeight: 900,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {group.name}
+                      </div>
+                      <div style={subtleText}>{active ? "Selecionado" : "Abrir grupo"}</div>
                     </div>
                   </div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
