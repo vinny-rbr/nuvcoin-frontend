@@ -108,6 +108,28 @@ export default function Receitas() {
 
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
   const receitas = useMemo(() => items.filter((x) => x.type === "RECEITA"), [items]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeChip, setActiveChip] = useState("Tudo");
+
+  const chipOptions = useMemo(() => {
+    const parents = new Set<string>();
+    for (const item of receitas) {
+      const parent = item.category.split(">")[0].trim();
+      if (parent) parents.add(parent);
+    }
+    return ["Tudo", ...Array.from(parents).slice(0, 4)];
+  }, [receitas]);
+
+  const filteredReceitas = useMemo(() => {
+    return receitas.filter((item) => {
+      const matchesSearch = !searchQuery ||
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesChip = activeChip === "Tudo" ||
+        item.category.split(">")[0].trim() === activeChip;
+      return matchesSearch && matchesChip;
+    });
+  }, [receitas, searchQuery, activeChip]);
 
   async function handleQuickCreateCategory(name: string, parentPath?: string): Promise<string> {
     const parent = parentPath ? categoryRecords.find((item) => item.fullPath === parentPath) : null;
@@ -325,15 +347,49 @@ export default function Receitas() {
           </div>
         </div>
 
+        {receitas.length > 0 ? (
+          <div className="finance-filter-row">
+            <div className="finance-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/>
+              </svg>
+              <input
+                className="finance-control"
+                placeholder="Buscar receita..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="chip-row">
+              {chipOptions.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  className={`chip${activeChip === chip ? " is-active" : ""}`}
+                  onClick={() => setActiveChip(chip)}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {receitas.length === 0 ? (
           <div className="finance-empty-state">
             <div className="finance-empty-icon">+</div>
             <strong>Nenhuma receita cadastrada ainda.</strong>
             <span>Adicione sua primeira entrada pelo formulario acima.</span>
           </div>
+        ) : filteredReceitas.length === 0 ? (
+          <div className="finance-empty-state">
+            <div className="finance-empty-icon">🔍</div>
+            <strong>Nenhum resultado encontrado.</strong>
+            <span>Tente outro termo ou categoria.</span>
+          </div>
         ) : (
           <div className="finance-list">
-            {receitas.map((item) => (
+            {filteredReceitas.map((item) => (
               <div key={item.id} className="finance-row">
                 <div className="finance-row-main">
                   <div className="finance-row-icon">R$</div>

@@ -522,6 +522,22 @@ function DonutDashboardCard({
   );
 }
 
+function SparkLine({ values, color }: { values: number[]; color: string }) {
+  if (values.length < 2) return null;
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const w = 160, h = 38;
+  const points = values
+    .map((v, i) => `${(i / (values.length - 1)) * w},${h - 3 - ((v - min) / range) * (h - 8)}`)
+    .join(" ");
+  return (
+    <svg className="stat-sparkline" viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" aria-hidden="true">
+      <polyline points={points} fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function Dashboard() {
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [registeredCategories, setRegisteredCategories] = useState<FinanceCategoryOption[]>([]);
@@ -594,6 +610,28 @@ export default function Dashboard() {
 
   const summary = useMemo(() => calculateSummary(filteredItems), [filteredItems]);
   const saldoClass = summary.saldoCents >= 0 ? "green" : "red";
+
+  const sparklines = useMemo(() => {
+    const now = new Date();
+    const months: Array<{ rec: number; des: number }> = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      let rec = 0, des = 0;
+      for (const item of items) {
+        if (!item.dateISO.startsWith(ym)) continue;
+        if (item.type === "RECEITA") rec += item.amountCents;
+        if (item.type === "DESPESA") des += item.amountCents;
+      }
+      months.push({ rec, des });
+    }
+    return {
+      receitas: months.map(m => m.rec),
+      despesas: months.map(m => m.des),
+      credito: months.map(m => m.des),
+      saldo: months.map(m => m.rec - m.des),
+    };
+  }, [items]);
   const dueSoonExpenses = useMemo(() => {
     const todayISODate = toISODate(new Date());
     const limitISODate = toISODate(addDays(new Date(), 3));
@@ -862,24 +900,28 @@ export default function Dashboard() {
           <div className="stat-title">Receitas</div>
           <div className="stat-value green">{formatBRLFromCents(summary.totalReceitasCents)}</div>
           <div className="stat-caption">{cmpLine.receitas}</div>
+          <SparkLine values={sparklines.receitas} color="#4ADE80" />
         </div>
 
         <div className="stat-card">
           <div className="stat-title">Despesas</div>
           <div className="stat-value red">{formatBRLFromCents(summary.totalDespesasCents)}</div>
           <div className="stat-caption">{cmpLine.despesas}</div>
+          <SparkLine values={sparklines.despesas} color="#F87171" />
         </div>
 
         <div className="stat-card">
           <div className="stat-title">Crédito</div>
           <div className="stat-value red">{formatBRLFromCents(summary.totalCreditoCents)}</div>
           <div className="stat-caption">gastos no crédito</div>
+          <SparkLine values={sparklines.credito} color="#F97316" />
         </div>
 
         <div className="stat-card">
           <div className="stat-title">Saldo</div>
           <div className={`stat-value ${saldoClass}`}>{formatBRLFromCents(summary.saldoCents)}</div>
           <div className="stat-caption">{cmpLine.saldo}</div>
+          <SparkLine values={sparklines.saldo} color="#60A5FA" />
         </div>
       </div>
 

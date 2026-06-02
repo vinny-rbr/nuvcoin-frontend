@@ -47,13 +47,46 @@ function persistLifetimeState(value: boolean): void {
   window.localStorage.removeItem("conciliaai_subscription_lifetime");
 }
 
+const NAV_ICONS = {
+  dashboard: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/>
+    </svg>
+  ),
+  receitas: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 19V5"/><path d="m6 11 6-6 6 6"/>
+    </svg>
+  ),
+  despesas: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 5v14"/><path d="m6 13 6 6 6-6"/>
+    </svg>
+  ),
+  categorias: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h9z"/><circle cx="7.5" cy="7.5" r="1.5"/>
+    </svg>
+  ),
+  importar: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+  ),
+  groups: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.4A5.5 5.5 0 0 1 20.5 19.5"/>
+    </svg>
+  ),
+};
+
 const navItems = [
-  { to: "/dashboard", label: "Dashboard", requiresActiveSubscription: true },
-  { to: "/receitas", label: "Receitas", requiresActiveSubscription: true },
-  { to: "/despesas", label: "Despesas", requiresActiveSubscription: true },
-  { to: "/categorias", label: "Categorias", requiresActiveSubscription: true },
-  { to: "/importar-ofx", label: "Importar extrato", requiresActiveSubscription: true },
-  { to: "/groups", label: "Groups", requiresActiveSubscription: false },
+  { to: "/dashboard", label: "Dashboard", icon: NAV_ICONS.dashboard, requiresActiveSubscription: true },
+  { to: "/receitas", label: "Receitas", icon: NAV_ICONS.receitas, requiresActiveSubscription: true },
+  { to: "/despesas", label: "Despesas", icon: NAV_ICONS.despesas, requiresActiveSubscription: true },
+  { to: "/categorias", label: "Categorias", icon: NAV_ICONS.categorias, requiresActiveSubscription: true },
+  { to: "/importar-ofx", label: "Importar extrato", icon: NAV_ICONS.importar, requiresActiveSubscription: true },
+  { to: "/groups", label: "Grupos", icon: NAV_ICONS.groups, requiresActiveSubscription: false },
 ];
 
 function getRemainingDays(endDateRaw: string | null): number | null {
@@ -781,18 +814,20 @@ export default function Layout({ children }: Props) {
             ) : null}
 
             {/* NavegaÃ§Ã£o */}
-            <nav className="nav" aria-label="NavegaÃ§Ã£o principal">
+            <nav className="nav" aria-label="Navegação principal">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
                   to={item.to}
                   aria-disabled={subscriptionStatus === "inactive" && item.requiresActiveSubscription}
+                  aria-current={location.pathname === item.to ? "page" : undefined}
                   onClick={
                     subscriptionStatus === "inactive" && item.requiresActiveSubscription
                       ? handleBlockedNavigation
                       : undefined
                   }
                 >
+                  {item.icon}
                   {item.label}
                 </Link>
               ))}
@@ -898,12 +933,14 @@ export default function Layout({ children }: Props) {
                   key={item.to}
                   to={item.to}
                   aria-disabled={subscriptionStatus === "inactive" && item.requiresActiveSubscription}
+                  aria-current={location.pathname === item.to ? "page" : undefined}
                   onClick={
                     subscriptionStatus === "inactive" && item.requiresActiveSubscription
                       ? handleBlockedNavigation
                       : handleMobileMenuClose
                   }
                 >
+                  {item.icon}
                   {item.label}
                 </Link>
               ))}

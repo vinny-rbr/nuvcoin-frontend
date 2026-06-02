@@ -159,6 +159,28 @@ export default function Despesas() {
 
   const despesas = useMemo(() => items.filter((x) => x.type === "DESPESA"), [items]);
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeChip, setActiveChip] = useState("Tudo");
+
+  const chipOptions = useMemo(() => {
+    const parents = new Set<string>();
+    for (const item of despesas) {
+      const parent = item.category.split(">")[0].trim();
+      if (parent) parents.add(parent);
+    }
+    return ["Tudo", ...Array.from(parents).slice(0, 4)];
+  }, [despesas]);
+
+  const filteredDespesas = useMemo(() => {
+    return despesas.filter((item) => {
+      const matchesSearch = !searchQuery ||
+        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesChip = activeChip === "Tudo" ||
+        item.category.split(">")[0].trim() === activeChip;
+      return matchesSearch && matchesChip;
+    });
+  }, [despesas, searchQuery, activeChip]);
 
   async function handleQuickCreateCategory(name: string, parentPath?: string): Promise<string> {
     const parent = parentPath ? categoryRecords.find((item) => item.fullPath === parentPath) : null;
@@ -489,15 +511,49 @@ export default function Despesas() {
           </div>
         </div>
 
+        {despesas.length > 0 ? (
+          <div className="finance-filter-row">
+            <div className="finance-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/>
+              </svg>
+              <input
+                className="finance-control"
+                placeholder="Buscar despesa..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="chip-row">
+              {chipOptions.map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  className={`chip${activeChip === chip ? " is-active" : ""}`}
+                  onClick={() => setActiveChip(chip)}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {despesas.length === 0 ? (
           <div className="finance-empty-state">
             <div className="finance-empty-icon">-</div>
             <strong>Nenhuma despesa cadastrada ainda.</strong>
             <span>Adicione sua primeira saida pelo formulario acima.</span>
           </div>
+        ) : filteredDespesas.length === 0 ? (
+          <div className="finance-empty-state">
+            <div className="finance-empty-icon">🔍</div>
+            <strong>Nenhum resultado encontrado.</strong>
+            <span>Tente outro termo ou categoria.</span>
+          </div>
         ) : (
           <div className="finance-list">
-            {despesas.map((d) => (
+            {filteredDespesas.map((d) => (
               <div key={d.id} className="finance-row">
                 <div className="finance-row-main">
                   <div className="finance-row-icon">R$</div>
