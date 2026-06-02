@@ -275,6 +275,24 @@ export default function Despesas() {
     setItems(updated);
   }
 
+  function onDeleteAll() {
+    if (despesas.length === 0) return;
+
+    const ok = window.confirm(`Apagar todas as ${despesas.length} despesa(s)? Essa acao nao pode ser desfeita.`);
+    if (!ok) return;
+
+    let updated = items;
+    for (const item of despesas) {
+      updated = financeRemove(item.id);
+    }
+
+    setItems(updated);
+    setFeedback(`${despesas.length} despesa(s) removida(s).`);
+    window.setTimeout(() => {
+      void financeRefreshFromApi().then(setItems).catch(() => undefined);
+    }, 1500);
+  }
+
   function toggleStatus(item: FinanceItem) {
     const nextStatus: FinanceStatus = item.status === "paid" ? "pending" : "paid";
     const updated = financeUpdate(item.id, { status: nextStatus });
@@ -451,7 +469,14 @@ export default function Despesas() {
             <span className="finance-kicker">Historico</span>
             <h3>Lista de Despesas</h3>
           </div>
-          <span className="finance-count">{despesas.length} cadastrada(s)</span>
+          <div className="finance-heading-actions">
+            <span className="finance-count">{despesas.length} cadastrada(s)</span>
+            {despesas.length > 0 ? (
+              <button className="finance-danger-button finance-bulk-delete-button" type="button" onClick={onDeleteAll}>
+                Apagar todas
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {despesas.length === 0 ? (

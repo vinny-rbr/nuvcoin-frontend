@@ -196,6 +196,24 @@ export default function Receitas() {
     setItems(updated);
   }
 
+  function handleRemoveAll() {
+    if (receitas.length === 0) return;
+
+    const ok = window.confirm(`Apagar todas as ${receitas.length} receita(s)? Essa acao nao pode ser desfeita.`);
+    if (!ok) return;
+
+    let updated = items;
+    for (const item of receitas) {
+      updated = financeRemove(item.id);
+    }
+
+    setItems(updated);
+    setFeedback(`${receitas.length} receita(s) removida(s).`);
+    window.setTimeout(() => {
+      void financeRefreshFromApi().then(setItems).catch(() => undefined);
+    }, 1500);
+  }
+
   return (
     <div className={`finance-view finance-income${animate ? " is-ready" : ""}`}>
       <section className="finance-hero">
@@ -287,7 +305,14 @@ export default function Receitas() {
             <span className="finance-kicker">Historico</span>
             <h3>Lista de Receitas</h3>
           </div>
-          <span className="finance-count">{receitas.length} cadastrada(s)</span>
+          <div className="finance-heading-actions">
+            <span className="finance-count">{receitas.length} cadastrada(s)</span>
+            {receitas.length > 0 ? (
+              <button className="finance-danger-button finance-bulk-delete-button" type="button" onClick={handleRemoveAll}>
+                Apagar todas
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {receitas.length === 0 ? (

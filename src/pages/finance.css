@@ -171,6 +171,22 @@
   white-space: nowrap;
 }
 
+.finance-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.finance-bulk-delete-button {
+  min-height: 32px;
+  border-radius: 999px;
+  padding: 0 14px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .finance-form-grid {
   display: grid;
   grid-template-columns: minmax(220px, 1.4fr) minmax(160px, 0.9fr) minmax(160px, 0.9fr) minmax(150px, 0.75fr);
@@ -1315,6 +1331,13 @@
   .finance-row-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .finance-heading-actions {
+    align-items: stretch;
+    justify-content: flex-start;
+    flex-direction: column;
+    width: 100%;
   }
 
   .finance-row-actions {
