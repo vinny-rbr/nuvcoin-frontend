@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard"; // Página dashboard
 import Receitas from "./pages/Receitas"; // Página receitas
 import Despesas from "./pages/Despesas"; // Página despesas
 import Categorias from "./pages/Categorias";
+import ImportOfx from "./pages/ImportOfx";
 import Groups from "./pages/Groups"; // Página de grupos (Splitwise)
 
 type AnimatedPageProps = {
@@ -137,6 +138,19 @@ export default function App() {
             <Layout>
               <AnimatedPage>
                 <Categorias />
+              </AnimatedPage>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/importar-ofx"
+        element={
+          <ProtectedRoute requireActiveSubscription>
+            <Layout>
+              <AnimatedPage>
+                <ImportOfx />
               </AnimatedPage>
             </Layout>
           </ProtectedRoute>

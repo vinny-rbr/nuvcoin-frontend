@@ -12,7 +12,6 @@ import {
   todayISO,
 } from "../lib/financeService";
 import CategoryPicker from "../components/CategoryPicker";
-import FinanceOfxImport from "../components/FinanceOfxImport";
 import { categoriesForType, createFinanceCategory, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
 import "./dashboard.css";
@@ -308,12 +307,6 @@ export default function Despesas() {
           <div className="stat-value">{formatCentsBRL(summary.saldoCents)}</div>
         </div>
       </div>
-
-      <FinanceOfxImport
-        incomeCategory={DEFAULT_CATEGORIES.RECEITA[0] ?? "Outros"}
-        expenseCategory={categoryOptions[0] ?? "Outros"}
-        onImported={setItems}
-      />
 
       <div className="chart-card finance-panel finance-form-panel">
         <div className="finance-section-heading">

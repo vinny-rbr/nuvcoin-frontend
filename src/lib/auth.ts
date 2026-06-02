@@ -134,6 +134,7 @@ export function canAccessSubscriptionRoute(pathname: string): boolean {
     pathname === "/receitas" ||
     pathname === "/despesas" ||
     pathname === "/categorias" ||
+    pathname === "/importar-ofx" ||
     pathname === "/onboarding" ||
     pathname === "/groups"
   ) {
