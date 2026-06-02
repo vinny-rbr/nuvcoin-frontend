@@ -94,17 +94,24 @@ body::before {
 }
 
 .brand .logo-dot,
-.logo-dot {
+.logo-dot,
+.app-logo-mark {
   width: 34px !important;
   height: 34px !important;
+  display: grid !important;
+  place-items: center !important;
   border-radius: 10px !important;
   background: var(--grad-primary) !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  font-weight: 950 !important;
   box-shadow: var(--glow-blue) !important;
   position: relative;
 }
 
 .brand .logo-dot::after,
-.logo-dot::after {
+.logo-dot::after,
+.app-logo-mark::after {
   content: "";
   position: absolute;
   inset: -4px;
@@ -119,6 +126,30 @@ body::before {
   font-weight: 700 !important;
   letter-spacing: -0.3px !important;
   text-transform: none !important;
+}
+
+.brand-copy {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.brand-copy strong {
+  color: var(--text-main);
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.brand-copy small {
+  margin-top: 3px;
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  line-height: 1;
 }
 
 .badge,
@@ -391,6 +422,7 @@ body::before {
 }
 
 .dashboard-view-mode-tabs,
+.dashboard-segmented,
 .categories-tabs {
   display: inline-flex !important;
   gap: 4px !important;
@@ -401,6 +433,7 @@ body::before {
 }
 
 .dashboard-view-mode-tabs button,
+.dashboard-segmented button,
 .categories-tabs button {
   border: 0 !important;
   background: transparent !important;
@@ -411,6 +444,7 @@ body::before {
 }
 
 .dashboard-view-mode-tabs button.is-active,
+.dashboard-segmented button.is-active,
 .categories-tabs button.is-active {
   background: var(--grad-primary) !important;
   color: #fff !important;
@@ -635,17 +669,37 @@ body::before {
 
   .brand h1,
   .badge,
-  .profile-button-text,
   .profile-version-pill,
   .nav {
     display: none !important;
   }
 
   .brand .logo-dot,
-  .logo-dot {
-    width: 22px !important;
-    height: 22px !important;
+  .logo-dot,
+  .app-logo-mark {
+    width: 38px !important;
+    height: 38px !important;
     border-radius: 8px !important;
+  }
+
+  .brand-copy {
+    display: grid !important;
+  }
+
+  .brand-copy strong {
+    font-size: 15px !important;
+    max-width: 96px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .brand-copy small {
+    font-size: 9px !important;
+  }
+
+  .profile-button-text {
+    display: none !important;
   }
 
   .mobile-nav-shell {
@@ -764,7 +818,10 @@ body::before {
     font-size: 30px !important;
   }
 
-  .dashboard-grid,
+  .dashboard-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
   .finance-summary-grid,
   .finance-income .finance-summary-grid,
   .finance-import-summary,
@@ -783,7 +840,20 @@ body::before {
     text-align: left !important;
   }
 
+  .stat-card {
+    min-height: 176px !important;
+    display: grid !important;
+    align-content: space-between !important;
+    padding: 18px !important;
+  }
+
+  .stat-value {
+    font-size: clamp(26px, 8vw, 35px) !important;
+    line-height: 1.12 !important;
+  }
+
   .dashboard-view-mode-tabs,
+  .dashboard-segmented,
   .categories-tabs {
     width: 100% !important;
     display: grid !important;

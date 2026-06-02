@@ -712,8 +712,11 @@ export default function Layout({ children }: Props) {
           {/* Marca do app */}
           <div className="brand-cluster">
             <div className="brand">
-              <span className="logo-dot" />
-              <h1>CONCILIAAÍ</h1>
+              <span className="app-logo-mark" aria-hidden="true">↗</span>
+              <span className="brand-copy">
+                <strong>Conciliaaí</strong>
+                <small>FINANÇAS</small>
+              </span>
             </div>
             <span className="badge">{planBadgeLabel}</span>
           </div>

@@ -8,6 +8,335 @@
     linear-gradient(180deg, #06111f 0%, #071826 100%);
 }
 
+.welcome-redesign-screen {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  overflow: hidden;
+  color: #f8fafc;
+  background:
+    radial-gradient(800px 520px at 20% 0%, rgba(59, 130, 246, 0.16), transparent 60%),
+    linear-gradient(180deg, #070d1b 0%, #0a1021 100%);
+}
+
+.welcome-redesign-phone {
+  width: min(390px, calc(100vw - 26px));
+  min-height: min(760px, calc(100dvh - 28px));
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 16px 20px 28px;
+  border-radius: 32px;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(10, 15, 30, 0.98)),
+    #0f172a;
+  box-shadow:
+    0 0 0 10px rgba(2, 6, 23, 0.92),
+    0 0 0 12px rgba(96, 165, 250, 0.18),
+    0 28px 90px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-redesign-phone::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 118px;
+  height: 22px;
+  border-radius: 0 0 18px 18px;
+  background: #020617;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.welcome-redesign-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 3;
+}
+
+.welcome-redesign-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.welcome-redesign-logo {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+  box-shadow: 0 12px 34px rgba(37, 99, 235, 0.48);
+}
+
+.welcome-redesign-brand strong {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.welcome-redesign-skip,
+.welcome-redesign-secondary {
+  color: #94a3b8;
+  text-decoration: none;
+  font-weight: 900;
+}
+
+.welcome-redesign-stage {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 28px;
+  padding-top: 24px;
+}
+
+.welcome-redesign-card {
+  width: min(230px, 70vw);
+  min-height: 296px;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 30px 18px 18px;
+  border-radius: 28px;
+  border: 1px solid rgba(96, 165, 250, 0.24);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--welcome-accent, #3b82f6) 26%, transparent), transparent 58%),
+    linear-gradient(180deg, rgba(59, 130, 246, 0.44), rgba(30, 64, 175, 0.22));
+  box-shadow:
+    0 28px 80px color-mix(in srgb, var(--welcome-accent, #3b82f6) 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.11);
+  animation: welcomeScreenIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.welcome-redesign-handle {
+  width: 56px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.36);
+  justify-self: center;
+}
+
+.welcome-art-balance {
+  display: grid;
+  gap: 5px;
+  color: #dbeafe;
+  font-size: 31px;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.welcome-art-balance small {
+  color: #93a4bd;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.welcome-art-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.welcome-art-chips span {
+  min-height: 58px;
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(148, 163, 184, 0.13);
+}
+
+.welcome-art-chips i,
+.welcome-art-list span::before {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: rgba(34, 197, 94, 0.42);
+}
+
+.welcome-art-chips span:nth-child(2) i {
+  background: rgba(239, 68, 68, 0.38);
+}
+
+.welcome-art-chips b {
+  width: 70%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.46);
+}
+
+.welcome-art-bars {
+  height: 82px;
+  display: flex;
+  align-items: end;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.welcome-art-bars span {
+  width: 34px;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(180deg, #60a5fa, #2563eb);
+  animation: welcomeBarIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.welcome-art-donut {
+  width: 138px;
+  height: 138px;
+  justify-self: center;
+  border-radius: 50%;
+  background: conic-gradient(#60a5fa 0 44%, #22c55e 44% 66%, #a78bfa 66% 82%, #f97316 82% 100%);
+  position: relative;
+}
+
+.welcome-art-donut::after {
+  content: "";
+  position: absolute;
+  inset: 36px;
+  border-radius: inherit;
+  background: #1e293b;
+}
+
+.welcome-art-list {
+  display: grid;
+  gap: 10px;
+}
+
+.welcome-art-list span {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.welcome-redesign-copy {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.welcome-redesign-copy h1 {
+  max-width: 280px;
+  margin: 0;
+  color: #f8fafc;
+  font-size: clamp(29px, 8vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.welcome-redesign-copy p {
+  max-width: 320px;
+  margin: 0;
+  color: #94a3b8;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.welcome-redesign-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.welcome-redesign-dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.32);
+  cursor: pointer;
+  transition: 0.22s ease;
+}
+
+.welcome-redesign-dots button.is-active {
+  width: 28px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+}
+
+.welcome-redesign-primary {
+  width: 100%;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 0;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #ffffff;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 16px 38px rgba(37, 99, 235, 0.36);
+}
+
+.welcome-redesign-secondary {
+  margin-top: 6px;
+}
+
+@keyframes welcomeScreenIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes welcomeBarIn {
+  from {
+    transform: scaleY(0.2);
+    opacity: 0;
+  }
+
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 420px) {
+  .welcome-redesign-screen {
+    padding: 10px;
+  }
+
+  .welcome-redesign-phone {
+    width: calc(100vw - 32px);
+    min-height: calc(100dvh - 26px);
+    padding: 16px 18px 26px;
+  }
+
+  .welcome-redesign-card {
+    width: min(230px, 72vw);
+    min-height: 294px;
+  }
+
+  .welcome-redesign-stage {
+    gap: 26px;
+  }
+}
+
 .welcome-screen {
   display: grid;
   place-items: center;
