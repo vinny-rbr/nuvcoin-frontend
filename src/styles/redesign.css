@@ -38,9 +38,6 @@ body::before {
 .dashboard-panel,
 .finance-panel,
 .categories-panel,
-.groups-panel,
-.groups-section-card,
-.groups-card,
 .parent-category-compare-shell,
 .parent-category-mini-dashboard,
 .app-dialog,
@@ -58,8 +55,7 @@ body::before {
 .chart-card::before,
 .dashboard-panel::before,
 .finance-panel::before,
-.categories-panel::before,
-.groups-panel::before {
+.categories-panel::before {
   background:
     linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent),
     radial-gradient(circle at top left, rgba(96, 165, 250, 0.1), transparent 34%) !important;
@@ -349,8 +345,7 @@ body::before {
 
 /* Pages */
 .dashboard-view,
-.finance-view,
-.groups-page {
+.finance-view {
   width: 100%;
   max-width: 1180px;
   margin: 0 auto;
@@ -358,9 +353,7 @@ body::before {
 }
 
 .dashboard-hero-panel,
-.finance-hero,
-.groups-hero,
-.groups-hero-card {
+.finance-hero {
   border-radius: var(--r-lg) !important;
   border: 1px solid rgba(96, 165, 250, 0.2) !important;
   background:
@@ -375,16 +368,13 @@ body::before {
 }
 
 .dashboard-hero-panel h2,
-.finance-hero h2,
-.groups-hero h2,
-.groups-hero-card h2 {
+.finance-hero h2 {
   font-family: var(--display) !important;
   letter-spacing: -0.6px !important;
 }
 
 .dashboard-kicker,
-.finance-kicker,
-.groups-kicker {
+.finance-kicker {
   color: var(--primary-lt) !important;
   letter-spacing: 1.4px !important;
 }
@@ -403,8 +393,7 @@ body::before {
 
 .stat-card,
 .finance-summary-card,
-.metric,
-.groups-metric-card {
+.metric {
   border-radius: var(--r-md) !important;
   background: var(--card) !important;
   border: 1px solid var(--stroke) !important;
@@ -412,8 +401,7 @@ body::before {
 }
 
 .stat-value,
-.finance-summary-value,
-.groups-metric-value {
+.finance-summary-value {
   font-family: var(--display) !important;
   letter-spacing: -0.5px !important;
 }
@@ -467,8 +455,7 @@ body::before {
 .parent-category-detail-row,
 .finance-row,
 .categories-row,
-.member-row,
-.groups-history-row {
+.member-row {
   border-radius: 13px !important;
   border: 1px solid var(--stroke-soft) !important;
   background: rgba(15, 23, 42, 0.36) !important;
@@ -646,28 +633,6 @@ body::before {
   font-weight: 900 !important;
 }
 
-/* Groups */
-.groups-lane,
-.groups-list,
-.groups-card-list {
-  gap: 12px !important;
-}
-
-.groups-page {
-  padding-bottom: 120px;
-}
-
-.groups-dashboard-hero,
-.groups-hero-card {
-  min-height: auto !important;
-}
-
-.groups-section-card,
-.groups-modal-card,
-.groups-action-panel {
-  border-radius: var(--r-lg) !important;
-}
-
 /* Mobile shell exactly like reference */
 @media (max-width: 767px) {
   .topbar-inner {
@@ -789,21 +754,18 @@ body::before {
   }
 
   .dashboard-view,
-  .finance-view,
-  .groups-page {
+  .finance-view {
     /* .page already adds 98px bottom for the nav — use small bottom here */
     padding: 18px 14px 24px !important;
   }
 
   .dashboard-hero-panel,
-  .finance-hero,
-  .groups-hero-card {
+  .finance-hero {
     padding: 20px !important;
   }
 
   .dashboard-hero-panel h2,
-  .finance-hero h2,
-  .groups-hero-card h2 {
+  .finance-hero h2 {
     font-size: 30px !important;
   }
 
