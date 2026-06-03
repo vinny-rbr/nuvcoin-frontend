@@ -48,6 +48,7 @@ import {
   tabButton,
   timelineCard,
 } from "./groups/styles/groups.styles"; // Estilos centralizados do mÃ³dulo
+import "./groups/styles/groups.css"; // Premium redesign CSS
 
 ChartJS.register(ArcElement, Tooltip, Legend); // Registra componentes do Chart.js
 
@@ -649,6 +650,7 @@ export default function Groups() {
               highlightGroupId={highlightGroupId}
               isGroupsLaneAnimating={isGroupsLaneAnimating}
               onSelectGroup={handleSelectGroup}
+              onCreateGroup={createGroup.open}
               sectionCard={responsiveSectionCard}
               panelTitle={responsivePanelTitle}
               subtleText={subtleText}
@@ -696,51 +698,32 @@ export default function Groups() {
         )}
 
         <div style={getClockEntryStyle(state.groups.length > 0 ? 2 : 1)}>
-          <div
-            style={{
-              ...responsiveSectionCard,
-              display: "grid",
-              gap: 12,
-              border: "1px solid rgba(91,140,255,0.20)",
-              background: "linear-gradient(135deg, rgba(30,64,175,0.16), rgba(15,23,42,0.72))",
-            }}
-          >
-            <div style={{ display: "grid", gap: 3 }}>
-              <div style={{ ...responsivePanelTitle, fontSize: isMobileViewport ? 15 : 18 }}>
-                Entrar em grupo compartilhado
-              </div>
-              <div style={subtleText}>Recebeu um convite? Informe o codigo para liberar somente esse grupo.</div>
+          <div className="grp-invite-card">
+            <span className="grp-hero-kicker">Entrar em grupo</span>
+            <h3 style={{ fontFamily: "var(--display)", fontSize: 17, margin: "6px 0 2px" }}>
+              Recebeu um convite?
+            </h3>
+            <div style={{ color: "var(--text-2)", fontSize: 13 }}>
+              Informe o código recebido por e-mail para liberar somente esse grupo.
             </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: isMobileViewport ? "1fr" : "minmax(220px, 320px) auto",
-                gap: 10,
-                alignItems: "center",
-              }}
-            >
+            <div className="grp-invite-row">
               <input
                 value={inviteCode}
                 onChange={(event) => setInviteCode(event.target.value)}
-                placeholder="Codigo do convite"
+                placeholder="Código do convite"
                 inputMode="numeric"
-                style={inputStyle}
               />
               <button
                 type="button"
+                className="grp-btn"
                 onClick={handleAcceptInviteCode}
                 disabled={inviteCodeLoading}
-                style={{
-                  ...primaryButton,
-                  cursor: inviteCodeLoading ? "not-allowed" : "pointer",
-                  opacity: inviteCodeLoading ? 0.7 : 1,
-                }}
               >
                 {inviteCodeLoading ? "Validando..." : "Entrar no grupo"}
               </button>
             </div>
-            {inviteCodeError && <div style={{ ...subtleText, color: "#fecaca" }}>{inviteCodeError}</div>}
-            {inviteCodeSuccess && <div style={{ ...subtleText, color: "#86efac" }}>{inviteCodeSuccess}</div>}
+            {inviteCodeError && <div style={{ color: "#fecaca", fontSize: 13 }}>{inviteCodeError}</div>}
+            {inviteCodeSuccess && <div style={{ color: "#86efac", fontSize: 13 }}>{inviteCodeSuccess}</div>}
           </div>
         </div>
 

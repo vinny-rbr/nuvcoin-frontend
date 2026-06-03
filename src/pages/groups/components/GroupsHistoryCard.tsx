@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 
 import type { GroupExpenseListItemDto } from "../types/groups.types";
-import { formatBRLFromCents, monthKeyFromISO } from "../utils/groups.helpers";
+import { formatBRLFromCents } from "../utils/groups.helpers";
 
 type GroupsHistoryCardProps = {
   selectedGroupId: string | null;
@@ -35,13 +35,13 @@ export default function GroupsHistoryCard({
   sectionCard,
   panelTitle,
   subtleText,
-  ghostButton,
+  ghostButton: _ghostButton,
   dangerButtonSmall,
-  timelineCard,
-  memberAvatarStyle,
+  timelineCard: _timelineCard,
+  memberAvatarStyle: _memberAvatarStyle,
 }: GroupsHistoryCardProps) {
   return (
-    <div style={sectionCard}>
+    <div className="grp-card" style={sectionCard}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <div style={{ display: "grid", gap: 2 }}>
           <div style={panelTitle}>Histórico</div>
@@ -53,7 +53,7 @@ export default function GroupsHistoryCard({
           onClick={onRefreshExpenses}
           disabled={!selectedGroupId || expensesLoading}
           style={{
-            ...ghostButton,
+            ..._ghostButton,
             cursor: !selectedGroupId || expensesLoading ? "not-allowed" : "pointer",
             opacity: !selectedGroupId || expensesLoading ? 0.7 : 1,
           }}
@@ -73,57 +73,46 @@ export default function GroupsHistoryCard({
       {!expensesLoading && !expensesError && historyItems.length === 0 && <div style={{ ...subtleText, marginTop: 12 }}>Sem despesas ainda.</div>}
 
       {!expensesLoading && !expensesError && historyItems.length > 0 && (
-        <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
+        <div style={{ marginTop: 8 }}>
           {historyItems.map((e) => {
             const deleting = deleteExpenseLoadingId === e.id;
+            const paidByName = e.paidByName || e.paidByEmail || "Membro";
 
             return (
-              <div key={e.id} style={timelineCard}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start", minWidth: 0 }}>
-                    <div style={memberAvatarStyle}>R$</div>
-
-                    <div style={{ display: "grid", gap: 4 }}>
-                      <div style={{ fontWeight: 900, fontSize: 17 }}>{e.description}</div>
-                      <div style={{ ...subtleText, display: "flex", gap: 12, flexWrap: "wrap" }}>
-                        <span>{new Date(e.date).toLocaleDateString("pt-BR")}</span>
-                        <span>Mês: {monthKeyFromISO(e.date)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "grid", gap: 8, justifyItems: "end" }}>
-                    <div style={{ fontWeight: 900, fontSize: 18 }}>{formatBRLFromCents(e.amountCents)}</div>
-
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-                      <button
-                        type="button"
-                        onClick={() => onOpenEditExpense(e)}
-                        disabled={deleting}
-                        style={{
-                          ...ghostButton,
-                          padding: "8px 10px",
-                          cursor: deleting ? "not-allowed" : "pointer",
-                          opacity: deleting ? 0.6 : 1,
-                        }}
-                      >
-                        Editar
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => onDeleteExpenseFromHistory(e)}
-                        disabled={deleting}
-                        style={{
-                          ...dangerButtonSmall,
-                          padding: "8px 10px",
-                          cursor: deleting ? "not-allowed" : "pointer",
-                          opacity: deleting ? 0.7 : 1,
-                        }}
-                      >
-                        {deleting ? "Excluindo…" : "Excluir"}
-                      </button>
-                    </div>
+              <div key={e.id} className="grp-tx-row">
+                <span className="grp-tx-ic" style={{ background: "rgba(59,130,246,.14)", color: "#60A5FA", fontSize: 18 }}>
+                  💳
+                </span>
+                <div className="grp-tx-main">
+                  <strong>{e.description}</strong>
+                  <span>Pago por {paidByName} • {new Date(e.date).toLocaleDateString("pt-BR")}</span>
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <div className="grp-tx-amt">{formatBRLFromCents(e.amountCents)}</div>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenEditExpense(e)}
+                      disabled={deleting}
+                      className="grp-btn-ghost"
+                      style={{ fontSize: 12, padding: "6px 10px" }}
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeleteExpenseFromHistory(e)}
+                      disabled={deleting}
+                      style={{
+                        ...dangerButtonSmall,
+                        padding: "6px 10px",
+                        fontSize: 12,
+                        cursor: deleting ? "not-allowed" : "pointer",
+                        opacity: deleting ? 0.7 : 1,
+                      }}
+                    >
+                      {deleting ? "…" : "Excluir"}
+                    </button>
                   </div>
                 </div>
               </div>

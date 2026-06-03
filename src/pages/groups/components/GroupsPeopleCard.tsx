@@ -65,7 +65,7 @@ export default function GroupsPeopleCard({
   const members = balances?.members ?? [];
 
   return (
-    <div style={sectionCard}>
+    <div className="grp-card" style={sectionCard}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <div style={{ display: "grid", gap: 2 }}>
           <div style={panelTitle}>Pessoas</div>

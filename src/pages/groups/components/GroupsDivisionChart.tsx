@@ -80,6 +80,7 @@ export default function GroupsDivisionChart({
 
   return (
     <div
+      className="grp-card"
       style={{
         ...sectionCard,
         padding: isMobile ? 16 : 22,

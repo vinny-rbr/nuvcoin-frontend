@@ -57,15 +57,6 @@ export default function GroupsMetrics({
     };
   }, []);
 
-  const valueStyle: CSSProperties = {
-    fontWeight: 900,
-    fontSize: "clamp(16px, 1.8vw, 24px)",
-    lineHeight: 1.1,
-    letterSpacing: -0.4,
-    overflowWrap: "anywhere",
-    minWidth: 0,
-  };
-
   const topBurdenRows = monthSplit
     .filter((item) => item.percentOfSalary > 0)
     .slice()
@@ -74,25 +65,29 @@ export default function GroupsMetrics({
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(142px, 1fr))", gap: 12 }}>
-        <div style={{ ...metricCard("blue"), minWidth: 0 }}>
-          <div style={subtleText}>Total do mes</div>
-          <div style={valueStyle}>{formatBRLFromCents(monthTotalCents)}</div>
+      <div className="grp-metrics">
+        <div className="grp-metric-card grp-s1" style={{ ...metricCard("blue"), minWidth: 0 }}>
+          <div className="grp-metric-label">Total do mês</div>
+          <div className="grp-metric-value">{formatBRLFromCents(monthTotalCents)}</div>
+          <div className="grp-metric-caption">{monthExpensesCount} despesas</div>
         </div>
 
-        <div style={{ ...metricCard("green"), minWidth: 0 }}>
-          <div style={subtleText}>Despesas</div>
-          <div style={valueStyle}>{monthExpensesCount}</div>
+        <div className="grp-metric-card grp-s2" style={{ ...metricCard("green"), minWidth: 0 }}>
+          <div className="grp-metric-label">Pessoas</div>
+          <div className="grp-metric-value">{membersCount}</div>
+          <div className="grp-metric-caption">no grupo</div>
         </div>
 
-        <div style={{ ...metricCard("purple"), minWidth: 0 }}>
-          <div style={subtleText}>Membros</div>
-          <div style={valueStyle}>{membersCount}</div>
+        <div className="grp-metric-card grp-s3" style={{ ...metricCard("purple"), minWidth: 0 }}>
+          <div className="grp-metric-label">Média por pessoa</div>
+          <div className="grp-metric-value">{formatBRLFromCents(averagePerPersonCents)}</div>
+          <div className="grp-metric-caption">divisão igualitária</div>
         </div>
 
-        <div style={{ ...metricCard(highestBurden > recommendedLimitPercent ? "red" : "blue"), minWidth: 0 }}>
-          <div style={subtleText}>Media por pessoa</div>
-          <div style={valueStyle}>{formatBRLFromCents(averagePerPersonCents)}</div>
+        <div className="grp-metric-card grp-s4" style={{ ...metricCard(highestBurden > recommendedLimitPercent ? "red" : "blue"), minWidth: 0 }}>
+          <div className="grp-metric-label">Maior comprometimento</div>
+          <div className="grp-metric-value">{highestBurden.toFixed(0)}%</div>
+          <div className="grp-metric-caption">da renda</div>
         </div>
       </div>
 
