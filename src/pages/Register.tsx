@@ -1,5 +1,5 @@
-﻿import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+﻿import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
@@ -101,73 +101,97 @@ export default function Register() {
     }
   }
 
+  const strengthLevel = useMemo(() => Math.min(3, Math.floor(password.length / 4)), [password]);
+  const strengthColors = ["#EF4444", "#EAB308", "#22C55E"];
+
   return (
-    <div className="auth-scene">
-      <div className="auth-grid" />
-      <div className="auth-card">
-        <h1 className="auth-title">Conciliaaí</h1>
-        <p className="auth-subtitle">Crie sua conta</p>
+    <div className="auth-page">
+      <div className="auth-v2-card stagger">
+        <div className="auth-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 17l5-5 4 3 8-8"/><path d="M16 7h4v4"/>
+          </svg>
+        </div>
 
-        <input
-          className="auth-input"
-          placeholder="Como voce quer ser chamado?"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <h1 className="auth-h1">Criar conta</h1>
+        <p className="auth-sub">Comece a organizar seu dinheiro em minutos.</p>
 
-        <input
-          className="auth-input"
-          placeholder="Seu e-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <div className="auth-form">
+          <div className="auth-field">
+            <span>Como quer ser chamado?</span>
+            <input
+              className="auth-input"
+              placeholder="Seu nome"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
 
-        <div className="auth-password-field">
-          <input
-            className="auth-input auth-password-input"
-            type={showPassword ? "text" : "password"}
-            placeholder="Senha"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button
-            type="button"
-            className="auth-password-toggle"
-            aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-            onClick={() => setShowPassword((current) => !current)}
-          >
-            {showPassword ? (
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 3l18 18" />
-                <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-                <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 5 9 7a8.8 8.8 0 0 1-2.1 3.2" />
-                <path d="M6.6 6.7C4.2 8.2 3 10.7 3 12c0 2 3.5 7 9 7a10.9 10.9 0 0 0 4.2-.8" />
-              </svg>
-            ) : (
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" />
-                <circle cx="12" cy="12" r="3" />
+          <div className="auth-field">
+            <span>E-mail</span>
+            <input
+              className="auth-input"
+              placeholder="voce@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
+          <div className="auth-field">
+            <span>Senha</span>
+            <div className="auth-pw-wrapper">
+              <input
+                className="auth-input"
+                type={showPassword ? "text" : "password"}
+                placeholder="Crie uma senha"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="auth-pw-btn"
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                onClick={() => setShowPassword((c) => !c)}
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+                    <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 5 9 7a8.8 8.8 0 0 1-2.1 3.2"/>
+                    <path d="M6.6 6.7C4.2 8.2 3 10.7 3 12c0 2 3.5 7 9 7a10.9 10.9 0 0 0 4.2-.8"/>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+            <div className="auth-strength" aria-hidden="true">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  style={{
+                    background: i < strengthLevel
+                      ? strengthColors[strengthLevel - 1]
+                      : "rgba(148,163,184,.18)",
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          <button className="auth-btn-primary" type="button" onClick={handleRegister} disabled={loading}>
+            {loading ? "Criando conta..." : "Criar conta"}
+            {!loading && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
               </svg>
             )}
           </button>
         </div>
 
-        <button
-          className="auth-button auth-button-register"
-          onClick={handleRegister}
-          disabled={loading}
-        >
-          {loading ? "Criando conta..." : "Criar conta"}
-        </button>
-
-        <p className="auth-footer">
-          Ja tem conta?{" "}
-          <button type="button" className="auth-link-button" onClick={() => navigate("/login")}>
-            Entrar
-          </button>
-        </p>
-
-        <p className="auth-credit">Feito com ❤️ por vinnytecnologia</p>
+        <p className="auth-foot-v2">Já tem conta? <Link to="/login">Entrar</Link></p>
+        <p className="auth-credit-v2">Feito com ❤️ por vinnytecnologia</p>
       </div>
     </div>
   );

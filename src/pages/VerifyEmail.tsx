@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
@@ -10,60 +10,63 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const initialEmail = useMemo(() => searchParams.get("email") ?? "", [searchParams]);
   const [email, setEmail] = useState(initialEmail);
-  const [code, setCode] = useState("");
+  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
+  const code = digits.join("");
+
+  const handleDigit = useCallback((index: number, value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(-1);
+    setDigits((prev) => {
+      const next = [...prev];
+      next[index] = cleaned;
+      return next;
+    });
+    if (cleaned && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  }, []);
+
+  const handleKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !digits[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  }, [digits]);
 
   async function handleVerify() {
-    if (!email || !code) {
-      alert("Informe o e-mail e o codigo.");
+    if (!email || code.length < 6) {
+      alert("Informe o e-mail e o código completo.");
       return;
     }
 
     try {
       setLoading(true);
-      logClientEvent({
-        event: "auth.email.verify.submit",
-        message: "Tentativa de verificacao de e-mail",
-        data: { email: email.trim() || null },
-      });
+      logClientEvent({ event: "auth.email.verify.submit", message: "Verificação de e-mail", data: { email } });
 
       const res = await fetch(apiUrl("/api/auth/verify-email"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), code: code.trim() }),
+        body: JSON.stringify({ email: email.trim(), code }),
       });
 
       if (!res.ok) {
-        const message = await readApiErrorMessage(res, "Nao foi possivel confirmar o e-mail.");
+        const message = await readApiErrorMessage(res, "Não foi possível confirmar o e-mail.");
         throw new Error(message);
       }
 
-      logClientEvent({
-        event: "auth.email.verify.success",
-        message: "E-mail verificado",
-        data: { email: email.trim() },
-      });
-      alert("E-mail confirmado. Agora voce pode entrar.");
+      logClientEvent({ event: "auth.email.verify.success", message: "E-mail verificado", data: { email } });
+      alert("E-mail confirmado. Agora você pode entrar.");
       navigate("/login");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao confirmar e-mail.";
-      logClientEvent({
-        event: "auth.email.verify.error",
-        message: "Erro na verificacao de e-mail",
-        data: { email: email.trim() || null, error: message },
-      });
-      alert(message);
+      alert(err instanceof Error ? err.message : "Erro ao confirmar e-mail.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleResend() {
-    if (!email) {
-      alert("Informe o e-mail.");
-      return;
-    }
+    if (!email) { alert("Informe o e-mail."); return; }
 
     try {
       setResending(true);
@@ -73,61 +76,90 @@ export default function VerifyEmail() {
         body: JSON.stringify({ email: email.trim() }),
       });
 
-      if (!res.ok) {
-        const message = await readApiErrorMessage(res, "Nao foi possivel reenviar o codigo.");
-        throw new Error(message);
-      }
-
-      logClientEvent({
-        event: "auth.email.verify.resend",
-        message: "Codigo de e-mail reenviado",
-        data: { email: email.trim() },
-      });
-      alert("Codigo reenviado.");
+      if (!res.ok) throw new Error(await readApiErrorMessage(res, "Não foi possível reenviar o código."));
+      logClientEvent({ event: "auth.email.verify.resend", message: "Código reenviado", data: { email } });
+      alert("Código reenviado.");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro ao reenviar codigo.";
-      alert(message);
+      alert(err instanceof Error ? err.message : "Erro ao reenviar código.");
     } finally {
       setResending(false);
     }
   }
 
+  const allFilled = code.length === 6;
+
   return (
-    <div className="auth-scene">
-      <div className="auth-grid" />
-      <div className="auth-card">
-        <h1 className="auth-title">Conciliaaí</h1>
-        <p className="auth-subtitle">Confirme seu e-mail</p>
+    <div className="auth-page">
+      <div className="auth-v2-card stagger">
+        <div className="auth-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.7 21a2 2 0 0 1-3.4 0"/>
+          </svg>
+        </div>
 
-        <input
-          className="auth-input"
-          placeholder="Seu e-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-
-        <input
-          className="auth-input auth-code-input"
-          inputMode="numeric"
-          maxLength={6}
-          placeholder="Codigo de 6 digitos"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-        />
-
-        <button className="auth-button auth-button-register" onClick={handleVerify} disabled={loading}>
-          {loading ? "Confirmando..." : "Confirmar e-mail"}
-        </button>
-
-        <button className="auth-link-button" type="button" onClick={handleResend} disabled={resending}>
-          {resending ? "Reenviando..." : "Reenviar codigo"}
-        </button>
-
-        <p className="auth-footer">
-          Ja confirmou? <Link to="/login">Entrar</Link>
+        <h1 className="auth-h1">Confirme seu e-mail</h1>
+        <p className="auth-sub">
+          Enviamos um código para{" "}
+          <strong style={{ color: "var(--text-main)" }}>{email || "seu e-mail"}</strong>
         </p>
 
-        <p className="auth-credit">Feito com ❤️ por vinnytecnologia</p>
+        {!initialEmail ? (
+          <div className="auth-field" style={{ marginBottom: 4 }}>
+            <span>E-mail</span>
+            <input
+              className="auth-input"
+              placeholder="voce@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+        ) : null}
+
+        <div className="otp-row" aria-label="Código de verificação">
+          {digits.map((d, i) => (
+            <input
+              key={i}
+              ref={(el) => { inputRefs.current[i] = el; }}
+              className={`otp-digit${d ? " is-filled" : ""}`}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={d}
+              onChange={(e) => handleDigit(i, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(i, e)}
+              aria-label={`Dígito ${i + 1}`}
+            />
+          ))}
+        </div>
+
+        <button
+          className="auth-btn-primary"
+          type="button"
+          onClick={handleVerify}
+          disabled={loading || !allFilled}
+          style={{ marginTop: 8 }}
+        >
+          {loading ? "Confirmando..." : "Confirmar"}
+          {!loading && (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          )}
+        </button>
+
+        <p className="auth-foot-v2">
+          Não chegou?{" "}
+          <button type="button" onClick={handleResend} disabled={resending}>
+            {resending ? "Reenviando..." : "Reenviar código"}
+          </button>
+        </p>
+
+        <p className="auth-foot-v2">
+          Já confirmou? <Link to="/login">Entrar</Link>
+        </p>
+
+        <p className="auth-credit-v2">Feito com ❤️ por vinnytecnologia</p>
       </div>
     </div>
   );

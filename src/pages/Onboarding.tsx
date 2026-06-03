@@ -240,33 +240,39 @@ export default function Onboarding() {
   }
 
   return (
-    <main className="onboarding-screen">
-      <section className="onboarding-card">
-        <div className="onboarding-topbar">
-          <button type="button" onClick={goBack} disabled={step === 0 || loading} aria-label="Voltar">
-            ←
+    <main className="onb-page">
+      <section className="onb-v2-card">
+        <div className="onb-topbar">
+          <button type="button" className="onb-back-btn" onClick={goBack} disabled={step === 0 || loading} aria-label="Voltar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
           </button>
-          <span>{step + 1} de {progressTotal}</span>
-          <button type="button" onClick={skipOnboarding} disabled={loading}>
-            Pular
-          </button>
+          <span className="onb-counter">{step + 1} de {progressTotal}</span>
+          <button type="button" className="onb-skip-btn" onClick={skipOnboarding} disabled={loading}>Pular</button>
         </div>
 
-        <div className="onboarding-progress">
+        <div className="onb-progress-bar">
           <span style={{ width: `${progress}%` }} />
         </div>
 
         {isQuestionStep ? (
-          <div className="onboarding-question">
+          <div className="onb-question stagger-children" key={step}>
             <h1>{currentQuestion.title}</h1>
-            {currentQuestion.subtitle ? <p>{currentQuestion.subtitle}</p> : null}
+            {currentQuestion.subtitle ? <p className="onb-q-sub">{currentQuestion.subtitle}</p> : null}
 
-            <div className="onboarding-options">
-              {currentQuestion.options.map((option) => (
-                <button key={option.id} type="button" onClick={() => handleAnswer(option)}>
-                  <span>{option.icon}</span>
+            <div className="onb-options">
+              {currentQuestion.options.map((option, i) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className="onb-opt"
+                  style={{ animationDelay: `${0.08 + i * 0.06}s` }}
+                  onClick={() => handleAnswer(option)}
+                >
+                  <span className="onb-opt-icon">{option.icon}</span>
                   <strong>{option.label}</strong>
-                  <small>›</small>
+                  <span className="onb-opt-arrow" aria-hidden="true">›</span>
                 </button>
               ))}
             </div>
@@ -274,34 +280,42 @@ export default function Onboarding() {
         ) : null}
 
         {isTourStep ? (
-          <div className="onboarding-tour">
-            <div className="onboarding-phone-preview">
+          <div className="onb-tour" key={step}>
+            <div className="onb-tour-art">
               <div className="onboarding-phone-chart" />
-              <span />
-              <span />
-              <span />
+              <span /><span /><span />
             </div>
-
-            <div className="onboarding-tour-copy">
-              <span>Primeiros passos</span>
+            <div className="onb-tour-copy">
+              <span className="onb-tour-tag">Passo {tourIndex + 1}</span>
               <h1>{tourSteps[tourIndex]}</h1>
-              <p>Nada fica travado: depois voce troca categorias, datas e valores do seu jeito.</p>
-
-              <button type="button" className="onboarding-primary" onClick={() => setStep((current) => current + 1)}>
+              <p>Nada fica travado: depois você troca categorias, datas e valores do seu jeito.</p>
+              <button type="button" className="auth-btn-primary" onClick={() => setStep((c) => c + 1)}>
                 Continuar
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6"/>
+                </svg>
               </button>
             </div>
           </div>
         ) : null}
 
         {isFinalStep ? (
-          <div className="onboarding-final">
-            <div className="onboarding-final-icon">✓</div>
-            <h1>Seu painel esta pronto</h1>
-            <p>Agora e so registrar os primeiros movimentos e acompanhar tudo pela visao geral.</p>
+          <div className="onb-final" key="final">
+            <div className="onb-final-check" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <h1>Seu painel está pronto</h1>
+            <p>Agora é só registrar os primeiros movimentos e acompanhar tudo pela visão geral.</p>
             {feedback ? <div className="onboarding-feedback">{feedback}</div> : null}
-            <button type="button" className="onboarding-primary" onClick={finish} disabled={loading}>
+            <button type="button" className="auth-btn-primary" onClick={finish} disabled={loading}>
               {loading ? "Preparando..." : finalButtonLabel}
+              {!loading && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M5 12h14M13 6l6 6-6 6"/>
+                </svg>
+              )}
             </button>
           </div>
         ) : null}

@@ -1358,6 +1358,73 @@
   }
 }
 
+/* ============================= */
+/* TX-ROW — transaction list     */
+/* ============================= */
+
+.tx-list {
+  display: grid;
+}
+
+.tx-row {
+  display: grid;
+  grid-template-columns: 46px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 13px 6px;
+  border-bottom: 1px solid var(--stroke-soft);
+  transition: background 0.18s ease;
+}
+
+.tx-row:last-child { border-bottom: 0; }
+
+.tx-row:hover { background: rgba(148, 163, 184, 0.04); border-radius: 12px; }
+
+.tx-ic {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.tx-main strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.tx-main span {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.tx-amt {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.tx-amt small {
+  display: block;
+  font-family: var(--font);
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+@media (max-width: 520px) {
+  .tx-row { grid-template-columns: 40px 1fr auto; gap: 10px; }
+  .tx-ic  { width: 40px; height: 40px; font-size: 16px; }
+}
+
 /*
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com

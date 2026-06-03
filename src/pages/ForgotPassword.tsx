@@ -119,83 +119,98 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="auth-scene">
-      <div className="auth-grid" />
-      <div className="auth-card auth-card-reset">
-        <h1 className="auth-title">Conciliaaí</h1>
-        <p className="auth-subtitle">Alterar senha</p>
+    <div className="auth-page">
+      <div className="auth-v2-card stagger" style={{ maxHeight: "calc(100dvh - 40px)", overflowY: "auto" }}>
+        <div className="auth-logo-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 17l5-5 4 3 8-8"/><path d="M16 7h4v4"/>
+          </svg>
+        </div>
 
-        <input
-          className="auth-input"
-          placeholder="Seu e-mail"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
+        <h1 className="auth-h1">Esqueci minha senha</h1>
+        <p className="auth-sub">Informe seu e-mail e enviaremos um código para redefinir.</p>
 
-        <button className="auth-button auth-button-login" type="button" onClick={handleRequestCode} disabled={loading}>
-          {loading && !codeSent ? "Enviando..." : codeSent ? "Reenviar codigo" : "Enviar codigo"}
-        </button>
-
-        {codeSent ? (
-          <>
-            <input
-              className="auth-input auth-code-input"
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="Codigo de 6 digitos"
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-            />
-
-            <div className="auth-password-field">
-              <input
-                className="auth-input auth-password-input"
-                type={showPassword ? "text" : "password"}
-                placeholder="Nova senha"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
-                onClick={() => setShowPassword((current) => !current)}
-              >
-                {showPassword ? (
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 3l18 18" />
-                    <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
-                    <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 5 9 7a8.8 8.8 0 0 1-2.1 3.2" />
-                    <path d="M6.6 6.7C4.2 8.2 3 10.7 3 12c0 2 3.5 7 9 7a10.9 10.9 0 0 0 4.2-.8" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                )}
-              </button>
-            </div>
-
+        <div className="auth-form">
+          <div className="auth-field">
+            <span>E-mail</span>
             <input
               className="auth-input"
-              type={showPassword ? "text" : "password"}
-              placeholder="Confirmar nova senha"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="voce@email.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
+          </div>
 
-            <button className="auth-button auth-button-register" type="button" onClick={handleResetPassword} disabled={loading}>
-              {loading ? "Alterando..." : "Alterar senha"}
-            </button>
-          </>
-        ) : null}
+          <button className="auth-btn-primary" type="button" onClick={handleRequestCode} disabled={loading}>
+            {loading && !codeSent ? "Enviando..." : codeSent ? "Reenviar código" : "Enviar código"}
+          </button>
 
-        <p className="auth-footer">
-          Lembrou a senha? <Link to="/login">Entrar</Link>
-        </p>
+          {codeSent ? (
+            <>
+              <div className="auth-field">
+                <span>Código de 6 dígitos</span>
+                <input
+                  className="auth-input"
+                  style={{ textAlign: "center", fontSize: 22, fontWeight: 700, letterSpacing: 8 }}
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="______"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                />
+              </div>
 
-        <p className="auth-credit">Feito com ❤️ por vinnytecnologia</p>
+              <div className="auth-field">
+                <span>Nova senha</span>
+                <div className="auth-pw-wrapper">
+                  <input
+                    className="auth-input"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Nova senha"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="auth-pw-btn"
+                    aria-label={showPassword ? "Ocultar" : "Mostrar"}
+                    onClick={() => setShowPassword((c) => !c)}
+                  >
+                    {showPassword ? (
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/>
+                        <path d="M9.9 5.2A10.7 10.7 0 0 1 12 5c5.5 0 9 5 9 7a8.8 8.8 0 0 1-2.1 3.2"/>
+                        <path d="M6.6 6.7C4.2 8.2 3 10.7 3 12c0 2 3.5 7 9 7a10.9 10.9 0 0 0 4.2-.8"/>
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 12s3.5-7 9-7 9 7 9 7-3.5 7-9 7-9-7-9-7z"/><circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="auth-field">
+                <span>Confirmar nova senha</span>
+                <input
+                  className="auth-input"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Repita a nova senha"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+
+              <button className="auth-btn-primary" type="button" onClick={handleResetPassword} disabled={loading}>
+                {loading ? "Alterando..." : "Alterar senha"}
+              </button>
+            </>
+          ) : null}
+        </div>
+
+        <p className="auth-foot-v2">Lembrou? <Link to="/login">Entrar</Link></p>
+        <p className="auth-credit-v2">Feito com ❤️ por vinnytecnologia</p>
       </div>
     </div>
   );

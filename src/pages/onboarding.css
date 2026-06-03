@@ -1120,3 +1120,300 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   ONBOARDING v2 — design handoff
+   ========================================================================== */
+
+.onb-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background:
+    radial-gradient(1100px 700px at 12% -10%, rgba(37, 99, 235, 0.18), transparent 55%),
+    radial-gradient(900px 600px at 100% 0%, rgba(34, 197, 94, 0.1), transparent 50%),
+    var(--bg-deep);
+}
+
+.onb-v2-card {
+  width: 100%;
+  max-width: 520px;
+  min-height: min(680px, calc(100dvh - 36px));
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(96, 165, 250, 0.12), transparent 46%),
+    rgba(30, 41, 59, 0.55);
+  border: 1px solid var(--stroke);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(16px);
+}
+
+/* Top bar */
+.onb-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.onb-back-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--stroke);
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--text-main);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: 0.2s var(--ease);
+}
+
+.onb-back-btn:hover:not(:disabled) { border-color: rgba(96, 165, 250, 0.35); }
+.onb-back-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.onb-back-btn svg { width: 18px; height: 18px; }
+
+.onb-counter {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-2);
+}
+
+.onb-skip-btn {
+  background: none;
+  border: 0;
+  color: var(--text-2);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 2px;
+}
+.onb-skip-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Aurora progress bar */
+.onb-progress-bar {
+  height: 7px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.14);
+  overflow: hidden;
+}
+
+.onb-progress-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--grad-aurora);
+  background-size: 200% 100%;
+  transition: width 0.5s var(--ease);
+  animation: onbAurora 4s linear infinite;
+}
+
+@keyframes onbAurora {
+  to { background-position: 200% 0; }
+}
+
+/* Question step */
+.onb-question {
+  display: grid;
+  gap: 16px;
+  animation: onbIn 0.35s var(--ease) both;
+}
+
+.onb-question h1 {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.4px;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.onb-q-sub {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.onb-options {
+  display: grid;
+  gap: 11px;
+}
+
+.onb-opt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  padding: 15px 16px;
+  color: var(--text-main);
+  transition: border-color 0.2s var(--ease), background 0.2s var(--ease), transform 0.2s var(--ease);
+  animation: onbOptIn 0.55s var(--ease) both;
+}
+
+.onb-opt:hover {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(30, 41, 59, 0.7);
+  transform: translateX(3px);
+}
+
+.onb-opt-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(167, 139, 250, 0.18));
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  color: #bfdbfe;
+}
+
+.onb-opt strong {
+  flex: 1;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.onb-opt-arrow {
+  color: var(--text-3);
+  font-size: 20px;
+  line-height: 1;
+}
+
+@keyframes onbOptIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Tour step */
+.onb-tour {
+  display: grid;
+  gap: 20px;
+  animation: onbIn 0.35s var(--ease) both;
+}
+
+.onb-tour-art {
+  height: 170px;
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(15, 23, 42, 0.7));
+  border: 1px solid var(--stroke);
+  display: grid;
+  place-items: center;
+}
+
+.onb-tour-copy {
+  display: grid;
+  gap: 12px;
+}
+
+.onb-tour-tag {
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: var(--primary-lt);
+}
+
+.onb-tour-copy h1 {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: -0.4px;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.onb-tour-copy p {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Final step */
+.onb-final {
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  text-align: center;
+  padding: 14px 0;
+  animation: onbIn 0.35s var(--ease) both;
+}
+
+.onb-final-check {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--grad-success);
+  box-shadow: 0 0 0 10px rgba(34, 197, 94, 0.1), 0 18px 40px rgba(22, 163, 74, 0.3);
+  animation: onbPop 0.55s var(--ease) both;
+}
+
+.onb-final-check svg { width: 42px; height: 42px; }
+
+.onb-final h1 {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.onb-final p {
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 340px;
+  margin: 0;
+}
+
+@keyframes onbPop {
+  0%   { transform: scale(0.4); }
+  60%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@keyframes onbIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .onb-page { padding: 0; }
+  .onb-v2-card {
+    width: 100%;
+    min-height: 100dvh;
+    border-radius: 0;
+    padding: 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onb-progress-bar span,
+  .onb-opt,
+  .onb-question,
+  .onb-tour,
+  .onb-final,
+  .onb-final-check {
+    animation: none;
+  }
+  .onb-opt:hover { transform: none; }
+}

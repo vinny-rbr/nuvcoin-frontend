@@ -52,7 +52,6 @@ export default function Categorias() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [animate, setAnimate] = useState(false);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
   const [composerOpen, setComposerOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [showAllColors, setShowAllColors] = useState(false);
@@ -179,100 +178,6 @@ export default function Categorias() {
     setShowAllIcons(false);
     setComposerOpen(true);
 
-    if (parentId) {
-      setExpandedIds((current) => {
-        const next = new Set(current);
-        next.add(parentId);
-        return next;
-      });
-    }
-  }
-
-  function toggleCategory(categoryId: string) {
-    setExpandedIds((current) => {
-      const next = new Set(current);
-      if (next.has(categoryId)) {
-        next.delete(categoryId);
-      } else {
-        next.add(categoryId);
-      }
-      return next;
-    });
-  }
-
-  function renderCategoryRow(category: FinanceCategoryOption) {
-    const children = childrenByParentId.get(category.id) ?? [];
-    const hasChildren = children.length > 0;
-    const isExpanded = expandedIds.has(category.id);
-    const canAddChild = (category.level ?? 1) < 3;
-
-    return (
-      <div key={category.id} className="categories-tree-item">
-        <div className={`categories-row categories-row-level-${category.level ?? 1}`}>
-          <div className="categories-row-main">
-            <button
-              className={`categories-expand-button${hasChildren ? "" : " is-empty"}`}
-              type="button"
-              disabled={!hasChildren}
-              aria-label={isExpanded ? "Fechar subcategorias" : "Abrir subcategorias"}
-              onClick={() => toggleCategory(category.id)}
-            >
-              {hasChildren ? (isExpanded ? "-" : "+") : ""}
-            </button>
-            <span className="categories-emoji-badge" style={{ backgroundColor: category.color ?? "#60a5fa" }}>
-              {category.icon ?? "💼"}
-            </span>
-            <div className="categories-name-stack">
-              <strong>{category.name}</strong>
-              <span>{category.fullPath ?? category.name}</span>
-            </div>
-          </div>
-
-          <div className="categories-actions">
-            {canAddChild ? (
-              <button
-                className="categories-icon-button"
-                type="button"
-                aria-label="Adicionar subcategoria"
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openCreate(category.id);
-                }}
-              >
-                +
-              </button>
-            ) : null}
-            <div className="categories-menu-wrap">
-              <button
-                className="categories-icon-button"
-                type="button"
-                aria-label="Mais opcoes"
-                onClick={() => setActionMenuId((current) => (current === category.id ? null : category.id))}
-              >
-                ...
-              </button>
-              {actionMenuId === category.id ? (
-                <div className="categories-menu">
-                  <button type="button" onClick={() => startEdit(category)}>
-                    Editar
-                  </button>
-                  <button type="button" disabled={saving} onClick={() => handleDelete(category)}>
-                    Remover
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
-        {hasChildren && isExpanded ? (
-          <div className="categories-tree-children">
-            {children.map((child) => renderCategoryRow(child))}
-          </div>
-        ) : null}
-      </div>
-    );
   }
 
   function startEdit(category: FinanceCategoryOption) {
@@ -358,11 +263,81 @@ export default function Categorias() {
           <div className="finance-empty-state">
             <div className="finance-empty-icon">+</div>
             <strong>{typeLabels[activeType].empty}</strong>
-            <span>Crie uma categoria acima para comecar.</span>
+            <span>Crie uma categoria usando o botão abaixo.</span>
           </div>
         ) : (
-          <div className="categories-list">
-            {rootCategories.map((category) => renderCategoryRow(category))}
+          <div className="cat-grid">
+            {rootCategories.map((category, idx) => {
+              const children = childrenByParentId.get(category.id) ?? [];
+              const color = category.color ?? "#60a5fa";
+              const colorAlpha = color + "29";
+              return (
+                <div
+                  key={category.id}
+                  className="cat-card card"
+                  style={{ animationDelay: `${idx * 0.06}s` }}
+                >
+                  <div className="cat-card-top">
+                    <span className="cat-ic" style={{ background: colorAlpha, fontSize: 22 }}>
+                      {category.icon ?? "💼"}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h4>{category.name}</h4>
+                      <div className="cat-card-meta">
+                        {children.length} {children.length === 1 ? "subcategoria" : "subcategorias"}
+                      </div>
+                    </div>
+                    <div className="cat-card-menu">
+                      <button
+                        type="button"
+                        className="categories-icon-button"
+                        aria-label="Mais opções"
+                        onClick={(e) => { e.stopPropagation(); setActionMenuId((c) => c === category.id ? null : category.id); }}
+                      >
+                        •••
+                      </button>
+                      {actionMenuId === category.id ? (
+                        <div className="categories-menu">
+                          <button type="button" onClick={() => startEdit(category)}>Editar</button>
+                          {(category.level ?? 1) < 3 ? (
+                            <button type="button" onClick={() => openCreate(category.id)}>+ Sub</button>
+                          ) : null}
+                          <button type="button" disabled={saving} onClick={() => handleDelete(category)}>Remover</button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="cat-bar">
+                    <i style={{ width: "100%", background: color }} />
+                  </div>
+
+                  {children.length > 0 ? (
+                    <div className="subcats">
+                      {children.slice(0, 5).map((child) => (
+                        <span key={child.id} className="subcat">{child.icon} {child.name}</span>
+                      ))}
+                      {children.length > 5 ? (
+                        <span className="subcat">+{children.length - 5}</span>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
+
+            <div
+              className="cat-card cat-card-new card"
+              role="button"
+              tabIndex={0}
+              aria-label="Criar nova categoria"
+              onClick={() => openCreate()}
+              onKeyDown={(e) => { if (e.key === "Enter") openCreate(); }}
+            >
+              <span className="cat-ic" style={{ background: "rgba(59,130,246,.14)", color: "#bfdbfe" }}>+</span>
+              <strong>Criar categoria</strong>
+              <span className="cat-card-meta">Adicione um novo grupo</span>
+            </div>
           </div>
         )}
 

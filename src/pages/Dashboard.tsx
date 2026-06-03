@@ -1105,35 +1105,49 @@ export default function Dashboard() {
               <span>Saldo</span>
               <strong className={saldoClass}>{formatBRLFromCents(summary.saldoCents)}</strong>
             </div>
+            {summary.totalReceitasCents > 0 ? (
+              <div style={{ background: "linear-gradient(135deg,rgba(59,130,246,.14),rgba(15,23,42,.4))", borderColor: "rgba(96,165,250,.25)" }}>
+                <span>Taxa de poupança</span>
+                <strong style={{ color: "#bfdbfe" }}>
+                  {(Math.max(0, summary.saldoCents) / summary.totalReceitasCents * 100).toFixed(1)}%
+                </strong>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
 
       <div className="chart-card dashboard-panel dashboard-transactions">
-        <div className="chart-title">Últimas Transações</div>
+        <div className="dashboard-card-head" style={{ marginBottom: 16 }}>
+          <div>
+            <span className="dashboard-kicker">Movimentações</span>
+            <h3 style={{ margin: "4px 0 0", fontSize: 18 }}>Últimas transações</h3>
+          </div>
+        </div>
 
         {latestItems.length === 0 ? (
           <div className="dashboard-empty-panel">Ainda não há transações cadastradas.</div>
         ) : (
-          <div className="transactions-table">
-            <div className="transaction-head">
-              <div>Data</div>
-              <div>Descrição</div>
-              <div>Categoria</div>
-              <div style={{ textAlign: "right" }}>Valor</div>
-            </div>
-
-            {latestItems.map((item) => (
-              <div key={item.id} className="transaction-row">
-                <div className="t-date">{new Date(`${item.dateISO}T00:00:00`).toLocaleDateString("pt-BR")}</div>
-                <div className="t-title">{item.title}</div>
-                <div className="t-category">{item.category}</div>
-                <div className={item.type === "RECEITA" ? "t-value green" : "t-value red"}>
-                  {item.type === "RECEITA" ? "+ " : "- "}
-                  {formatBRLFromCents(item.amountCents)}
+          <div className="tx-list">
+            {latestItems.map((item) => {
+              const isRec = item.type === "RECEITA";
+              const color = isRec ? "#22C55E" : "#EF4444";
+              const bg = isRec ? "rgba(34,197,94,.14)" : "rgba(239,68,68,.14)";
+              const emoji = isRec ? "↑" : "↓";
+              return (
+                <div key={item.id} className="tx-row">
+                  <span className="tx-ic" style={{ background: bg, color }}>{emoji}</span>
+                  <div className="tx-main">
+                    <strong>{item.title}</strong>
+                    <span>{item.category} • {formatDateBR(item.dateISO)}</span>
+                  </div>
+                  <div className={`tx-amt ${isRec ? "green" : "red"}`}>
+                    {isRec ? "+ " : "– "}{formatBRLFromCents(item.amountCents)}
+                    <small>{isRec ? "Receita" : "Despesa"}</small>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
