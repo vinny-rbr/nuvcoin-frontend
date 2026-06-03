@@ -4,7 +4,6 @@
   useRef,
   useState,
   type CSSProperties,
-  type MouseEvent as ReactMouseEvent,
 } from "react";
 import { createPortal } from "react-dom";
 
@@ -36,7 +35,7 @@ type GroupsHeaderActionsProps = {
 export default function GroupsHeaderActions({
   actions,
   pageHeroStyle,
-  pillStyle,
+  pillStyle: _pillStyle,
   subtleText,
 }: GroupsHeaderActionsProps) {
   const [hoveredAction, setHoveredAction] = useState<GroupsHeaderQuickActionId | null>(null);
@@ -273,53 +272,6 @@ export default function GroupsHeaderActions({
     };
   }
 
-  function getHamburgerButtonStyle(): CSSProperties {
-    return {
-      position: "relative",
-      width: isMobile ? "100%" : 52,
-      height: isMobile ? 48 : 52,
-      padding: isMobile ? "0 14px" : 0,
-      borderRadius: 18,
-      border: "1px solid rgba(255,255,255,0.12)",
-      background: "linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.03) 100%)",
-      color: "#f8fafc",
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: isMobile ? "space-between" : "center",
-      boxShadow: isMenuOpen
-        ? "0 18px 38px rgba(15,23,42,0.26), 0 10px 20px rgba(15,23,42,0.16), inset 0 1px 0 rgba(255,255,255,0.12)"
-        : "0 12px 24px rgba(15,23,42,0.18), inset 0 1px 0 rgba(255,255,255,0.08)",
-      transform: isMenuOpen ? "translateY(-1px) scale(1.02)" : "translateY(0) scale(1)",
-      transition:
-        "transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), background 0.22s ease, border 0.22s ease, box-shadow 0.22s ease",
-      cursor: "pointer",
-      overflow: "hidden",
-      outline: "none",
-      flexShrink: 0,
-      zIndex: 61,
-    };
-  }
-
-  function getHamburgerLineStyle(index: number): CSSProperties {
-    return {
-      width: 18,
-      height: 2,
-      borderRadius: 999,
-      background: "#f8fafc",
-      transform:
-        isMenuOpen && index === 0
-          ? "translateY(6px) rotate(45deg)"
-          : isMenuOpen && index === 1
-            ? "scaleX(0)"
-            : isMenuOpen && index === 2
-              ? "translateY(-6px) rotate(-45deg)"
-              : "none",
-      opacity: isMenuOpen && index === 1 ? 0 : 1,
-      transition: "transform 0.24s ease, opacity 0.18s ease",
-      transformOrigin: "center",
-    };
-  }
-
   function getMobileMenuStyle(): CSSProperties {
     return {
       position: "fixed",
@@ -536,11 +488,6 @@ export default function GroupsHeaderActions({
     );
   }
 
-  function handleHamburgerClick(event: ReactMouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
-    setIsMenuOpen((current) => !current);
-  }
-
   return (
     <>
       <div
@@ -575,49 +522,32 @@ export default function GroupsHeaderActions({
             minWidth: 0,
           }}
         >
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              ...pillStyle,
-              width: "fit-content",
-            }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 999,
-                background: "#5b8cff",
-                display: "inline-block",
-              }}
-            />
-            Controle compartilhado
-          </div>
+          <span className="grp-hero-kicker">
+            Contas compartilhadas
+          </span>
 
           <div style={{ display: "grid", gap: 4 }}>
             <h2
               style={{
                 margin: 0,
-                fontSize: isMobile ? 28 : 38,
+                fontSize: isMobile ? 26 : 34,
                 lineHeight: 1.05,
-                letterSpacing: -0.8,
+                letterSpacing: -0.6,
                 overflowWrap: "anywhere",
                 fontFamily: "var(--display)",
               }}
             >
-              Dashboard de grupos
+              Grupos
             </h2>
             <div
               style={{
                 ...subtleText,
-                fontSize: isMobile ? 13 : 15,
-                maxWidth: isMobile ? "100%" : 780,
+                fontSize: isMobile ? 13 : 14,
+                maxWidth: isMobile ? "100%" : 480,
                 lineHeight: 1.45,
               }}
             >
-              Crie grupos, adicione pessoas, defina salários ou percentuais e acompanhe a divisão do mês com clareza.
+              Divida aluguel, viagens e contas da casa de forma justa — por salário, igual ou percentual.
             </div>
           </div>
         </div>
@@ -625,46 +555,47 @@ export default function GroupsHeaderActions({
         {isMobile ? (
           <div
             style={{
-              position: "relative",
               display: "flex",
-              justifyContent: "flex-end",
+              gap: 8,
+              flexWrap: "wrap",
               width: "100%",
-              minWidth: 0,
-              alignSelf: "stretch",
-              zIndex: 61,
             }}
           >
-            <button
-              type="button"
-              aria-label={isMenuOpen ? "Fechar menu de acoes" : "Abrir menu de acoes"}
-              aria-expanded={isMenuOpen}
-              onClick={handleHamburgerClick}
-              ref={hamburgerButtonRef}
-              style={getHamburgerButtonStyle()}
-            >
-              <span
+            {actions.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                disabled={action.disabled}
+                onClick={action.onClick}
                 style={{
-                  display: isMobile ? "inline-flex" : "none",
+                  display: "inline-flex",
                   alignItems: "center",
-                  gap: 8,
-                  fontWeight: 900,
+                  gap: 7,
+                  border: action.id === "create"
+                    ? "0"
+                    : "1px solid rgba(148,163,184,0.2)",
+                  borderRadius: 11,
+                  padding: "9px 14px",
+                  background: action.id === "create"
+                    ? "linear-gradient(135deg,#60a5fa,#2563eb)"
+                    : "rgba(30,41,59,0.6)",
+                  color: "#f8fafc",
+                  fontWeight: 800,
                   fontSize: 13,
+                  cursor: action.disabled ? "not-allowed" : "pointer",
+                  opacity: action.disabled ? 0.5 : 1,
+                  boxShadow: action.id === "create"
+                    ? "0 8px 20px rgba(37,99,235,0.3)"
+                    : "none",
+                  whiteSpace: "nowrap",
                 }}
               >
-                Acoes do grupo
-              </span>
-              <span
-                aria-hidden="true"
-                style={{
-                  display: "grid",
-                  gap: 4,
-                }}
-              >
-                <span style={getHamburgerLineStyle(0)} />
-                <span style={getHamburgerLineStyle(1)} />
-                <span style={getHamburgerLineStyle(2)} />
-              </span>
-            </button>
+                <span style={{ animation: action.loading ? "conciliaai-groups-spin 0.9s linear infinite" : "none" }}>
+                  {action.icon}
+                </span>
+                {action.label}
+              </button>
+            ))}
           </div>
         ) : (
           <div
