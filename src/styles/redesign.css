@@ -791,7 +791,8 @@ body::before {
   .dashboard-view,
   .finance-view,
   .groups-page {
-    padding: 18px 14px 120px !important;
+    /* .page already adds 98px bottom for the nav — use small bottom here */
+    padding: 18px 14px 24px !important;
   }
 
   .dashboard-hero-panel,

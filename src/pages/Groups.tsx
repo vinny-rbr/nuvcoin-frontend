@@ -496,12 +496,16 @@ export default function Groups() {
   const responsiveShellOuterStyle: CSSProperties = {
     ...shellOuterStyle,
     padding: isMobileViewport ? "0 12px" : shellOuterStyle.padding,
+    // Remove overflow-x:hidden on mobile so the horizontal lane can scroll
+    overflowX: isMobileViewport ? "visible" : "hidden",
   };
 
   const responsiveShellStyle: CSSProperties = {
     ...shellStyle,
     gap: isMobileViewport ? 14 : shellStyle.gap,
-    padding: isMobileViewport ? "12px 0 22px" : shellStyle.padding,
+    padding: isMobileViewport ? "12px 0 24px" : shellStyle.padding,
+    // Allow lane to scroll horizontally on mobile without being clipped
+    overflowX: isMobileViewport ? "visible" : "hidden",
   };
 
   const responsivePageHeroStyle: CSSProperties = {

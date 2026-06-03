@@ -105,6 +105,8 @@
     radial-gradient(circle at 0% 0%, rgba(91, 140, 255, 0.16), rgba(91, 140, 255, 0) 34%),
     linear-gradient(180deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.66));
   box-shadow: var(--shadow-card);
+  /* Allow inner lane to scroll without being clipped */
+  overflow: visible;
 }
 
 .grp-lane {
@@ -493,7 +495,8 @@
 /* ---- Responsive ---- */
 @media (max-width: 760px) {
   .grp-page {
-    padding: 18px 14px 120px;
+    /* .page already handles bottom nav clearance */
+    padding: 18px 14px 24px;
     gap: 14px;
   }
 
