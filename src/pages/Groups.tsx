@@ -41,8 +41,6 @@ import {
   pillStyle,
   primaryButton,
   sectionCard,
-  shellOuterStyle,
-  shellStyle,
   softButton,
   subtleText,
   tabButton,
@@ -493,20 +491,6 @@ export default function Groups() {
     onClearBaseFeedback: clearBaseFeedback,
   });
 
-  const responsiveShellOuterStyle: CSSProperties = {
-    ...shellOuterStyle,
-    padding: isMobileViewport ? "0 12px" : shellOuterStyle.padding,
-    // Remove overflow-x:hidden on mobile so the horizontal lane can scroll
-    overflowX: isMobileViewport ? "visible" : "hidden",
-  };
-
-  const responsiveShellStyle: CSSProperties = {
-    ...shellStyle,
-    gap: isMobileViewport ? 14 : shellStyle.gap,
-    padding: isMobileViewport ? "12px 0 24px" : shellStyle.padding,
-    // Allow lane to scroll horizontally on mobile without being clipped
-    overflowX: isMobileViewport ? "visible" : "hidden",
-  };
 
   const responsivePageHeroStyle: CSSProperties = {
     ...pageHeroStyle,
@@ -622,8 +606,8 @@ export default function Groups() {
 
   return (
     <div
+      className="grp-page"
       style={{
-        ...responsiveShellOuterStyle,
         opacity: pageReady ? 1 : 0,
         transform: pageReady ? "translateY(0px) scale(1)" : "translateY(22px) scale(0.985)",
         filter: pageReady ? "blur(0px)" : "blur(10px)",
@@ -634,9 +618,7 @@ export default function Groups() {
     >
       <div
         key={animationKey}
-        style={{
-          ...responsiveShellStyle,
-        }}
+        style={{ display: "contents" }}
       >
         <div style={getClockEntryStyle(0)}>
           <GroupsHeaderActions
