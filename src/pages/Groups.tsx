@@ -551,6 +551,18 @@ export default function Groups() {
   function getClockEntryStyle(order: number): CSSProperties {
     const delay = 140 + order * 130;
 
+    // On mobile: simple translateY so content stays within screen bounds.
+    // The 3D perspective + rotateX/rotateZ with transformOrigin:"top left"
+    // pushes elements off to the right on small screens.
+    if (isMobileViewport) {
+      return {
+        opacity: animate ? 1 : 0,
+        transform: animate ? "translateY(0)" : "translateY(18px)",
+        transition: `opacity 0.55s ease ${delay}ms, transform 0.65s cubic-bezier(0.16,1,0.3,1) ${delay}ms`,
+        willChange: "opacity, transform",
+      };
+    }
+
     return {
       opacity: animate ? 1 : 0,
       transform: animate
@@ -618,7 +630,7 @@ export default function Groups() {
     >
       <div
         key={animationKey}
-        style={{ display: "contents" }}
+        style={{ display: "grid", gap: isMobileViewport ? 14 : 18, width: "100%" }}
       >
         <div style={getClockEntryStyle(0)}>
           <GroupsHeaderActions
