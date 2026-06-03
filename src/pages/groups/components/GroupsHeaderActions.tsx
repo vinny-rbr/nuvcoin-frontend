@@ -78,20 +78,6 @@ export default function GroupsHeaderActions({
   }, [isMobile]);
 
   useEffect(() => {
-    if (!isMobile || !isMenuOpen) {
-      document.body.style.overflow = "";
-      return undefined;
-    }
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isMobile, isMenuOpen]);
-
-  useEffect(() => {
     if (!isMenuOpen) return undefined;
 
     function handlePointerDown(event: MouseEvent | TouchEvent) {
@@ -631,4 +617,3 @@ export default function GroupsHeaderActions({
     </>
   );
 }
-
