@@ -1003,16 +1003,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="dashboard-donut-grid">
-          <DonutDashboardCard
-            {...selectedAnalytics.primary}
-            colors={donutColors}
-          />
-          <DonutDashboardCard
-            {...selectedAnalytics.secondary}
-            colors={donutColors.slice(2).concat(donutColors.slice(0, 2))}
-          />
-        </div>
+        <DonutDashboardCard
+          {...selectedAnalytics.primary}
+          colors={donutColors}
+        />
       </section>
 
       {parentCategorySummaries.length > 0 ? (
