@@ -107,6 +107,13 @@ body::before {
   font-weight: 950 !important;
   box-shadow: var(--glow-blue) !important;
   position: relative;
+  flex-shrink: 0;
+}
+
+.app-logo-mark svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .brand .logo-dot::after,
@@ -776,28 +783,9 @@ body::before {
     box-shadow: var(--shadow-pop) !important;
   }
 
-  .mobile-bottom-icon-income::before {
-    content: "+";
-    display: grid;
-    place-items: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    border: 2px solid currentColor;
-    font-size: 16px;
-    font-weight: 900;
-  }
-
-  .mobile-bottom-icon-expense::before {
-    content: "-";
-    display: grid;
-    place-items: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    border: 2px solid currentColor;
-    font-size: 18px;
-    font-weight: 900;
+  .mobile-bottom-nav > button svg {
+    width: 21px !important;
+    height: 21px !important;
   }
 
   .dashboard-view,

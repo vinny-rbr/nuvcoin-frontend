@@ -897,28 +897,48 @@ export default function Dashboard() {
 
       <div className="dashboard-grid">
         <div className="stat-card">
-          <div className="stat-title">Receitas</div>
+          <div className="stat-top">
+            <span className="stat-title">Receitas</span>
+            <span className="stat-ic" style={{ background: "rgba(34,197,94,.14)", color: "#4ADE80" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
+            </span>
+          </div>
           <div className="stat-value green">{formatBRLFromCents(summary.totalReceitasCents)}</div>
           <div className="stat-caption">{cmpLine.receitas}</div>
           <SparkLine values={sparklines.receitas} color="#4ADE80" />
         </div>
 
         <div className="stat-card">
-          <div className="stat-title">Despesas</div>
+          <div className="stat-top">
+            <span className="stat-title">Despesas</span>
+            <span className="stat-ic" style={{ background: "rgba(239,68,68,.14)", color: "#F87171" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>
+            </span>
+          </div>
           <div className="stat-value red">{formatBRLFromCents(summary.totalDespesasCents)}</div>
           <div className="stat-caption">{cmpLine.despesas}</div>
           <SparkLine values={sparklines.despesas} color="#F87171" />
         </div>
 
         <div className="stat-card">
-          <div className="stat-title">Crédito</div>
+          <div className="stat-top">
+            <span className="stat-title">Crédito</span>
+            <span className="stat-ic" style={{ background: "rgba(249,115,22,.14)", color: "#F97316" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
+            </span>
+          </div>
           <div className="stat-value red">{formatBRLFromCents(summary.totalCreditoCents)}</div>
           <div className="stat-caption">gastos no crédito</div>
           <SparkLine values={sparklines.credito} color="#F97316" />
         </div>
 
         <div className="stat-card">
-          <div className="stat-title">Saldo</div>
+          <div className="stat-top">
+            <span className="stat-title">Saldo</span>
+            <span className="stat-ic" style={{ background: "rgba(59,130,246,.14)", color: "#60A5FA" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h12v4"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5"/><circle cx="16.5" cy="12.5" r="1.3"/></svg>
+            </span>
+          </div>
           <div className={`stat-value ${saldoClass}`}>{formatBRLFromCents(summary.saldoCents)}</div>
           <div className="stat-caption">{cmpLine.saldo}</div>
           <SparkLine values={sparklines.saldo} color="#60A5FA" />

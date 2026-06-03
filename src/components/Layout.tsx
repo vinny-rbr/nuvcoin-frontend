@@ -745,7 +745,11 @@ export default function Layout({ children }: Props) {
           {/* Marca do app */}
           <div className="brand-cluster">
             <div className="brand">
-              <span className="app-logo-mark" aria-hidden="true">↗</span>
+              <span className="app-logo-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 17l5-5 4 3 8-8"/><path d="M16 7h4v4"/>
+                </svg>
+              </span>
               <span className="brand-copy">
                 <strong>Conciliaaí</strong>
                 <small>FINANÇAS</small>
@@ -991,12 +995,7 @@ export default function Layout({ children }: Props) {
             className={location.pathname === "/dashboard" ? "is-active" : ""}
             onClick={() => handleMobileRoute("/dashboard")}
           >
-            <span className="mobile-bottom-icon mobile-bottom-icon-grid" aria-hidden="true">
-              <span />
-              <span />
-              <span />
-              <span />
-            </span>
+            {NAV_ICONS.dashboard}
             <span>Início</span>
           </button>
 
@@ -1005,7 +1004,7 @@ export default function Layout({ children }: Props) {
             className={location.pathname === "/receitas" ? "is-active" : ""}
             onClick={() => handleMobileRoute("/receitas")}
           >
-            <span className="mobile-bottom-icon mobile-bottom-icon-income" aria-hidden="true" />
+            {NAV_ICONS.receitas}
             <span>Receitas</span>
           </button>
 
@@ -1050,7 +1049,7 @@ export default function Layout({ children }: Props) {
             className={location.pathname === "/despesas" ? "is-active" : ""}
             onClick={() => handleMobileRoute("/despesas")}
           >
-            <span className="mobile-bottom-icon mobile-bottom-icon-expense" aria-hidden="true" />
+            {NAV_ICONS.despesas}
             <span>Despesas</span>
           </button>
 
@@ -1059,7 +1058,7 @@ export default function Layout({ children }: Props) {
             className={location.pathname === "/groups" ? "is-active" : ""}
             onClick={() => handleMobileRoute("/groups", false)}
           >
-            <span className="mobile-bottom-icon mobile-bottom-icon-users" aria-hidden="true" />
+            {NAV_ICONS.groups}
             <span>Grupos</span>
           </button>
         </nav>
