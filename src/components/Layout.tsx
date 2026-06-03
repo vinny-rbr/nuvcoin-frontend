@@ -989,79 +989,137 @@ export default function Layout({ children }: Props) {
       ) : null}
 
       {isMobile ? (
-        <nav className="mobile-bottom-nav" aria-label="Menu principal mobile">
-          <button
-            type="button"
-            className={location.pathname === "/dashboard" ? "is-active" : ""}
-            onClick={() => handleMobileRoute("/dashboard")}
+        <>
+          {/* Scrim behind popup */}
+          {isQuickAddOpen ? (
+            <div
+              className="mobile-nav-scrim"
+              aria-hidden="true"
+              onClick={() => setIsQuickAddOpen(false)}
+            />
+          ) : null}
+
+          {/* Curved popup menu */}
+          <div
+            ref={quickAddRef}
+            className={`mobile-curved-menu${isQuickAddOpen ? " is-open" : ""}`}
+            role="menu"
           >
-            {NAV_ICONS.dashboard}
-            <span>Início</span>
-          </button>
-
-          <button
-            type="button"
-            className={location.pathname === "/receitas" ? "is-active" : ""}
-            onClick={() => handleMobileRoute("/receitas")}
-          >
-            {NAV_ICONS.receitas}
-            <span>Receitas</span>
-          </button>
-
-          <div className="mobile-quick-add-shell" ref={quickAddRef}>
-            <button
-              type="button"
-              className={`mobile-quick-add-button${isQuickAddOpen ? " is-open" : ""}`}
-              aria-label={isQuickAddOpen ? "Fechar lancamento rapido" : "Abrir lancamento rapido"}
-              aria-expanded={isQuickAddOpen}
-              onClick={handleQuickAddToggle}
-            >
-              <span aria-hidden="true">+</span>
-            </button>
-
-            <div className={`mobile-quick-add-menu${isQuickAddOpen ? " is-open" : ""}`}>
-              {location.pathname === "/groups" ? (
-                <button type="button" onClick={handleGroupExpenseQuickAdd}>
-                  <span className="quick-add-dot quick-add-dot-group" aria-hidden="true" />
-                  Lançar despesa de grupo
+            {location.pathname === "/groups" ? (
+              <button type="button" className="mobile-curved-item" onClick={handleGroupExpenseQuickAdd}>
+                <span className="quick-add-dot quick-add-dot-group" aria-hidden="true" />
+                Lançar despesa de grupo
+              </button>
+            ) : (
+              <>
+                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/receitas")}>
+                  <span className="quick-add-dot quick-add-dot-income" aria-hidden="true" />
+                  Nova receita
                 </button>
-              ) : (
-                <>
-                  <button type="button" onClick={() => handleMobileRoute("/receitas")}>
-                    <span className="quick-add-dot quick-add-dot-income" aria-hidden="true" />
-                    Nova receita
-                  </button>
-                  <button type="button" onClick={() => handleMobileRoute("/despesas")}>
-                    <span className="quick-add-dot quick-add-dot-expense" aria-hidden="true" />
-                    Nova despesa
-                  </button>
-                  <button type="button" onClick={() => handleMobileRoute("/importar-ofx")}>
-                    <span className="quick-add-dot quick-add-dot-import" aria-hidden="true" />
-                    Importar extrato
-                  </button>
-                </>
-              )}
-            </div>
+                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/despesas")}>
+                  <span className="quick-add-dot quick-add-dot-expense" aria-hidden="true" />
+                  Nova despesa
+                </button>
+                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/importar-ofx")}>
+                  <span className="quick-add-dot quick-add-dot-import" aria-hidden="true" />
+                  Importar extrato
+                </button>
+              </>
+            )}
           </div>
 
-          <button
-            type="button"
-            className={location.pathname === "/despesas" ? "is-active" : ""}
-            onClick={() => handleMobileRoute("/despesas")}
-          >
-            {NAV_ICONS.despesas}
-            <span>Despesas</span>
-          </button>
+          {/* Curved bottom nav */}
+          <nav className="mobile-bottom-nav" aria-label="Menu principal mobile">
+            {/* Glow behind FAB */}
+            <div className="mobile-nav-glow" aria-hidden="true" />
 
-          <button
-            type="button"
-            className={location.pathname === "/groups" ? "is-active" : ""}
-            onClick={() => handleMobileRoute("/groups", false)}
-          >
-            {NAV_ICONS.groups}
-            <span>Grupos</span>
-          </button>
-        </nav>
+            {/* SVG curved background */}
+            <svg
+              className="mobile-nav-curve"
+              viewBox="0 0 320 80"
+              preserveAspectRatio="none"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="curveBarFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stopColor="#0f172a" stopOpacity="0.97" />
+                  <stop offset="1" stopColor="#080d19" stopOpacity="0.99" />
+                </linearGradient>
+              </defs>
+              <path
+                fill="url(#curveBarFill)"
+                d="M0,22 L98,22 C124,22 120,54 160,54 C200,54 196,22 222,22 L320,22 L320,80 L0,80 Z"
+              />
+              <path
+                fill="none"
+                stroke="rgba(148,163,184,0.18)"
+                strokeWidth="1.2"
+                d="M0,22 L98,22 C124,22 120,54 160,54 C200,54 196,22 222,22 L320,22"
+              />
+            </svg>
+
+            {/* Nav row */}
+            <div className="mobile-nav-row">
+              <button
+                type="button"
+                className={`mobile-nav-btn${location.pathname === "/dashboard" ? " is-active" : ""}`}
+                onClick={() => handleMobileRoute("/dashboard")}
+              >
+                {NAV_ICONS.dashboard}
+                <span>Início</span>
+              </button>
+
+              <button
+                type="button"
+                className={`mobile-nav-btn${location.pathname === "/categorias" ? " is-active" : ""}`}
+                onClick={() => handleMobileRoute("/categorias")}
+              >
+                {NAV_ICONS.categorias}
+                <span>Categorias</span>
+              </button>
+
+              {/* Central FAB */}
+              <div className="mobile-fab-slot">
+                <button
+                  type="button"
+                  className={`mobile-fab${isQuickAddOpen ? " is-open" : ""}`}
+                  aria-label={isQuickAddOpen ? "Fechar lançamento rápido" : "Novo lançamento"}
+                  aria-expanded={isQuickAddOpen}
+                  onClick={handleQuickAddToggle}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 5v14" /><path d="M5 12h14" />
+                  </svg>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className={`mobile-nav-btn${location.pathname === "/groups" ? " is-active" : ""}`}
+                onClick={() => handleMobileRoute("/groups", false)}
+              >
+                {NAV_ICONS.groups}
+                <span>Grupos</span>
+              </button>
+
+              <button
+                type="button"
+                className="mobile-nav-btn"
+                aria-label="Abrir perfil"
+                onClick={() => setIsProfileMenuOpen((c) => !c)}
+              >
+                <span className="mobile-nav-avatar" aria-hidden="true">
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="" />
+                  ) : (
+                    profileInitials.slice(0, 1)
+                  )}
+                </span>
+                <span>Perfil</span>
+              </button>
+            </div>
+          </nav>
+        </>
       ) : null}
 
       {isLoggingOut ? (
