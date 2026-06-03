@@ -796,3 +796,327 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   WELCOME PAGE v2 — design handoff
+   ========================================================================== */
+
+.welcome-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding: 30px 24px 34px;
+  color: var(--text-main);
+  background:
+    radial-gradient(1100px 700px at 12% -10%, rgba(37, 99, 235, 0.18), transparent 55%),
+    radial-gradient(900px 600px at 100% 0%, rgba(34, 197, 94, 0.1), transparent 50%),
+    radial-gradient(800px 800px at 80% 110%, rgba(167, 139, 250, 0.1), transparent 55%),
+    var(--bg-deep);
+}
+
+.welcome-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.welcome-skip {
+  background: none;
+  border: 0;
+  color: var(--text-2);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 6px 2px;
+}
+
+.welcome-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Phone mockup graphic */
+.welcome-phone {
+  width: 230px;
+  height: 300px;
+  border-radius: 34px;
+  position: relative;
+  flex-shrink: 0;
+  background: linear-gradient(160deg, #1b2742, #0e1730);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  box-shadow: var(--shadow-pop), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 20px 18px;
+  overflow: hidden;
+}
+
+.welcome-phone::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 6px;
+  border-radius: 99px;
+  background: rgba(148, 163, 184, 0.25);
+}
+
+.welcome-phone-glow {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.5;
+  top: -40px;
+  right: -50px;
+  background: var(--welcome-glow, var(--primary));
+  transition: background 0.6s var(--ease);
+  pointer-events: none;
+}
+
+/* Art elements rendered inside phone */
+.w-balance {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 700;
+  margin-top: 34px;
+  color: var(--text-main);
+}
+
+.w-balance small {
+  display: block;
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin-bottom: 3px;
+}
+
+.w-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.w-chip {
+  flex: 1;
+  height: 58px;
+  border-radius: 14px;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid var(--stroke);
+  padding: 9px;
+}
+
+.w-chip i {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  margin-bottom: 7px;
+}
+
+.w-chip b {
+  display: block;
+  height: 7px;
+  width: 60%;
+  border-radius: 9px;
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.w-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  height: 74px;
+  margin-top: 18px;
+}
+
+.w-bars span {
+  flex: 1;
+  border-radius: 7px 7px 3px 3px;
+  background: var(--grad-primary);
+  opacity: 0.85;
+  transform-origin: bottom;
+  animation: wBarGrow 1.2s var(--ease) both;
+}
+
+@keyframes wBarGrow {
+  from { transform: scaleY(0.15); }
+  to   { transform: scaleY(1); }
+}
+
+.w-donut {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin: 18px auto 0;
+  background: conic-gradient(var(--primary) 0 38%, var(--success) 38% 64%, var(--violet) 64% 82%, var(--orange) 82% 100%);
+  -webkit-mask: radial-gradient(circle 38px at 50% 50%, transparent 98%, #000 100%);
+          mask: radial-gradient(circle 38px at 50% 50%, transparent 98%, #000 100%);
+  animation: wDonutSpin 1s var(--ease) both;
+}
+
+@keyframes wDonutSpin {
+  from { transform: rotate(-90deg) scale(0.85); }
+  to   { transform: rotate(0) scale(1); }
+}
+
+.w-list {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.w-li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.w-li i {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  flex-shrink: 0;
+}
+
+.w-li b {
+  height: 8px;
+  border-radius: 9px;
+  background: rgba(148, 163, 184, 0.28);
+  flex: 1;
+}
+
+.w-li u {
+  width: 42px;
+  height: 8px;
+  border-radius: 9px;
+  background: rgba(148, 163, 184, 0.18);
+  text-decoration: none;
+}
+
+/* Copy section below phone */
+.welcome-copy {
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+}
+
+.welcome-copy h1 {
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.5px;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.welcome-copy p {
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 12px 0 0;
+  text-wrap: pretty;
+}
+
+.welcome-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 24px 0;
+}
+
+.welcome-dots button {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  border: 0;
+  background: rgba(148, 163, 184, 0.3);
+  cursor: pointer;
+  transition: width 0.3s var(--ease), background 0.3s var(--ease);
+  padding: 0;
+}
+
+.welcome-dots button.is-active {
+  width: 26px;
+  background: var(--grad-primary);
+}
+
+.welcome-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.welcome-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  border: 0;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 15px;
+  padding: 14px 22px;
+  border-radius: 14px;
+  color: #fff;
+  background: var(--grad-primary);
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.34);
+  transition: transform 0.22s var(--ease), box-shadow 0.22s var(--ease);
+}
+
+.welcome-btn-primary svg {
+  width: 18px;
+  height: 18px;
+}
+
+.welcome-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 42px rgba(37, 99, 235, 0.46);
+}
+
+.welcome-btn-ghost {
+  background: transparent;
+  border: 0;
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+  padding: 10px;
+}
+
+@media (max-width: 520px) {
+  .welcome-page {
+    padding: 22px 18px 28px;
+  }
+
+  .welcome-phone {
+    width: min(210px, 62vw);
+    height: min(280px, calc(62vw * 1.3));
+  }
+
+  .welcome-copy h1 {
+    font-size: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .w-bars span,
+  .w-donut {
+    animation: none;
+  }
+}

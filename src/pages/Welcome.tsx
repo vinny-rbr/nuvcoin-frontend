@@ -1,31 +1,31 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./onboarding.css";
 
 const slides = [
   {
-    title: "Seu dinheiro em uma visao clara",
-    text: "Acompanhe entradas, saidas e saldo sem precisar montar planilha para tudo.",
-    accent: "#3B82F6",
-    preview: "summary",
+    title: "Seu dinheiro em uma visão clara",
+    text: "Acompanhe entradas, saídas e saldo sem precisar montar planilha para tudo.",
+    glow: "#3B82F6",
+    art: "summary",
   },
   {
-    title: "Categorias com a sua linguagem",
-    text: "Organize gastos e recebimentos do jeito que combina com sua rotina.",
-    accent: "#22C55E",
-    preview: "donut",
+    title: "Categorias na sua linguagem",
+    text: "Organize gastos e recebimentos do jeito que combina com a sua rotina.",
+    glow: "#22C55E",
+    art: "donut",
   },
   {
-    title: "Controle individual ou compartilhado",
-    text: "Use sozinho ou crie grupos para dividir custos com outras pessoas.",
-    accent: "#A78BFA",
-    preview: "cards",
+    title: "Sozinho ou compartilhado",
+    text: "Use individualmente ou crie grupos para dividir custos com outras pessoas.",
+    glow: "#A78BFA",
+    art: "cards",
   },
   {
-    title: "Decisoes pequenas, mes mais previsivel",
-    text: "Compare periodos, veja padroes e ajuste o caminho antes do susto chegar.",
-    accent: "#F97316",
-    preview: "bars",
+    title: "Decisões pequenas, mês previsível",
+    text: "Compare períodos, veja padrões e ajuste o caminho antes do susto chegar.",
+    glow: "#F97316",
+    art: "bars",
   },
 ];
 
@@ -33,11 +33,11 @@ function WelcomeArt({ type }: { type: string }) {
   if (type === "donut") {
     return (
       <>
-        <div className="welcome-art-donut" />
-        <div className="welcome-art-list">
-          <span />
-          <span />
-          <span />
+        <div className="w-donut" />
+        <div className="w-list">
+          <div className="w-li"><i style={{ background: "#60A5FA" }} /><b /><u /></div>
+          <div className="w-li"><i style={{ background: "#22C55E" }} /><b style={{ flex: "0.7" }} /><u /></div>
+          <div className="w-li"><i style={{ background: "#A78BFA" }} /><b style={{ flex: "0.5" }} /><u /></div>
         </div>
       </>
     );
@@ -46,14 +46,11 @@ function WelcomeArt({ type }: { type: string }) {
   if (type === "cards") {
     return (
       <>
-        <div className="welcome-art-balance">
-          <small>Grupo - Ape 302</small>
-          R$ 4.280
-        </div>
-        <div className="welcome-art-list">
-          <span />
-          <span />
-          <span />
+        <div className="w-balance"><small>Grupo · Apê 302</small>R$ 4.280</div>
+        <div className="w-list">
+          <div className="w-li"><i style={{ background: "linear-gradient(135deg,#3B82F6,#2563EB)" }} /><b /><u /></div>
+          <div className="w-li"><i style={{ background: "linear-gradient(135deg,#22C55E,#16A34A)" }} /><b style={{ flex: "0.8" }} /><u /></div>
+          <div className="w-li"><i style={{ background: "linear-gradient(135deg,#A78BFA,#7C3AED)" }} /><b style={{ flex: "0.6" }} /><u /></div>
         </div>
       </>
     );
@@ -62,38 +59,33 @@ function WelcomeArt({ type }: { type: string }) {
   if (type === "bars") {
     return (
       <>
-        <div className="welcome-art-balance">
-          <small>Saldo do mes</small>
-          R$ 4.770
-        </div>
-        <div className="welcome-art-bars">
-          {[40, 62, 48, 80, 58, 92].map((value, index) => (
-            <span key={index} style={{ height: `${value}%`, animationDelay: `${index * 0.08}s` }} />
+        <div className="w-balance"><small>Saldo do mês</small>R$ 4.770</div>
+        <div className="w-bars">
+          {[40, 62, 48, 80, 58, 92].map((v, i) => (
+            <span key={i} style={{ height: `${v}%`, animationDelay: `${i * 0.08}s` }} />
           ))}
         </div>
       </>
     );
   }
 
+  // summary (default)
   return (
     <>
-      <div className="welcome-art-balance">
-        <small>Saldo atual</small>
-        R$ 8.740
-      </div>
-      <div className="welcome-art-chips">
-        <span>
-          <i />
+      <div className="w-balance"><small>Saldo atual</small>R$ 8.740</div>
+      <div className="w-row">
+        <div className="w-chip">
+          <i style={{ background: "rgba(34,197,94,.4)" }} />
           <b />
-        </span>
-        <span>
-          <i />
+        </div>
+        <div className="w-chip">
+          <i style={{ background: "rgba(239,68,68,.4)" }} />
           <b />
-        </span>
+        </div>
       </div>
-      <div className="welcome-art-bars">
-        {[50, 70, 45, 88, 60].map((value, index) => (
-          <span key={index} style={{ height: `${value}%`, animationDelay: `${index * 0.08}s` }} />
+      <div className="w-bars">
+        {[50, 70, 45, 88, 60].map((v, i) => (
+          <span key={i} style={{ height: `${v}%`, animationDelay: `${i * 0.08}s` }} />
         ))}
       </div>
     </>
@@ -105,70 +97,67 @@ export default function Welcome() {
   const [activeIndex, setActiveIndex] = useState(0);
   const slide = slides[activeIndex];
   const isLastSlide = activeIndex === slides.length - 1;
-  const primaryLabel = useMemo(() => (isLastSlide ? "Criar conta" : "Proximo"), [isLastSlide]);
 
   function handlePrimaryClick() {
     if (!isLastSlide) {
-      setActiveIndex((current) => current + 1);
-      return;
+      setActiveIndex((i) => i + 1);
+    } else {
+      navigate("/register");
     }
-
-    navigate("/register");
   }
 
   return (
-    <main className="welcome-redesign-screen">
-      <section className="welcome-redesign-phone" aria-live="polite">
-        <header className="welcome-redesign-top">
-          <div className="welcome-redesign-brand">
-            <span className="welcome-redesign-logo" aria-hidden="true">
-              ↗
-            </span>
+    <main className="welcome-page">
+      <div className="welcome-top">
+        <div className="brand">
+          <span className="app-logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 17l5-5 4 3 8-8" /><path d="M16 7h4v4" />
+            </svg>
+          </span>
+          <span className="brand-copy">
             <strong>Conciliaaí</strong>
+          </span>
+        </div>
+        <Link to="/login" className="welcome-skip">Pular</Link>
+      </div>
+
+      <div className="welcome-stage">
+        <div
+          className="welcome-phone"
+          style={{ "--welcome-glow": slide.glow } as React.CSSProperties}
+        >
+          <div className="welcome-phone-glow" />
+          <WelcomeArt key={slide.art} type={slide.art} />
+        </div>
+
+        <div className="welcome-copy">
+          <h1>{slide.title}</h1>
+          <p>{slide.text}</p>
+
+          <div className="welcome-dots" aria-label={`Slide ${activeIndex + 1} de ${slides.length}`}>
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                className={index === activeIndex ? "is-active" : ""}
+                onClick={() => setActiveIndex(index)}
+                aria-label={`Ir para slide ${index + 1}`}
+              />
+            ))}
           </div>
 
-          <Link to="/login" className="welcome-redesign-skip">
-            Pular
-          </Link>
-        </header>
-
-        <div className="welcome-redesign-stage">
-          <div
-            key={slide.preview}
-            className="welcome-redesign-card"
-            style={{ "--welcome-accent": slide.accent } as CSSProperties}
-          >
-            <span className="welcome-redesign-handle" />
-            <WelcomeArt type={slide.preview} />
-          </div>
-
-          <div className="welcome-redesign-copy">
-            <h1>{slide.title}</h1>
-            <p>{slide.text}</p>
-
-            <div className="welcome-redesign-dots" aria-label={`Tela ${activeIndex + 1} de ${slides.length}`}>
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  type="button"
-                  className={index === activeIndex ? "is-active" : ""}
-                  onClick={() => setActiveIndex(index)}
-                  aria-label={`Ir para slide ${index + 1}`}
-                />
-              ))}
-            </div>
-
-            <button type="button" className="welcome-redesign-primary" onClick={handlePrimaryClick}>
-              {primaryLabel}
-              <span aria-hidden="true">→</span>
+          <div className="welcome-actions">
+            <button type="button" className="welcome-btn-primary" onClick={handlePrimaryClick}>
+              {isLastSlide ? "Criar conta" : "Próximo"}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+              </svg>
             </button>
-
-            <Link className="welcome-redesign-secondary" to="/login">
-              Ja tenho conta
-            </Link>
+            <Link className="welcome-btn-ghost" to="/login">Já tenho conta</Link>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }
