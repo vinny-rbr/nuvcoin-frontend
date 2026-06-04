@@ -4,16 +4,18 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  CartesianGrid,
   PieChart,
   Pie,
   Cell,
 } from "recharts";
+
+import {
+  InteractiveDonut,
+  AreaTrendChart,
+  MiniRingsCompare,
+  SummaryCards,
+} from "./DashboardCharts";
+import type { SummaryCardItem } from "./DashboardCharts";
 
 import type { FinanceCategoryOption, FinanceItem, PaymentType } from "../types/finance";
 
@@ -275,127 +277,6 @@ function groupByPayment(items: FinanceItem[]): DonutItem[] {
       valueCents: value.valueCents,
       detailItems: value.detailItems,
     }))
-  );
-}
-
-function ParentCategoryMiniDashboard({
-  label,
-  summary,
-}: {
-  label: string;
-  summary: ParentCategorySummary | null;
-}) {
-  const [openType, setOpenType] = useState<"RECEITA" | "DESPESA" | null>(null);
-  const saldoClass = summary && summary.saldoCents >= 0 ? "green" : "red";
-  const data = summary
-    ? toDonutData([
-        { name: "Receitas", valueCents: summary.receitasCents },
-        { name: "Despesas", valueCents: summary.despesasCents },
-      ])
-    : [];
-  const openItems =
-    openType === "RECEITA"
-      ? summary?.receitaItems ?? []
-      : openType === "DESPESA"
-        ? summary?.despesaItems ?? []
-        : [];
-  const openLabel = openType === "RECEITA" ? "Receitas" : "Despesas";
-
-  useEffect(() => {
-    setOpenType(null);
-  }, [summary?.name]);
-
-  return (
-    <div className="parent-category-mini-dashboard">
-      <div className="parent-category-mini-head">
-        <span>{label}</span>
-        <strong>{summary?.name ?? "Escolha uma categoria"}</strong>
-      </div>
-
-      {summary ? (
-        <>
-          <div className="parent-category-mini-chart">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={data}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius="62%"
-                  outerRadius="86%"
-                  paddingAngle={2}
-                  stroke="rgba(241,245,249,0.8)"
-                  strokeWidth={2}
-                >
-                  {data.map((item) => (
-                    <Cell key={item.name} fill={item.name === "Receitas" ? "#22C55E" : "#EF4444"} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-
-            <div className="parent-category-mini-center">
-              <span>Saldo</span>
-              <strong className={saldoClass}>{formatBRLFromCents(summary.saldoCents)}</strong>
-            </div>
-          </div>
-
-          <div className="parent-category-mini-values">
-            <button
-              type="button"
-              className={openType === "RECEITA" ? "is-active" : ""}
-              onClick={() => setOpenType((current) => (current === "RECEITA" ? null : "RECEITA"))}
-            >
-              <span>Receitas</span>
-              <strong className="green">{formatBRLFromCents(summary.receitasCents)}</strong>
-            </button>
-            <button
-              type="button"
-              className={openType === "DESPESA" ? "is-active" : ""}
-              onClick={() => setOpenType((current) => (current === "DESPESA" ? null : "DESPESA"))}
-            >
-              <span>Despesas</span>
-              <strong className="red">{formatBRLFromCents(summary.despesasCents)}</strong>
-            </button>
-          </div>
-
-          {openType ? (
-            <div className="parent-category-detail-list">
-              <div className="parent-category-detail-head">
-                <strong>{openLabel}</strong>
-                <button type="button" onClick={() => setOpenType(null)}>
-                  Fechar
-                </button>
-              </div>
-
-              {openItems.length === 0 ? (
-                <div className="parent-category-detail-empty">Nenhum lançamento encontrado nessa categoria.</div>
-              ) : (
-                openItems
-                  .slice()
-                  .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
-                  .map((item) => (
-                    <div key={item.id} className="parent-category-detail-row">
-                      <div>
-                        <strong>{item.title}</strong>
-                        <span>
-                          {item.category} • {formatDateBR(item.dateISO)}
-                        </span>
-                      </div>
-                      <strong className={item.type === "RECEITA" ? "green" : "red"}>
-                        {item.type === "RECEITA" ? "+ " : "- "}
-                        {formatBRLFromCents(item.amountCents)}
-                      </strong>
-                    </div>
-                  ))
-              )}
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <div className="dashboard-empty-panel">Sem categoria para comparar.</div>
-      )}
-    </div>
   );
 }
 
@@ -718,6 +599,22 @@ export default function Dashboard() {
       saldo: lineFrom(monthCmp.saldo.pct, monthCmp.saldo.direction),
     };
   }, [monthCmp]);
+
+  const summaryCardItems = useMemo((): SummaryCardItem[] => {
+    const fmtPct = (pct: number | null, dir: "UP" | "DOWN" | "FLAT") => ({
+      dl: pct != null ? `${Math.abs(pct).toFixed(1)}%` : "—",
+      up: dir !== "DOWN",
+    });
+    const savingPct = summary.totalReceitasCents > 0
+      ? (Math.max(0, summary.saldoCents) / summary.totalReceitasCents * 100).toFixed(1) + "%"
+      : "0%";
+    return [
+      { lab: "Receitas", v: summary.totalReceitasCents, c: "#34d399", s: sparklines.receitas, ...fmtPct(monthCmp.receitas.pct, monthCmp.receitas.direction) },
+      { lab: "Despesas", v: summary.totalDespesasCents, c: "#fb7185", s: sparklines.despesas, ...fmtPct(monthCmp.despesas.pct, monthCmp.despesas.direction) },
+      { lab: "Saldo", v: summary.saldoCents, c: "#60a5fa", s: sparklines.saldo, ...fmtPct(monthCmp.saldo.pct, monthCmp.saldo.direction) },
+      { lab: "Poupança", v: 0, c: "#fbbf24", s: sparklines.saldo, dl: savingPct, up: true, txt: savingPct },
+    ];
+  }, [summary, sparklines, monthCmp]);
 
   const chartData = useMemo(() => {
     const map = new Map<string, { receitasCents: number; despesasCents: number }>();
@@ -1150,10 +1047,19 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <DonutDashboardCard
-          {...selectedAnalytics.primary}
-          colors={donutColors}
-        />
+        {viewMode === "CONFRONTO" ? (
+          <InteractiveDonut
+            receitasCents={summary.totalReceitasCents}
+            despesasCents={summary.totalDespesasCents}
+            saldoCents={summary.saldoCents}
+            periodo={getPeriodLabel(period)}
+          />
+        ) : (
+          <DonutDashboardCard
+            {...selectedAnalytics.primary}
+            colors={donutColors}
+          />
+        )}
       </section>
 
       {parentCategorySummaries.length > 0 ? (
@@ -1198,70 +1104,31 @@ export default function Dashboard() {
             </label>
           </div>
 
-          <div className="parent-category-dashboard-grid">
-            <ParentCategoryMiniDashboard label="Dashboard 1" summary={selectedParentDashboardA} />
-            <ParentCategoryMiniDashboard label="Dashboard 2" summary={selectedParentDashboardB} />
-          </div>
+          <MiniRingsCompare
+            blockA={selectedParentDashboardA ? {
+              label: "Dashboard 1",
+              name: selectedParentDashboardA.name,
+              receitasCents: selectedParentDashboardA.receitasCents,
+              despesasCents: selectedParentDashboardA.despesasCents,
+              saldoCents: selectedParentDashboardA.saldoCents,
+            } : null}
+            blockB={selectedParentDashboardB ? {
+              label: "Dashboard 2",
+              name: selectedParentDashboardB.name,
+              receitasCents: selectedParentDashboardB.receitasCents,
+              despesasCents: selectedParentDashboardB.despesasCents,
+              saldoCents: selectedParentDashboardB.saldoCents,
+            } : null}
+          />
         </section>
       ) : null}
 
       <div className="dashboard-charts">
-        <div className="chart-card dashboard-panel">
-          <div className="chart-title">Receitas x Despesas ({getPeriodLabel(period)})</div>
-
-          <div style={{ width: "100%", height: 320 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
-                <XAxis dataKey="mes" stroke="#94A3B8" />
-                <YAxis stroke="#94A3B8" />
-                <Tooltip
-                  formatter={(value: unknown) => {
-                    const n = typeof value === "number" ? value : Number(value);
-                    if (Number.isNaN(n)) return String(value);
-                    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-                  }}
-                  contentStyle={{
-                    backgroundColor: "#0b1220",
-                    border: "1px solid rgba(148,163,184,0.2)",
-                    borderRadius: 10,
-                    color: "#F1F5F9",
-                  }}
-                  itemStyle={{ color: "#F1F5F9", fontWeight: 800 }}
-                  labelStyle={{ color: "#CBD5E1", fontWeight: 800 }}
-                />
-                <Line type="monotone" dataKey="receitas" stroke="#22C55E" strokeWidth={3} dot={false} />
-                <Line type="monotone" dataKey="despesas" stroke="#EF4444" strokeWidth={3} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        <div className="chart-card dashboard-panel dashboard-mini-summary">
-          <div className="chart-title">Resumo do período</div>
-          <div className="dashboard-mini-list">
-            <div>
-              <span>Receitas</span>
-              <strong className="green">{formatBRLFromCents(summary.totalReceitasCents)}</strong>
-            </div>
-            <div>
-              <span>Despesas</span>
-              <strong className="red">{formatBRLFromCents(summary.totalDespesasCents)}</strong>
-            </div>
-            <div>
-              <span>Saldo</span>
-              <strong className={saldoClass}>{formatBRLFromCents(summary.saldoCents)}</strong>
-            </div>
-            {summary.totalReceitasCents > 0 ? (
-              <div style={{ background: "linear-gradient(135deg,rgba(59,130,246,.14),rgba(15,23,42,.4))", borderColor: "rgba(96,165,250,.25)" }}>
-                <span>Taxa de poupança</span>
-                <strong style={{ color: "#bfdbfe" }}>
-                  {(Math.max(0, summary.saldoCents) / summary.totalReceitasCents * 100).toFixed(1)}%
-                </strong>
-              </div>
-            ) : null}
-          </div>
-        </div>
+        <AreaTrendChart data={chartData} periodo={getPeriodLabel(period)} />
+        <SummaryCards
+          periodo={getPeriodLabel(period)}
+          items={summaryCardItems}
+        />
       </div>
 
       <div className="chart-card dashboard-panel dashboard-transactions">
