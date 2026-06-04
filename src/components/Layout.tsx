@@ -1024,6 +1024,11 @@ export default function Layout({ children }: Props) {
                   <span className="quick-add-dot quick-add-dot-import" aria-hidden="true" />
                   Importar extrato
                 </button>
+                <button type="button" className="mobile-curved-item mobile-curved-item-report" onClick={() => handleMobileRoute("/relatorios")}>
+                  <span className="quick-add-dot quick-add-dot-report" aria-hidden="true" />
+                  Relatórios
+                  <span className="quick-add-new-badge" aria-label="Novo">NOVO</span>
+                </button>
               </>
             )}
           </div>

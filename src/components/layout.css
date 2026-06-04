@@ -829,6 +829,28 @@
     background: #a78bfa;
     box-shadow: 0 0 0 5px rgba(167, 139, 250, 0.14);
   }
+
+  .quick-add-dot-report {
+    background: #2dd4bf;
+    box-shadow: 0 0 0 5px rgba(45, 212, 191, 0.16);
+  }
+
+  .mobile-curved-item-report {
+    border-color: rgba(45, 212, 191, 0.4);
+    background: linear-gradient(120deg, rgba(45, 212, 191, 0.12), rgba(30, 41, 59, 0.82));
+  }
+
+  .quick-add-new-badge {
+    margin-left: auto;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    color: #5eead4;
+    background: rgba(45, 212, 191, 0.16);
+    border: 1px solid rgba(45, 212, 191, 0.35);
+    padding: 3px 7px;
+    border-radius: 999px;
+  }
 }
 
 @media (max-width: 430px) {

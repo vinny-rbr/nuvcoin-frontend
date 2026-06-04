@@ -18,6 +18,7 @@ import Despesas from "./pages/Despesas"; // Página despesas
 import Categorias from "./pages/Categorias";
 import ImportOfx from "./pages/ImportOfx";
 import Groups from "./pages/Groups"; // Página de grupos (Splitwise)
+import Relatorios from "./pages/Relatorios";
 
 type AnimatedPageProps = {
   children: ReactNode; // Conteúdo da página
@@ -165,6 +166,20 @@ export default function App() {
             <Layout>
               <AnimatedPage>
                 <Groups />
+              </AnimatedPage>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Relatórios */}
+      <Route
+        path="/relatorios"
+        element={
+          <ProtectedRoute requireActiveSubscription>
+            <Layout>
+              <AnimatedPage>
+                <Relatorios />
               </AnimatedPage>
             </Layout>
           </ProtectedRoute>
