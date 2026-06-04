@@ -7,6 +7,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Tooltip,
 } from "recharts";
 
 import {
@@ -336,8 +337,8 @@ function DonutDashboardCard({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(_, name, props) => {
-                    const item = props.payload as DonutItem;
+                  formatter={(_: unknown, name: string, props: { payload: DonutItem }) => {
+                    const item = props.payload;
                     return [formatBRLFromCents(item.valueCents), name];
                   }}
                   contentStyle={{
