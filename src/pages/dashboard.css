@@ -1280,8 +1280,10 @@
   }
 
   .stat-value {
-    font-size: 25px;
-    overflow-wrap: anywhere;
+    font-size: clamp(14px, 4.2vw, 22px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .dashboard-donut-wrap {

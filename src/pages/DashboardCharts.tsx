@@ -206,7 +206,7 @@ export function InteractiveDonut({
 }) {
   const [cardRef, inView] = useInView();
   const tweenProg = useTween(inView);
-  const totalAnimated = useCountUp(receitasCents + despesasCents, inView);
+  const saldoAnimated = useCountUp(Math.abs(saldoCents), inView);
   const [hovered, setHovered] = useState<number | null>(null);
   const [tip, setTip] = useState<{ html: string; x: number; y: number } | null>(null);
 
@@ -288,9 +288,9 @@ export function InteractiveDonut({
         {/* Center label */}
         <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center", textAlign: "center", pointerEvents: "none" }}>
           <div style={{ whiteSpace: "nowrap" }}>
-            <div style={{ color: "var(--text-secondary)", fontSize: 11, fontWeight: 700 }}>Total movido</div>
-            <strong style={{ display: "block", fontSize: 23, fontWeight: 700 }}>
-              {brlShort(inView ? totalAnimated : 0)}
+            <div style={{ color: "var(--text-secondary)", fontSize: 11, fontWeight: 700 }}>Saldo</div>
+            <strong style={{ display: "block", fontSize: 23, fontWeight: 700, color: saldoCents >= 0 ? G : R }}>
+              {saldoCents < 0 ? "-" : ""}{brlShort(inView ? saldoAnimated : 0)}
             </strong>
             <small style={{ color: "var(--text-secondary)", fontSize: 10 }}>{periodo}</small>
           </div>
