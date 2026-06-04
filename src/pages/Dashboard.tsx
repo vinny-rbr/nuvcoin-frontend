@@ -337,9 +337,9 @@ function DonutDashboardCard({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(_: unknown, name: string, props: { payload: DonutItem }) => {
+                  formatter={(_: unknown, name: string | undefined, props: { payload: DonutItem }) => {
                     const item = props.payload;
-                    return [formatBRLFromCents(item.valueCents), name];
+                    return [formatBRLFromCents(item.valueCents), name ?? ""];
                   }}
                   contentStyle={{
                     backgroundColor: "#0b1220",
