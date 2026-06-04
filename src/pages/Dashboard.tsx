@@ -1,6 +1,6 @@
 import "./dashboard.css";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import {
   ResponsiveContainer,
@@ -421,6 +421,40 @@ function DonutDashboardCard({
           ) : null}
         </div>
       )}
+    </div>
+  );
+}
+
+function FitValue({ children, max = 26, min = 12 }: { children: React.ReactNode; max?: number; min?: number }) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useLayoutEffect(() => {
+    const wrap = wrapRef.current;
+    const text = textRef.current;
+    if (!wrap || !text) return;
+
+    const fit = () => {
+      let size = max;
+      text.style.fontSize = `${size}px`;
+      while (text.scrollWidth > wrap.clientWidth && size > min) {
+        size -= 0.5;
+        text.style.fontSize = `${size}px`;
+      }
+    };
+
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(wrap);
+    if (document.fonts?.ready) void document.fonts.ready.then(fit);
+    return () => ro.disconnect();
+  }, [children, max, min]);
+
+  return (
+    <div ref={wrapRef} style={{ width: "100%", overflow: "hidden" }}>
+      <span ref={textRef} style={{ display: "inline-block", whiteSpace: "nowrap", lineHeight: 1.05 }}>
+        {children}
+      </span>
     </div>
   );
 }
@@ -949,7 +983,7 @@ export default function Dashboard() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
             </span>
           </div>
-          <div className="stat-value green">{formatBRLFromCents(summary.totalReceitasCents)}</div>
+          <div className="stat-value green"><FitValue>{formatBRLFromCents(summary.totalReceitasCents)}</FitValue></div>
           <div className="stat-caption">{cmpLine.receitas}</div>
           <SparkLine values={sparklines.receitas} color="#4ADE80" />
         </div>
@@ -961,7 +995,7 @@ export default function Dashboard() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>
             </span>
           </div>
-          <div className="stat-value red">{formatBRLFromCents(summary.totalDespesasCents)}</div>
+          <div className="stat-value red"><FitValue>{formatBRLFromCents(summary.totalDespesasCents)}</FitValue></div>
           <div className="stat-caption">{cmpLine.despesas}</div>
           <SparkLine values={sparklines.despesas} color="#F87171" />
         </div>
@@ -973,7 +1007,7 @@ export default function Dashboard() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>
             </span>
           </div>
-          <div className="stat-value red">{formatBRLFromCents(summary.totalCreditoCents)}</div>
+          <div className="stat-value red"><FitValue>{formatBRLFromCents(summary.totalCreditoCents)}</FitValue></div>
           <div className="stat-caption">gastos no crédito</div>
           <SparkLine values={sparklines.credito} color="#F97316" />
         </div>
@@ -985,7 +1019,7 @@ export default function Dashboard() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7a2 2 0 0 1 2-2h12v4"/><path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1H5"/><circle cx="16.5" cy="12.5" r="1.3"/></svg>
             </span>
           </div>
-          <div className={`stat-value ${saldoClass}`}>{formatBRLFromCents(summary.saldoCents)}</div>
+          <div className={`stat-value ${saldoClass}`}><FitValue>{formatBRLFromCents(summary.saldoCents)}</FitValue></div>
           <div className="stat-caption">{cmpLine.saldo}</div>
           <SparkLine values={sparklines.saldo} color="#60A5FA" />
         </div>
