@@ -338,7 +338,7 @@ function DonutDashboardCard({
                 </Pie>
                 <Tooltip
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={(value: any, name: any, props: any) => {
+                  formatter={(_value: any, name: any, props: any) => {
                     const item = props.payload as DonutItem;
                     return [formatBRLFromCents(item.valueCents), name];
                   }}
