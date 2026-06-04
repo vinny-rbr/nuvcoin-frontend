@@ -4,6 +4,7 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Rota
 import Layout from "./components/Layout"; // Layout premium (topbar + container)
 import AppUpdatePrompt from "./components/AppUpdatePrompt";
 import PwaInstallPrompt from "./components/PwaInstallPrompt";
+import WhatsNewModal from "./components/WhatsNewModal";
 import ProtectedRoute from "./routes/ProtectedRoute"; // Proteção de rota (mock login)
 
 import Login from "./pages/Login"; // Página de login
@@ -73,6 +74,7 @@ export default function App() {
     <>
       <AppUpdatePrompt />
       <PwaInstallPrompt />
+      <WhatsNewModal />
       <Routes>
       {/* Rotas públicas */}
       <Route path="/login" element={<Login />} />

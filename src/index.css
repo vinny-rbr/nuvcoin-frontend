@@ -179,6 +179,116 @@ textarea {
   }
 }
 
+/* ── What's New modal ── */
+.wnm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(5, 9, 20, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: wnmScrimIn 0.2s ease;
+}
+@keyframes wnmScrimIn { from { opacity: 0 } to { opacity: 1 } }
+
+.wnm-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(180deg, rgba(20, 29, 48, 0.99), rgba(11, 17, 32, 0.99));
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-bottom: 0;
+  border-radius: 26px 26px 0 0;
+  padding: 12px 20px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-shadow: 0 -28px 70px rgba(0, 0, 0, 0.55);
+  animation: wnmSheetUp 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes wnmSheetUp {
+  from { transform: translateY(56px); opacity: 0.3 }
+  to   { transform: translateY(0);    opacity: 1 }
+}
+
+.wnm-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+  margin: 0 auto 20px;
+}
+
+.wnm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.wnm-icon {
+  font-size: 34px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.wnm-title {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.1;
+}
+.wnm-version {
+  font-size: 12px;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+
+.wnm-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.wnm-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.09);
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.35;
+}
+.wnm-emoji {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.wnm-btn {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #fff;
+  font-weight: 900;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.38);
+  transition: opacity 0.16s;
+}
+.wnm-btn:active { opacity: 0.85; }
+
 /* Cards padrÃ£o */
 .card {
   background:

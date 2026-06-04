@@ -69,6 +69,7 @@ export default function AppUpdatePrompt() {
       window.localStorage.setItem(VERSION_STORAGE_KEY, availableVersion.buildId);
     }
 
+    window.localStorage.setItem("conciliaai_pending_whats_new", "1");
     window.location.reload();
   }
 
