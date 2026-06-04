@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { FinanceItem } from "../types/finance";
 import { financeList, financeRefreshFromApi, financeSubscribe } from "../lib/financeService";
@@ -468,8 +469,9 @@ export default function Relatorios() {
         </div>
       )}
 
-      {/* Export sheet */}
-      {showExport && (
+      {/* Export sheet — rendered in document.body via portal so position:fixed
+          is not affected by ancestor transforms (AnimatedPage will-change) */}
+      {showExport && createPortal(
         <div className="rep-sheet-scrim" onClick={() => setShowExport(false)}>
           <div className="rep-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="sheet-handle" />
@@ -503,7 +505,8 @@ export default function Relatorios() {
               Cancelar
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
