@@ -480,9 +480,7 @@
   }
 
   .brand-cluster {
-    gap: 0;
-    min-width: 0;
-    flex: 0 0 auto;
+    display: none;
   }
 
   .brand {
@@ -534,7 +532,7 @@
   }
 
   .mobile-nav-shell {
-    display: none;
+    display: none !important;
   }
 
   .mobile-menu-button {
@@ -575,8 +573,7 @@
   }
 
   .lifetime-badge {
-    padding: 6px 8px;
-    font-size: 11px;
+    display: none;
   }
 
   .activate-plan-button {
