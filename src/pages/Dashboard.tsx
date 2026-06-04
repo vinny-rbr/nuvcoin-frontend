@@ -145,6 +145,26 @@ function getParentCategoryName(category: string): string {
     .filter(Boolean)[0] || "Outros";
 }
 
+const MONTH_NAMES_PT = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+function ymToFullMonth(ym: string): string {
+  const m = Number(ym.split("-")[1]);
+  const y = ym.split("-")[0];
+  return `${MONTH_NAMES_PT[m - 1]} ${y}`;
+}
+
+function heroBalSize(cents: number, hidden: boolean): number {
+  const str = hidden ? "R$ •••••" : formatBRLFromCents(Math.abs(cents));
+  const n = str.length;
+  if (n <= 12) return 36;
+  if (n <= 15) return 30;
+  if (n <= 18) return 25;
+  return 21;
+}
+
 function toDonutData(entries: Array<{ name: string; valueCents: number; detailItems?: FinanceItem[] }>): DonutItem[] {
   const total = entries.reduce((sum, item) => sum + item.valueCents, 0);
 
@@ -546,6 +566,22 @@ export default function Dashboard() {
   const [parentDashboardA, setParentDashboardA] = useState("");
   const [parentDashboardB, setParentDashboardB] = useState("");
   const [animate, setAnimate] = useState(false);
+  const [balanceHidden, setBalanceHidden] = useState(false);
+  const [heroMonth, setHeroMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const currentMonthYM = useMemo(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  }, []);
+  const planBadge = useMemo(() => {
+    if (localStorage.getItem("conciliaai_subscription_lifetime") === "true") return "Vitalício";
+    const s = localStorage.getItem("subscriptionStatus") ?? localStorage.getItem("subscriptionActive") ?? "";
+    if (s === "trial") return "Trial";
+    if (s === "active" || s === "true") return "Ativo";
+    return null;
+  }, []);
 
   useEffect(() => {
     const load = () => {
@@ -610,6 +646,16 @@ export default function Dashboard() {
 
   const summary = useMemo(() => calculateSummary(filteredItems), [filteredItems]);
   const saldoClass = summary.saldoCents >= 0 ? "green" : "red";
+
+  const heroData = useMemo(() => {
+    let rec = 0, des = 0;
+    for (const item of items) {
+      if (!item.dateISO.startsWith(heroMonth)) continue;
+      if (item.type === "RECEITA") rec += item.amountCents;
+      if (item.type === "DESPESA") des += item.amountCents;
+    }
+    return { receitasCents: rec, despesasCents: des, saldoCents: rec - des };
+  }, [items, heroMonth]);
 
   const sparklines = useMemo(() => {
     const now = new Date();
@@ -871,16 +917,117 @@ export default function Dashboard() {
 
   return (
     <div className={`dashboard-view${animate ? " is-ready" : ""}`}>
-      <div className="dashboard-hero dashboard-hero-panel">
-        <div>
-          <span className="dashboard-kicker">Painel financeiro</span>
-          <h2>Visão Geral</h2>
-          <p>Compare receitas, despesas, formas de pagamento e categorias por período.</p>
+      <div className="dashboard-hero">
+        {/* Mobile-only brand bar */}
+        <div className="dash-brand-bar">
+          <div className="dash-brand-id">
+            <span className="dash-brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 15l4-5 3 3 5-7" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            <div className="dash-brand-copy">
+              <strong>Conciliaaí</strong>
+              <small>FINANÇAS</small>
+            </div>
+          </div>
+          {planBadge ? <span className="dash-plan-badge">{planBadge}</span> : null}
         </div>
 
-        <div className="dashboard-filter-cluster">
-          <label>
-            <span>Período</span>
+        {/* Cartão azul — monthly summary card */}
+        <div className="dash-hero-card">
+          <div className="dash-hero-deco" aria-hidden="true" />
+
+          <div className="dash-hero-top">
+            <span className="dash-hero-label">Saldo em contas</span>
+            <div className="dash-month-nav">
+              <button
+                type="button"
+                className="dash-month-btn"
+                aria-label="Mês anterior"
+                onClick={() => setHeroMonth((m) => addMonthsYM(m, -1))}
+                disabled={heroMonth <= addMonthsYM(currentMonthYM, -23)}
+              >
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true">
+                  <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+              <span className="dash-month-label">{ymToFullMonth(heroMonth)}</span>
+              <button
+                type="button"
+                className="dash-month-btn"
+                aria-label="Próximo mês"
+                onClick={() => setHeroMonth((m) => addMonthsYM(m, 1))}
+                disabled={heroMonth >= currentMonthYM}
+              >
+                <svg viewBox="0 0 24 24" fill="none" width="16" height="16" aria-hidden="true">
+                  <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="dash-hero-bal-row">
+            <span
+              className="dash-hero-bal"
+              style={{
+                fontSize: heroBalSize(heroData.saldoCents, balanceHidden),
+                color: heroData.saldoCents < 0 ? "#FFCBC6" : "#ffffff",
+              }}
+            >
+              {balanceHidden ? "R$ •••••" : formatBRLFromCents(heroData.saldoCents)}
+            </span>
+            <button
+              type="button"
+              className="dash-hero-eye"
+              aria-label={balanceHidden ? "Mostrar saldo" : "Esconder saldo"}
+              onClick={() => setBalanceHidden((h) => !h)}
+            >
+              {balanceHidden ? (
+                <svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true">
+                  <path d="M3 3l18 18M10.6 5.2A10.6 10.6 0 0 1 12 5c6.2 0 10 7 10 7a18 18 0 0 1-3.3 4.1M6.1 6.6A18 18 0 0 0 2 12s3.8 7 10 7a10.3 10.3 0 0 0 4-.8" stroke="rgba(255,255,255,0.75)" strokeWidth="1.9" strokeLinecap="round"/>
+                  <path d="M9.5 9.6a3 3 0 0 0 4.2 4.2" stroke="rgba(255,255,255,0.75)" strokeWidth="1.9" strokeLinecap="round"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" width="20" height="20" aria-hidden="true">
+                  <path d="M2 12s3.8-7 10-7 10 7 10 7-3.8 7-10 7S2 12 2 12Z" stroke="rgba(255,255,255,0.75)" strokeWidth="1.9"/>
+                  <circle cx="12" cy="12" r="3" stroke="rgba(255,255,255,0.75)" strokeWidth="1.9"/>
+                </svg>
+              )}
+            </button>
+          </div>
+
+          <div className="dash-hero-stats">
+            <div className="dash-hero-stat">
+              <span className="dash-stat-ic dash-stat-ic--up" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                  <path d="M12 19V5M12 5l-6 6M12 5l6 6" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <div>
+                <small>Receitas</small>
+                <strong>{formatBRLFromCents(heroData.receitasCents)}</strong>
+              </div>
+            </div>
+            <div className="dash-hero-divider" aria-hidden="true" />
+            <div className="dash-hero-stat">
+              <span className="dash-stat-ic dash-stat-ic--down" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" width="14" height="14">
+                  <path d="M12 5v14M12 19l6-6M12 19l-6-6" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <div>
+                <small>Despesas</small>
+                <strong>{formatBRLFromCents(heroData.despesasCents)}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Period filter (compact row) */}
+        <div className="dash-period-row">
+          <label className="dash-period-label">
+            <span>Período da análise</span>
             <select
               className="period-select"
               value={period}

@@ -1425,6 +1425,283 @@
   .tx-ic  { width: 40px; height: 40px; font-size: 16px; }
 }
 
+/* ============================= */
+/* NOVO TOPO — Cartão azul       */
+/* ============================= */
+
+.dash-brand-bar {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0 14px;
+}
+
+.dash-brand-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dash-brand-mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(150deg, #3b8aff, #1b4dcb);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(46, 125, 255, 0.28);
+  flex-shrink: 0;
+}
+
+.dash-brand-mark svg {
+  width: 18px;
+  height: 18px;
+}
+
+.dash-brand-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.dash-brand-copy strong {
+  font-size: 17px;
+  font-weight: 800;
+  color: #eaf0fa;
+  letter-spacing: -0.01em;
+}
+
+.dash-brand-copy small {
+  font-size: 9px;
+  font-weight: 700;
+  color: #677085;
+  letter-spacing: 0.18em;
+}
+
+.dash-plan-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(47, 210, 125, 0.14);
+  border: 1px solid rgba(47, 210, 125, 0.3);
+  color: #2fd27d;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dash-plan-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2fd27d;
+}
+
+/* ── Hero card ── */
+
+.dash-hero-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 20px;
+  background: linear-gradient(140deg, #3b8aff 0%, #2055c8 55%, #173c97 100%);
+  box-shadow: 0 18px 40px rgba(27, 77, 203, 0.35);
+}
+
+.dash-hero-deco {
+  position: absolute;
+  right: -40px;
+  top: -50px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.10);
+  pointer-events: none;
+}
+
+.dash-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.dash-hero-label {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+.dash-month-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  padding: 4px 8px;
+}
+
+.dash-month-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  line-height: 1;
+}
+
+.dash-month-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.dash-month-btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dash-month-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  padding: 0 5px;
+}
+
+.dash-hero-bal-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  position: relative;
+}
+
+.dash-hero-bal {
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  line-height: 1.05;
+  transition: font-size 0.2s ease;
+}
+
+.dash-hero-eye {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.dash-hero-eye:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.dash-hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  position: relative;
+}
+
+.dash-hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-stat-ic {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dash-hero-stat > div {
+  min-width: 0;
+}
+
+.dash-hero-stat small {
+  display: block;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.72);
+  font-weight: 600;
+}
+
+.dash-hero-stat strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dash-hero-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ── Period row ── */
+
+.dash-period-row {
+  display: flex;
+  align-items: center;
+}
+
+.dash-period-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ── Mobile overrides ── */
+
+@media (max-width: 720px) {
+  .dash-brand-bar {
+    display: flex;
+  }
+
+  .dash-hero-stat strong {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dash-month-label {
+    font-size: 12px;
+  }
+
+  .dash-hero-stat strong {
+    font-size: 12px;
+  }
+}
+
 /*
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
