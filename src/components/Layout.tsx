@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent as ReactMouseEvent } from "react";
+﻿import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom"; // Links sem recarregar a pÃ¡gina
 import PhotoFlow from "./PhotoFlow";
 import {
@@ -89,17 +89,6 @@ const navItems = [
   { to: "/groups", label: "Grupos", icon: NAV_ICONS.groups, requiresActiveSubscription: false },
 ];
 
-function getRemainingDays(endDateRaw: string | null): number | null {
-  if (!endDateRaw) return null;
-
-  const endDate = new Date(endDateRaw);
-  const now = new Date();
-
-  const diff = endDate.getTime() - now.getTime();
-  const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)) - 1);
-
-  return days;
-}
 
 function formatPriceCents(priceCents: number): string {
   return new Intl.NumberFormat("pt-BR", {
@@ -151,9 +140,8 @@ export default function Layout({ children }: Props) {
   const mobileMenuRef = useRef<HTMLDivElement | null>(null);
   const quickAddRef = useRef<HTMLDivElement | null>(null);
   const profileMenuRef = useRef<HTMLDivElement | null>(null);
-  const profilePhotoInputRef = useRef<HTMLInputElement | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
-  const [isLifetimeSubscription, setIsLifetimeSubscription] = useState(readStoredLifetimeState);
+  const [, setIsLifetimeSubscription] = useState(readStoredLifetimeState);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [profileName, setProfileName] = useState(() =>
     typeof window === "undefined" ? "" : window.localStorage.getItem("conciliaai_name") ?? "",
@@ -169,10 +157,6 @@ export default function Layout({ children }: Props) {
     const userId = window.localStorage.getItem("conciliaai_userId");
     return window.localStorage.getItem(getProfilePhotoStorageKey(userId));
   });
-  const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : localStorage.getItem("subscriptionEndDateUtc")
-  );
-  const remainingDays = getRemainingDays(subscriptionEndDate);
   const profileDisplayName = profileName || profileEmail.split("@")[0] || "Usuário";
   const profileInitials = getInitials(profileDisplayName || profileEmail);
 
@@ -364,7 +348,6 @@ export default function Layout({ children }: Props) {
           persistLifetimeState(nextIsLifetime);
           if (!nextIsLifetime && nextEndDate) {
             localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
-            setSubscriptionEndDate(nextEndDate);
           }
           setSubscriptionStatus("active");
           persistSubscriptionState("active");
@@ -377,7 +360,6 @@ export default function Layout({ children }: Props) {
           persistLifetimeState(false);
           if (nextEndDate) {
             localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
-            setSubscriptionEndDate(nextEndDate);
           }
           setSubscriptionStatus("trial");
           persistSubscriptionState("trial");
@@ -491,7 +473,6 @@ export default function Layout({ children }: Props) {
             persistLifetimeState(nextIsLifetime);
             if (!nextIsLifetime && nextEndDate) {
               localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
-              setSubscriptionEndDate(nextEndDate);
             }
             setSubscriptionStatus("active");
             persistSubscriptionState("active");
@@ -694,7 +675,6 @@ export default function Layout({ children }: Props) {
 
       if (endDateUtc && !nextIsLifetime) {
         localStorage.setItem("subscriptionEndDateUtc", endDateUtc);
-        setSubscriptionEndDate(endDateUtc);
       }
 
       persistSubscriptionState("trial");
