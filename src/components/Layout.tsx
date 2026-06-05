@@ -135,6 +135,9 @@ export default function Layout({ children }: Props) {
   const [isPhotoFlowOpen, setIsPhotoFlowOpen] = useState(false);
   const [isActivatePlanModalOpen, setIsActivatePlanModalOpen] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+  const [cpfInput, setCpfInput] = useState("");
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const [showCpfModal, setShowCpfModal] = useState(false);
   const [isCheckingSubscriptionStatus, setIsCheckingSubscriptionStatus] = useState(true);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [showTrialModal, setShowTrialModal] = useState(false);
@@ -557,8 +560,23 @@ export default function Layout({ children }: Props) {
     });
   }
 
-  async function handleSubscribe(planId: string) {
+  function formatCpf(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    return digits
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+
+  async function handleSubscribe(planId: string, cpfCnpj?: string) {
     const token = localStorage.getItem("token") ?? "";
+
+    const cpfDigits = cpfCnpj?.replace(/\D/g, "");
+    if (!cpfDigits || cpfDigits.length !== 11) {
+      setPendingPlanId(planId);
+      setShowCpfModal(true);
+      return;
+    }
 
     try {
       setLoadingPlanId(planId);
@@ -571,6 +589,7 @@ export default function Layout({ children }: Props) {
         },
         body: JSON.stringify({
           planId,
+          cpfCnpj: cpfDigits,
         }),
       });
 
@@ -1401,6 +1420,66 @@ export default function Layout({ children }: Props) {
                 }}
               >
                 Agora nao
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showCpfModal ? (
+        <div
+          aria-live="polite"
+          aria-modal="true"
+          role="dialog"
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
+          <div style={{
+            background: "#1e293b", borderRadius: 16, padding: 32, width: "90%", maxWidth: 380,
+            display: "flex", flexDirection: "column", gap: 16,
+          }}>
+            <h2 style={{ color: "#f1f5f9", margin: 0, fontSize: 20 }}>Informe seu CPF</h2>
+            <p style={{ color: "#94a3b8", margin: 0, fontSize: 14 }}>
+              Necessário para processar o pagamento.
+            </p>
+            <input
+              style={{
+                background: "#0f172a", border: "1px solid #334155", borderRadius: 10,
+                padding: "12px 16px", color: "#f1f5f9", fontSize: 16, outline: "none",
+              }}
+              placeholder="000.000.000-00"
+              value={cpfInput}
+              inputMode="numeric"
+              onChange={(e) => setCpfInput(formatCpf(e.target.value))}
+            />
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                onClick={() => { setShowCpfModal(false); setCpfInput(""); setPendingPlanId(null); }}
+                style={{
+                  flex: 1, padding: "12px 0", borderRadius: 10, border: "1px solid #334155",
+                  background: "transparent", color: "#94a3b8", cursor: "pointer", fontSize: 15,
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (pendingPlanId) {
+                    setShowCpfModal(false);
+                    void handleSubscribe(pendingPlanId, cpfInput);
+                    setCpfInput("");
+                    setPendingPlanId(null);
+                  }
+                }}
+                style={{
+                  flex: 1, padding: "12px 0", borderRadius: 10, border: "none",
+                  background: "#6366f1", color: "#fff", cursor: "pointer", fontSize: 15, fontWeight: 600,
+                }}
+              >
+                Continuar
               </button>
             </div>
           </div>

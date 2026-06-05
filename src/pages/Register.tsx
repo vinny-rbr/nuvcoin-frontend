@@ -19,17 +19,8 @@ export default function Register() {
 
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [cpf, setCpf] = useState("");
 
   const [loading, setLoading] = useState(false);
-
-  function formatCpf(value: string) {
-    const digits = value.replace(/\D/g, "").slice(0, 11);
-    return digits
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d)/, "$1.$2")
-      .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-  }
 
   async function handleRegister() {
     logClientEvent({
@@ -40,12 +31,6 @@ export default function Register() {
 
     if (!name.trim() || !email || !password) {
       alert("Preencha nome, email e senha.");
-      return;
-    }
-
-    const cpfDigits = cpf.replace(/\D/g, "");
-    if (cpfDigits && cpfDigits.length !== 11) {
-      alert("CPF inválido. Informe todos os 11 dígitos.");
       return;
     }
 
@@ -72,7 +57,6 @@ export default function Register() {
           name: name.trim(),
           email: email.trim(),
           password: password,
-          ...(cpfDigits ? { cpfCnpj: cpfDigits } : {}),
         }),
       });
 
@@ -150,16 +134,6 @@ export default function Register() {
             />
           </div>
 
-          <div className="auth-field">
-            <span>CPF <span style={{ color: "rgba(148,163,184,.6)", fontWeight: 400 }}>(opcional)</span></span>
-            <input
-              className="auth-input"
-              placeholder="000.000.000-00"
-              value={cpf}
-              onChange={(e) => setCpf(formatCpf(e.target.value))}
-              inputMode="numeric"
-            />
-          </div>
 
           <div className="auth-field">
             <span>Senha</span>
