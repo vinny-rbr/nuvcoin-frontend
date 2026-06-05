@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.50": [
+    { emoji: "📋", text: "Checkout agora pede nome completo e CPF — dados salvos no seu perfil automaticamente." },
+    { emoji: "🔄", text: "Corrigido loop infinito de onboarding para contas com assinatura expirada." },
+  ],
   "1.0.49": [
     { emoji: "OK", text: "Login agora sincroniza plano vitalicio imediatamente ao entrar." },
   ],
