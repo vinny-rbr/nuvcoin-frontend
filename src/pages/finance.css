@@ -1832,6 +1832,10 @@
   gap: 9px;
   margin-top: 4px;
   min-width: 0;
+}
+.cat-drill-name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1927,6 +1931,8 @@
 }
 .cat-drill-sm span { font-size: 11px; color: #64748b; }
 .cat-drill-chev { color: #64748b; font-size: 18px; line-height: 1; flex-shrink: 0; }
+.cat-drill-head-acts,
+.cat-drill-row-acts { position: relative; flex-shrink: 0; }
 
 .cat-drill-empty {
   color: #64748b;

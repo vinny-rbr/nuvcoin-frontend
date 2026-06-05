@@ -254,6 +254,26 @@ export default function Categorias() {
     }
   }
 
+  async function handleDeleteDrillNode(category: FinanceCategoryOption) {
+    const ok = confirm(`Remover "${category.name}"?`);
+    if (!ok) return;
+
+    try {
+      setSaving(true);
+      setFeedback(null);
+      await deleteFinanceCategory(category.id);
+      setCategories((current) => current.filter((item) => item.id !== category.id));
+      setActionMenuId(null);
+      drillBack();
+      setFeedback("Categoria removida.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Nao foi possivel remover a categoria.");
+      await refreshCategories().catch(() => undefined);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const selectedParent = parentOptions.find((category) => category.id === newParentId);
   const visibleColorOptions = showAllColors ? categoryColors : categoryColors.slice(0, 3);
   const visibleIconOptions = showAllIcons ? categoryEmojis : categoryEmojis.slice(0, 3);
@@ -312,7 +332,7 @@ export default function Categorias() {
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </button>
-              <div style={{ minWidth: 0 }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
                 <div className="cat-drill-crumb">
                   {drillAncestors.map((anc, idx) => (
                     <span key={idx}>
@@ -323,11 +343,27 @@ export default function Categorias() {
                 </div>
                 <div className="cat-drill-title">
                   <span className="cat-drill-dot" style={{ background: drillNode.color ?? "#60a5fa" }} />
-                  {drillNode.name}
+                  <span className="cat-drill-name">{drillNode.name}</span>
                   <span className="cat-drill-pill">
                     {(drillNode.level ?? 2) <= 2 ? "subcategoria" : "sub-subcategoria"}
                   </span>
                 </div>
+              </div>
+              <div className="cat-drill-head-acts">
+                <button
+                  type="button"
+                  className="categories-icon-button"
+                  aria-label="Mais opções"
+                  onClick={() => setActionMenuId((c) => c === drillNode.id ? null : drillNode.id)}
+                >
+                  •••
+                </button>
+                {actionMenuId === drillNode.id ? (
+                  <div className="categories-menu">
+                    <button type="button" onClick={() => startEdit(drillNode)}>Editar</button>
+                    <button type="button" disabled={saving} onClick={() => void handleDeleteDrillNode(drillNode)}>Remover</button>
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -357,7 +393,7 @@ export default function Categorias() {
                       className="cat-drill-subrow"
                       role="button"
                       tabIndex={0}
-                      onClick={() => drillInto(child.id)}
+                      onClick={(e) => { if ((e.target as HTMLElement).closest("button")) return; drillInto(child.id); }}
                       onKeyDown={(e) => { if (e.key === "Enter") drillInto(child.id); }}
                     >
                       <span className="cat-drill-si" style={{ background: childColor + "26" }}>
@@ -371,7 +407,22 @@ export default function Categorias() {
                             : "sem subcategorias"}
                         </span>
                       </div>
-                      <span className="cat-drill-chev">›</span>
+                      <div className="cat-drill-row-acts">
+                        <button
+                          type="button"
+                          className="categories-icon-button"
+                          aria-label="Mais opções"
+                          onClick={(e) => { e.stopPropagation(); setActionMenuId((c) => c === child.id ? null : child.id); }}
+                        >
+                          •••
+                        </button>
+                        {actionMenuId === child.id ? (
+                          <div className="categories-menu">
+                            <button type="button" onClick={(e) => { e.stopPropagation(); startEdit(child); }}>Editar</button>
+                            <button type="button" disabled={saving} onClick={(e) => { e.stopPropagation(); void handleDelete(child); }}>Remover</button>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })
