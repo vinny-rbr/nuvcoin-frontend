@@ -49,7 +49,7 @@ type UseGroupsDashboardReturn = {
   submittingMember: boolean; // Loading para adicionar/remover membro
   removingMemberId: string | null; // Guarda qual membro estÃ¡ sendo removido
   error: string | null; // Erro geral do hook
-  selectGroup: (groupId: string) => void; // Seleciona grupo ativo
+  selectGroup: (groupId: string | null) => void; // Seleciona grupo ativo (null para deselecionar)
   reloadGroups: () => Promise<void>; // Recarrega lista de grupos
   reloadSelectedGroupData: () => Promise<void>; // Recarrega dados do grupo ativo
   handleCreateGroup: (payload: CreateGroupRequest) => Promise<boolean>; // Cria grupo
@@ -255,8 +255,8 @@ export function useGroupsDashboard(): UseGroupsDashboardReturn {
     }
   }, [selectedGroupId]);
 
-  const selectGroup = useCallback((groupId: string) => {
-    // Atualiza grupo ativo
+  const selectGroup = useCallback((groupId: string | null) => {
+    // Atualiza grupo ativo (null = deselecionar)
     setSelectedGroupId(groupId);
 
     // Persiste imediatamente

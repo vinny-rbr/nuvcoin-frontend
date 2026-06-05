@@ -37,7 +37,7 @@ export default function GroupsGroupsLane({
       <div className="grp-panel-head">
         <div>
           <h3 className="grp-panel-title">Seus grupos</h3>
-          <div className="grp-panel-sub">Selecione para ver os detalhes</div>
+          <div className="grp-panel-sub">Selecione para ver as ações</div>
         </div>
       </div>
 

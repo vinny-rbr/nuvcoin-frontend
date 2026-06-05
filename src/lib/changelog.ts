@@ -4,6 +4,11 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.38": [
+    { emoji: "🗂️", text: "Grupos agora mostra a lista direto, sem painel de ações no topo" },
+    { emoji: "⚡", text: "Ações do grupo ficam dentro do contexto ao selecionar um grupo" },
+    { emoji: "✕", text: "Botão para fechar o grupo selecionado sem sair da tela" },
+  ],
   "1.0.35": [
     { emoji: "📊", text: "Nova tela de Relatórios no menu +" },
     { emoji: "🔍", text: "Busca por nome ou valor nas movimentações" },

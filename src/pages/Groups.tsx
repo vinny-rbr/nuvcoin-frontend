@@ -1,9 +1,9 @@
 ﻿import { useEffect, useMemo, useState, type CSSProperties } from "react"; // Hooks do React
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js"; // Elementos principais do Chart.js
 
+import GroupsContextCard from "./groups/components/GroupsContextCard";
 import GroupsDashboardContent from "./groups/components/GroupsDashboardContent";
 import GroupsGroupsLane from "./groups/components/GroupsGroupsLane";
-import GroupsHeaderActions from "./groups/components/GroupsHeaderActions";
 import GroupsModalsHub from "./groups/components/GroupsModalsHub";
 import { acceptGroupInvite } from "./groups/services/groups.api";
 
@@ -36,7 +36,6 @@ import {
   modalCard,
   modalHeader,
   modalOverlay,
-  pageHeroStyle,
   panelTitle,
   pillStyle,
   primaryButton,
@@ -492,12 +491,6 @@ export default function Groups() {
   });
 
 
-  const responsivePageHeroStyle: CSSProperties = {
-    ...pageHeroStyle,
-    padding: isMobileViewport ? 16 : pageHeroStyle.padding,
-    borderRadius: isMobileViewport ? 18 : pageHeroStyle.borderRadius,
-  };
-
   const responsiveSectionCard: CSSProperties = {
     ...sectionCard,
     padding: isMobileViewport ? 14 : sectionCard.padding,
@@ -632,14 +625,17 @@ export default function Groups() {
         key={animationKey}
         style={{ display: "grid", gap: isMobileViewport ? 14 : 18, width: "100%" }}
       >
-        <div style={getClockEntryStyle(0)}>
-          <GroupsHeaderActions
-            actions={headerQuickActions}
-            pageHeroStyle={responsivePageHeroStyle}
-            pillStyle={responsivePillStyle}
-            subtleText={subtleText}
-          />
+        {/* Slim header */}
+        <div style={getClockEntryStyle(0)} className="grp-slim-head">
+          <span className="grp-hero-kicker">Contas compartilhadas</span>
+          <h2 style={{ fontFamily: "var(--display)", fontSize: isMobileViewport ? 26 : 30, fontWeight: 700, letterSpacing: "-0.02em", margin: "8px 0 6px" }}>
+            Grupos
+          </h2>
+          <p style={{ color: "var(--text-2)", fontSize: 13.5, lineHeight: 1.45, maxWidth: 480, margin: 0 }}>
+            Divida aluguel, viagens e contas da casa de forma justa.
+          </p>
         </div>
+
         {state.groups.length > 0 && (
           <div style={getClockEntryStyle(1)}>
             <GroupsGroupsLane
@@ -654,8 +650,31 @@ export default function Groups() {
               subtleText={subtleText}
               memberAvatarStyle={memberAvatarStyle}
             />
+            {!selectedGroup && (
+              <div className="grp-hint-row">
+                <span className="grp-hint-pulse" />
+                Toque num grupo para abrir as ações dele
+              </div>
+            )}
           </div>
         )}
+
+        {/* Group context card — appears when a group is selected */}
+        {selectedGroup && (
+          <div style={getClockEntryStyle(state.groups.length > 0 ? 2 : 1)}>
+            <GroupsContextCard
+              groupName={selectedGroup.name}
+              membersCount={membersCount}
+              monthTotalCents={monthTotalCents}
+              averagePerPersonCents={averagePerPersonCents}
+              balances={balances}
+              actions={headerQuickActions}
+              onClose={() => selectGroup(null)}
+              isMobile={isMobileViewport}
+            />
+          </div>
+        )}
+
         {state.error && (
           <div style={getClockEntryStyle(2)}>
             <div
@@ -695,35 +714,37 @@ export default function Groups() {
           </div>
         )}
 
-        <div style={getClockEntryStyle(state.groups.length > 0 ? 2 : 1)}>
-          <div className="grp-invite-card">
-            <span className="grp-hero-kicker">Entrar em grupo</span>
-            <h3 style={{ fontFamily: "var(--display)", fontSize: 17, margin: "6px 0 2px" }}>
-              Recebeu um convite?
-            </h3>
-            <div style={{ color: "var(--text-2)", fontSize: 13 }}>
-              Informe o código recebido por e-mail para liberar somente esse grupo.
+        {!selectedGroup && (
+          <div style={getClockEntryStyle(state.groups.length > 0 ? 3 : 1)}>
+            <div className="grp-invite-card">
+              <span className="grp-hero-kicker">Entrar em grupo</span>
+              <h3 style={{ fontFamily: "var(--display)", fontSize: 17, margin: "6px 0 2px" }}>
+                Recebeu um convite?
+              </h3>
+              <div style={{ color: "var(--text-2)", fontSize: 13 }}>
+                Informe o código recebido por e-mail para liberar somente esse grupo.
+              </div>
+              <div className="grp-invite-row">
+                <input
+                  value={inviteCode}
+                  onChange={(event) => setInviteCode(event.target.value)}
+                  placeholder="Código do convite"
+                  inputMode="numeric"
+                />
+                <button
+                  type="button"
+                  className="grp-btn"
+                  onClick={handleAcceptInviteCode}
+                  disabled={inviteCodeLoading}
+                >
+                  {inviteCodeLoading ? "Validando..." : "Entrar no grupo"}
+                </button>
+              </div>
+              {inviteCodeError && <div style={{ color: "#fecaca", fontSize: 13 }}>{inviteCodeError}</div>}
+              {inviteCodeSuccess && <div style={{ color: "#86efac", fontSize: 13 }}>{inviteCodeSuccess}</div>}
             </div>
-            <div className="grp-invite-row">
-              <input
-                value={inviteCode}
-                onChange={(event) => setInviteCode(event.target.value)}
-                placeholder="Código do convite"
-                inputMode="numeric"
-              />
-              <button
-                type="button"
-                className="grp-btn"
-                onClick={handleAcceptInviteCode}
-                disabled={inviteCodeLoading}
-              >
-                {inviteCodeLoading ? "Validando..." : "Entrar no grupo"}
-              </button>
-            </div>
-            {inviteCodeError && <div style={{ color: "#fecaca", fontSize: 13 }}>{inviteCodeError}</div>}
-            {inviteCodeSuccess && <div style={{ color: "#86efac", fontSize: 13 }}>{inviteCodeSuccess}</div>}
           </div>
-        </div>
+        )}
 
         <GroupsDashboardContent
           selectedGroupId={selectedGroupId}
