@@ -113,6 +113,25 @@ export async function updateFinanceCategory(
   return normalizeCategory(await response.json());
 }
 
+export async function moveFinanceCategory(
+  id: string,
+  type: FinanceType,
+  parentId: string | null,
+): Promise<FinanceCategoryOption> {
+  const response = await fetch(apiUrl(`/api/finance-categories/${encodeURIComponent(id)}`), {
+    method: "PATCH",
+    headers: makeHeaders(),
+    body: JSON.stringify({ type, parentId }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new Error(payload?.message ?? `Could not move category: ${response.status}`);
+  }
+
+  return normalizeCategory(await response.json());
+}
+
 export async function deleteFinanceCategory(id: string): Promise<void> {
   const response = await fetch(apiUrl(`/api/finance-categories/${encodeURIComponent(id)}`), {
     method: "DELETE",

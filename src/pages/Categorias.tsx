@@ -5,8 +5,11 @@ import {
   createFinanceCategory,
   deleteFinanceCategory,
   listFinanceCategories,
+  moveFinanceCategory,
   updateFinanceCategory,
 } from "../lib/financeCategoriesService";
+import MoverCategoriaSheet, { descendantIds } from "../components/MoverCategoriaSheet";
+import type { MoveOpts } from "../components/MoverCategoriaSheet";
 import "./dashboard.css";
 import "./finance.css";
 
@@ -39,6 +42,19 @@ const categoryColors = [
   "#06b6d4", "#ec4899", "#84cc16", "#64748b", "#f97316",
 ];
 
+function MoveIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 9l-3 3 3 3" />
+      <path d="M9 5l3-3 3 3" />
+      <path d="M15 19l-3 3-3-3" />
+      <path d="M19 9l3 3-3 3" />
+      <path d="M2 12h20" />
+      <path d="M12 2v20" />
+    </svg>
+  );
+}
+
 export default function Categorias() {
   const [categories, setCategories] = useState<FinanceCategoryOption[]>([]);
   const [activeType, setActiveType] = useState<FinanceType>("RECEITA");
@@ -58,6 +74,7 @@ export default function Categorias() {
   const [showAllIcons, setShowAllIcons] = useState(false);
   const [drillPath, setDrillPath] = useState<string[]>([]);
   const [drillAnim, setDrillAnim] = useState<string>("");
+  const [moveItem, setMoveItem] = useState<FinanceCategoryOption | null>(null);
 
   const visibleCategories = useMemo(
     () =>
@@ -274,6 +291,50 @@ export default function Categorias() {
     }
   }
 
+  function openMove(cat: FinanceCategoryOption) {
+    setActionMenuId(null);
+    setMoveItem(cat);
+  }
+
+  async function handleApplyMove({ targetType, targetParentId, mode }: MoveOpts) {
+    const item = moveItem!;
+    try {
+      setSaving(true);
+      setFeedback(null);
+
+      if (mode === "self") {
+        const directChildren = categories.filter((c) => c.parentId === item.id);
+        await moveFinanceCategory(item.id, targetType, targetParentId);
+        for (const child of directChildren) {
+          await moveFinanceCategory(child.id, child.type, item.parentId ?? null);
+        }
+      } else {
+        await moveFinanceCategory(item.id, targetType, targetParentId);
+        if (targetType !== item.type) {
+          const desc = descendantIds(categories, item.id);
+          const descList = categories.filter((c) => desc.has(c.id));
+          for (const d of descList) {
+            await moveFinanceCategory(d.id, targetType, d.parentId ?? null);
+          }
+        }
+      }
+
+      await refreshCategories();
+      setActiveType(targetType);
+      setDrillPath([]);
+      setMoveItem(null);
+      const where = targetParentId
+        ? `para dentro de "${categories.find((c) => c.id === targetParentId)?.name ?? ""}"`
+        : `para a raiz de ${targetType === "RECEITA" ? "Recebimentos" : "Gastos"}`;
+      setFeedback(`"${item.name}" movida ${where}.`);
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Não foi possível mover a categoria.");
+      await refreshCategories().catch(() => undefined);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const selectedParent = parentOptions.find((category) => category.id === newParentId);
   const visibleColorOptions = showAllColors ? categoryColors : categoryColors.slice(0, 3);
   const visibleIconOptions = showAllIcons ? categoryEmojis : categoryEmojis.slice(0, 3);
@@ -364,6 +425,9 @@ export default function Categorias() {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                       Editar
                     </button>
+                    <button type="button" className="mv-menu-item" onClick={() => openMove(drillNode)}>
+                      <MoveIcon /> Mover
+                    </button>
                     <button type="button" disabled={saving} onClick={() => void handleDeleteDrillNode(drillNode)}>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
                       Remover
@@ -428,6 +492,9 @@ export default function Categorias() {
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                               Editar
                             </button>
+                            <button type="button" className="mv-menu-item" onClick={(e) => { e.stopPropagation(); openMove(child); }}>
+                              <MoveIcon /> Mover
+                            </button>
                             <button type="button" disabled={saving} onClick={(e) => { e.stopPropagation(); void handleDelete(child); }}>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
                               Remover
@@ -483,6 +550,9 @@ export default function Categorias() {
                             {(category.level ?? 1) < 3 ? (
                               <button type="button" onClick={() => openCreate(category.id)}>+ Sub</button>
                             ) : null}
+                            <button type="button" className="mv-menu-item" onClick={() => openMove(category)}>
+                              <MoveIcon /> Mover
+                            </button>
                             <button type="button" disabled={saving} onClick={() => handleDelete(category)}>Remover</button>
                           </div>
                         ) : null}
@@ -608,6 +678,15 @@ export default function Categorias() {
           </div>
         </div>,
         document.body,
+      ) : null}
+
+      {moveItem ? (
+        <MoverCategoriaSheet
+          cats={categories}
+          item={moveItem}
+          onClose={() => setMoveItem(null)}
+          onApply={(opts) => void handleApplyMove(opts)}
+        />
       ) : null}
     </div>
   );
