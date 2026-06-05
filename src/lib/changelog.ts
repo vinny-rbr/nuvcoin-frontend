@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.39": [
+    { emoji: "📋", text: "Clique em Receitas ou Despesas no gráfico Confronto para ver os lançamentos do período" },
+  ],
   "1.0.38": [
     { emoji: "🗂️", text: "Grupos agora mostra a lista direto, sem painel de ações no topo" },
     { emoji: "⚡", text: "Ações do grupo ficam dentro do contexto ao selecionar um grupo" },

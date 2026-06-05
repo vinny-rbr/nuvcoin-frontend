@@ -1089,6 +1089,8 @@ export default function Dashboard() {
             despesasCents={summary.totalDespesasCents}
             saldoCents={summary.saldoCents}
             periodo={getPeriodLabel(period)}
+            receitaItems={filteredItems.filter(i => i.type === "RECEITA")}
+            despesaItems={filteredItems.filter(i => i.type === "DESPESA")}
           />
         ) : (
           <DonutDashboardCard

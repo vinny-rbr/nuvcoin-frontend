@@ -8,6 +8,7 @@
    ============================================================ */
 
 import { useEffect, useRef, useState } from "react";
+import type { FinanceItem } from "../types/finance";
 
 // ─── Color tokens (green=receitas · red=despesas · blue=saldo) ────
 const G = "#34d399";
@@ -198,22 +199,27 @@ export function InteractiveDonut({
   despesasCents,
   saldoCents,
   periodo,
+  receitaItems = [],
+  despesaItems = [],
 }: {
   receitasCents: number;
   despesasCents: number;
   saldoCents: number;
   periodo: string;
+  receitaItems?: FinanceItem[];
+  despesaItems?: FinanceItem[];
 }) {
   const [cardRef, inView] = useInView();
   const tweenProg = useTween(inView);
   const saldoAnimated = useCountUp(Math.abs(saldoCents), inView);
   const [hovered, setHovered] = useState<number | null>(null);
   const [tip, setTip] = useState<{ html: string; x: number; y: number } | null>(null);
+  const [selectedSeg, setSelectedSeg] = useState<"Receitas" | "Despesas" | null>(null);
 
   const total = receitasCents + despesasCents || 1;
   const segs = [
-    { nm: "Receitas", v: receitasCents, c: G },
-    { nm: "Despesas", v: despesasCents, c: R },
+    { nm: "Receitas", v: receitasCents, c: G, items: receitaItems },
+    { nm: "Despesas", v: despesasCents, c: R, items: despesaItems },
   ];
 
   let angle = 0;
@@ -299,25 +305,80 @@ export function InteractiveDonut({
 
       {/* Legend */}
       <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
-        {segs.map((seg) => (
-          <div key={seg.nm} style={{
-            display: "grid",
-            gridTemplateColumns: "auto minmax(0,1fr) auto",
-            alignItems: "center",
-            gap: 10,
-            border: "1px solid rgba(148,163,184,.09)",
-            background: "rgba(15,23,42,.36)",
-            borderRadius: 12,
-            padding: "11px 13px",
-          }}>
-            <span style={{ width: 11, height: 11, borderRadius: "50%", background: seg.c, display: "inline-block", flexShrink: 0 }} />
-            <span style={{ fontWeight: 700, fontSize: 13.5 }}>{seg.nm}</span>
-            <span style={{ display: "flex", alignItems: "baseline", gap: 7, whiteSpace: "nowrap" }}>
-              <strong style={{ fontWeight: 800, fontSize: 13.5, color: seg.c }}>{brl(seg.v)}</strong>
-              <span style={{ color: "var(--text-secondary)", fontSize: 12, fontWeight: 700 }}>{pctStr(seg.v, total)}</span>
-            </span>
-          </div>
-        ))}
+        {segs.map((seg) => {
+          const isSelected = selectedSeg === seg.nm;
+          return (
+            <div key={seg.nm}>
+              <button
+                type="button"
+                onClick={() => setSelectedSeg(isSelected ? null : seg.nm as "Receitas" | "Despesas")}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "auto minmax(0,1fr) auto",
+                  alignItems: "center",
+                  gap: 10,
+                  border: `1px solid ${isSelected ? seg.c + "44" : "rgba(148,163,184,.09)"}`,
+                  background: isSelected ? `${seg.c}10` : "rgba(15,23,42,.36)",
+                  borderRadius: isSelected ? "12px 12px 0 0" : 12,
+                  padding: "11px 13px",
+                  width: "100%",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  transition: "background 0.18s, border-color 0.18s",
+                }}
+              >
+                <span style={{ width: 11, height: 11, borderRadius: "50%", background: seg.c, display: "inline-block", flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: 13.5 }}>{seg.nm}</span>
+                <span style={{ display: "flex", alignItems: "baseline", gap: 7, whiteSpace: "nowrap" }}>
+                  <strong style={{ fontWeight: 800, fontSize: 13.5, color: seg.c }}>{brl(seg.v)}</strong>
+                  <span style={{ color: "var(--text-secondary)", fontSize: 12, fontWeight: 700 }}>{pctStr(seg.v, total)}</span>
+                  <span style={{ color: "var(--text-secondary)", fontSize: 11, marginLeft: 2 }}>{isSelected ? "▲" : "▼"}</span>
+                </span>
+              </button>
+
+              {isSelected && (
+                <div style={{
+                  border: `1px solid ${seg.c}44`,
+                  borderTop: "none",
+                  borderRadius: "0 0 12px 12px",
+                  background: "rgba(10,15,30,.6)",
+                  maxHeight: 280,
+                  overflowY: "auto",
+                }}>
+                  {seg.items.length === 0 ? (
+                    <div style={{ padding: "14px 13px", color: "var(--text-secondary)", fontSize: 13 }}>
+                      Nenhum lançamento no período.
+                    </div>
+                  ) : (
+                    seg.items
+                      .slice()
+                      .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
+                      .map((item) => (
+                        <div key={item.id} style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          padding: "10px 13px",
+                          borderBottom: "1px solid rgba(148,163,184,.07)",
+                        }}>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
+                            <div style={{ color: "var(--text-secondary)", fontSize: 11.5, marginTop: 1 }}>
+                              {item.category} · {new Date(`${item.dateISO}T00:00:00`).toLocaleDateString("pt-BR")}
+                            </div>
+                          </div>
+                          <strong style={{ color: seg.c, fontSize: 13, whiteSpace: "nowrap", flexShrink: 0 }}>
+                            {seg.nm === "Receitas" ? "+ " : "- "}{brl(item.amountCents)}
+                          </strong>
+                        </div>
+                      ))
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Tooltip */}
