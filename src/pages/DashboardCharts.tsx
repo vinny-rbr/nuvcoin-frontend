@@ -214,7 +214,18 @@ export function InteractiveDonut({
   const saldoAnimated = useCountUp(Math.abs(saldoCents), inView);
   const [hovered, setHovered] = useState<number | null>(null);
   const [tip, setTip] = useState<{ html: string; x: number; y: number } | null>(null);
-  const [selectedSeg, setSelectedSeg] = useState<"Receitas" | "Despesas" | null>(null);
+  const [openSeg, setOpenSeg] = useState<"Receitas" | "Despesas" | null>(null);
+  const [mountedSeg, setMountedSeg] = useState<"Receitas" | "Despesas" | null>(null);
+
+  function toggleSeg(nm: "Receitas" | "Despesas") {
+    if (openSeg === nm) {
+      setOpenSeg(null);
+      setTimeout(() => setMountedSeg((m) => (m === nm ? null : m)), 340);
+    } else {
+      setMountedSeg(nm);
+      setOpenSeg(nm);
+    }
+  }
 
   const total = receitasCents + despesasCents || 1;
   const segs = [
@@ -303,80 +314,54 @@ export function InteractiveDonut({
         </div>
       </div>
 
-      {/* Legend */}
+      {/* Legend — accordion */}
       <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
         {segs.map((seg) => {
-          const isSelected = selectedSeg === seg.nm;
+          const isOpen = openSeg === seg.nm;
+          const isMounted = mountedSeg === seg.nm;
           return (
             <div key={seg.nm}>
               <button
                 type="button"
-                onClick={() => setSelectedSeg(isSelected ? null : seg.nm as "Receitas" | "Despesas")}
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "auto minmax(0,1fr) auto",
-                  alignItems: "center",
-                  gap: 10,
-                  border: `1px solid ${isSelected ? seg.c + "44" : "rgba(148,163,184,.09)"}`,
-                  background: isSelected ? `${seg.c}10` : "rgba(15,23,42,.36)",
-                  borderRadius: isSelected ? "12px 12px 0 0" : 12,
-                  padding: "11px 13px",
-                  width: "100%",
-                  cursor: "pointer",
-                  textAlign: "left",
-                  color: "inherit",
-                  transition: "background 0.18s, border-color 0.18s",
-                }}
+                className="donut-leg-btn"
+                style={isOpen ? { borderColor: seg.c + "44", background: seg.c + "10", borderRadius: "12px 12px 0 0" } : undefined}
+                onClick={() => toggleSeg(seg.nm as "Receitas" | "Despesas")}
               >
-                <span style={{ width: 11, height: 11, borderRadius: "50%", background: seg.c, display: "inline-block", flexShrink: 0 }} />
-                <span style={{ fontWeight: 700, fontSize: 13.5 }}>{seg.nm}</span>
-                <span style={{ display: "flex", alignItems: "baseline", gap: 7, whiteSpace: "nowrap" }}>
-                  <strong style={{ fontWeight: 800, fontSize: 13.5, color: seg.c }}>{brl(seg.v)}</strong>
-                  <span style={{ color: "var(--text-secondary)", fontSize: 12, fontWeight: 700 }}>{pctStr(seg.v, total)}</span>
-                  <span style={{ color: "var(--text-secondary)", fontSize: 11, marginLeft: 2 }}>{isSelected ? "▲" : "▼"}</span>
+                <span className="donut-leg-dot" style={{ background: seg.c }} />
+                <span className="donut-leg-name">{seg.nm}</span>
+                <span className="donut-leg-right">
+                  <span className="dlr-v" style={{ color: seg.c }}>{brl(seg.v)}</span>
+                  <span className="dlr-p">{pctStr(seg.v, total)}</span>
+                  <span className={`donut-leg-chev${isOpen ? " is-open" : ""}`}>▼</span>
                 </span>
               </button>
 
-              {isSelected && (
-                <div className="donut-drilldown" style={{
-                  border: `1px solid ${seg.c}44`,
-                  borderTop: "none",
-                  borderRadius: "0 0 12px 12px",
-                  background: "rgba(10,15,30,.6)",
-                  maxHeight: 280,
-                  overflowY: "auto",
-                }}>
-                  {seg.items.length === 0 ? (
-                    <div style={{ padding: "14px 13px", color: "var(--text-secondary)", fontSize: 13 }}>
-                      Nenhum lançamento no período.
-                    </div>
-                  ) : (
-                    seg.items
+              <div className={`donut-acc${isOpen ? " is-open" : ""}`}>
+                <div className="donut-acc-inner">
+                  <div className="donut-acc-list" style={{ borderColor: seg.c + "44" }}>
+                    {isMounted && seg.items.length === 0 && (
+                      <div className="donut-acc-empty">Nenhum lançamento no período.</div>
+                    )}
+                    {isMounted && seg.items
                       .slice()
                       .sort((a, b) => b.dateISO.localeCompare(a.dateISO))
-                      .map((item) => (
-                        <div key={item.id} style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          gap: 10,
-                          padding: "10px 13px",
-                          borderBottom: "1px solid rgba(148,163,184,.07)",
-                        }}>
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontWeight: 700, fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.title}</div>
-                            <div style={{ color: "var(--text-secondary)", fontSize: 11.5, marginTop: 1 }}>
+                      .map((item, i) => (
+                        <div key={item.id} className="donut-drow donut-drow-anim" style={{ animationDelay: `${i * 45}ms` }}>
+                          <div className="donut-drow-main">
+                            <div className="donut-drow-ti">{item.title}</div>
+                            <div className="donut-drow-me">
                               {item.category} · {new Date(`${item.dateISO}T00:00:00`).toLocaleDateString("pt-BR")}
                             </div>
                           </div>
-                          <strong style={{ color: seg.c, fontSize: 13, whiteSpace: "nowrap", flexShrink: 0 }}>
-                            {seg.nm === "Receitas" ? "+ " : "- "}{brl(item.amountCents)}
+                          <strong className="donut-drow-amt" style={{ color: seg.c }}>
+                            {seg.nm === "Receitas" ? "+ " : "− "}{brl(item.amountCents)}
                           </strong>
                         </div>
                       ))
-                  )}
+                    }
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           );
         })}

@@ -1699,14 +1699,73 @@
   }
 }
 
-@keyframes donutDrillDown {
-  from { opacity: 0; transform: translateY(-6px); }
+/* ── Donut legend accordion ───────────────────────────────── */
+.donut-leg-btn {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.09);
+  background: rgba(15, 23, 42, 0.36);
+  border-radius: 12px;
+  padding: 11px 13px;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  transition: background 0.18s, border-color 0.18s;
+}
+.donut-leg-btn:active { transform: scale(0.99); }
+.donut-leg-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.donut-leg-name { font-weight: 700; font-size: 13.5px; }
+.donut-leg-right { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.donut-leg-right .dlr-v { font-weight: 800; font-size: 13.5px; }
+.donut-leg-right .dlr-p { color: var(--text-secondary); font-size: 12px; font-weight: 700; }
+.donut-leg-chev {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  display: inline-block;
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-left: 2px;
+}
+.donut-leg-chev.is-open { transform: rotate(180deg); }
+
+.donut-acc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.donut-acc.is-open { grid-template-rows: 1fr; }
+.donut-acc-inner { overflow: hidden; min-height: 0; }
+.donut-acc-list {
+  border: 1px solid rgba(148, 163, 184, 0.09);
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
+  background: rgba(10, 15, 30, 0.6);
+  max-height: 230px;
+  overflow-y: auto;
+}
+.donut-acc-empty { padding: 14px 13px; color: var(--text-secondary); font-size: 13px; }
+
+.donut-drow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+}
+.donut-drow:last-child { border-bottom: 0; }
+.donut-drow-main { min-width: 0; }
+.donut-drow-ti { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.donut-drow-me { color: var(--text-secondary); font-size: 11.5px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.donut-drow-amt { font-size: 13px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+
+@keyframes donutRowIn {
+  from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-.donut-drilldown {
-  animation: donutDrillDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-}
+.donut-drow-anim { animation: donutRowIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 /*
 Desenvolvido por Lucas Vinicius
