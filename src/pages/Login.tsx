@@ -2,7 +2,7 @@
 import { Link, useNavigate } from "react-router-dom"; // Link + navegaÃ§Ã£o
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
-import { persistSubscriptionState } from "../lib/auth";
+import { deriveSubscriptionStatusFromAuthData, persistSubscriptionState } from "../lib/auth";
 import { hasCompletedOnboarding } from "../lib/onboarding";
 import { logClientEvent } from "../lib/clientLogger";
 import "./auth.css";
@@ -77,6 +77,10 @@ export default function Login() {
         subscriptionStatus?: string;
         planStatus?: string;
         isActive?: boolean | string;
+        isLifetime?: boolean;
+        lifetime?: boolean;
+        planLifetime?: boolean;
+        endDateUtc?: string | null;
       };
 
       if (!data.token) {
@@ -103,13 +107,24 @@ export default function Login() {
         message: "Login realizado",
         data: { email: data.email, userId: data.userId, name: data.name ?? "" },
       });
-      if (data.subscriptionEndDateUtc) {
-        localStorage.setItem("subscriptionEndDateUtc", data.subscriptionEndDateUtc);
+      const nextSubscriptionStatus = deriveSubscriptionStatusFromAuthData(data);
+      const nextIsLifetime = data.isLifetime === true || data.lifetime === true || data.planLifetime === true;
+      const nextEndDate = data.subscriptionEndDateUtc ?? data.endDateUtc ?? null;
+
+      if (nextIsLifetime) {
+        localStorage.setItem("conciliaai_subscription_lifetime", "true");
+        localStorage.removeItem("subscriptionEndDateUtc");
+      } else {
+        localStorage.removeItem("conciliaai_subscription_lifetime");
+      }
+
+      if (!nextIsLifetime && nextEndDate) {
+        localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
       } else {
         localStorage.removeItem("subscriptionEndDateUtc");
       }
-      localStorage.removeItem("conciliaai_subscription_lifetime");
-      persistSubscriptionState(null); // Estado da assinatura sera validado pelo backend apos login
+
+      persistSubscriptionState(nextSubscriptionStatus); // Estado da assinatura tambem sera revalidado pelo layout.
 
       navigate(hasCompletedOnboarding(data.userId) ? "/dashboard" : "/onboarding");
     } catch (err: unknown) {

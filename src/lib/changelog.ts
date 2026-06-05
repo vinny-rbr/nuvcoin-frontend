@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.49": [
+    { emoji: "OK", text: "Login agora sincroniza plano vitalicio imediatamente ao entrar." },
+  ],
   "1.0.47": [
     { emoji: "🗂️", text: "Drill-in refinado — titulo com Space Grotesk, nome trunca correto (flex:0 1 auto), addrow nao estoura, icones SVG no menu editar/remover" },
   ],
