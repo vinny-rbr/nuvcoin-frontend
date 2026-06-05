@@ -854,7 +854,7 @@ export default function Layout({ children }: Props) {
                 <small>FINANÇAS</small>
               </span>
             </div>
-            <span className="badge">{planBadgeLabel}</span>
+            <span className="badge">FINANÇAS</span>
           </div>
 
           <div
@@ -866,32 +866,6 @@ export default function Layout({ children }: Props) {
               marginLeft: "auto",
             }}
           >
-            {lifetimeBadgeLabel ? (
-              <span className="lifetime-badge">
-                {lifetimeBadgeLabel}
-              </span>
-            ) : null}
-
-            {remainingDaysBadge ? (
-              <span
-                className="trial-badge"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  padding: "6px 10px",
-                  borderRadius: "999px",
-                  background: "rgba(255, 255, 255, 0.12)",
-                  color: "var(--text-main)",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  lineHeight: 1,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {remainingDaysBadge}
-              </span>
-            ) : null}
-
             {!hasConfirmedPaidSubscription ? (
               <button
                 type="button"
@@ -936,79 +910,31 @@ export default function Layout({ children }: Props) {
               ))}
             </nav>
 
-            <div className="profile-menu-shell" ref={profileMenuRef}>
+            {!isMobile ? (
               <button
                 type="button"
-                className="profile-button"
-                aria-label="Abrir perfil do usuario"
-                aria-expanded={isProfileMenuOpen}
-                onClick={() => setIsProfileMenuOpen((current) => !current)}
+                onClick={() => navigate("/perfil")}
+                aria-label="Abrir perfil"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "6px 10px 6px 6px",
+                  borderRadius: "10px",
+                  border: "1px solid rgba(148, 163, 184, 0.18)",
+                  background: "rgba(30, 41, 59, 0.6)",
+                  color: "var(--text-main)",
+                  cursor: "pointer",
+                  transition: "0.2s ease",
+                  whiteSpace: "nowrap",
+                }}
               >
-                <span className="profile-avatar" aria-hidden="true">
+                <span className="profile-avatar" style={{ width: 28, height: 28, fontSize: 11 }} aria-hidden="true">
                   {profilePhoto ? <img src={profilePhoto} alt="" /> : profileInitials}
                 </span>
-                <span className="profile-version-pill">v{APP_VERSION}</span>
-                <span className="profile-button-text">
-                  <strong>{profileDisplayName}</strong>
-                  <small>{profileEmail || "Perfil"}</small>
-                </span>
+                <span style={{ fontSize: 13, fontWeight: 600 }}>{profileDisplayName}</span>
               </button>
-
-              <div className={`profile-panel${isProfileMenuOpen ? " is-open" : ""}`}>
-                <div className="profile-panel-head">
-                  <button
-                    type="button"
-                    className="profile-avatar profile-avatar-large"
-                    onClick={handleProfilePhotoClick}
-                    title="Trocar foto"
-                  >
-                    {profilePhoto ? <img src={profilePhoto} alt="Foto do perfil" /> : profileInitials}
-                  </button>
-                  <div>
-                    <strong>{profileDisplayName}</strong>
-                    <span>{profileEmail || "Sem e-mail salvo"}</span>
-                    <span className="profile-version">Versao {APP_VERSION}</span>
-                  </div>
-                </div>
-
-                <input
-                  ref={profilePhotoInputRef}
-                  className="profile-file-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfilePhotoChange}
-                />
-
-                <button type="button" className="profile-action" onClick={handleProfilePhotoClick}>
-                  Trocar foto
-                </button>
-                {profilePhoto ? (
-                  <button type="button" className="profile-action profile-action-danger" onClick={handleRemoveProfilePhoto}>
-                    Remover foto
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={{
-                display: isMobile ? "none" : "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "8px 14px",
-                borderRadius: "10px",
-                border: "1px solid rgba(148, 163, 184, 0.18)",
-                background: "rgba(30, 41, 59, 0.6)",
-                color: "var(--text-main)",
-                cursor: "pointer",
-                transition: "0.2s ease",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Sair
-            </button>
+            ) : null}
           </div>
 
           <div className="mobile-nav-shell" ref={mobileMenuRef}>
