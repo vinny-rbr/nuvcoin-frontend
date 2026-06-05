@@ -4,8 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
-  "1.0.53": [
-    { emoji: "✨", text: "Cabeçalho simplificado — dias restantes e avatar removidos do topo. Tudo sobre o seu plano está agora na tela Perfil." },
+  "1.0.54": [
+    { emoji: "👤", text: "Nova tela de Perfil — foto, nome, e-mail, CPF, assinatura e dias restantes. Acesse pelo botão Perfil na barra inferior." },
+    { emoji: "✨", text: "Cabeçalho simplificado — menu lateral removido. A navegação fica toda na barra inferior." },
   ],
   "1.0.52": [
     { emoji: "👤", text: "Nova tela de Perfil — foto, nome, e-mail, CPF, datas de assinatura e barra de progresso do ciclo. Acesse pelo botão Perfil na barra inferior." },
