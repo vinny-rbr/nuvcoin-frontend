@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import type { FinanceCategory, FinanceCategoryOption, FinanceItem, FinanceStatus, PaymentType } from "../types/finance";
 import {
   financeAdd,
@@ -35,13 +36,9 @@ function formatDateBR(dateISO: string): string {
 
 function getPaymentLabel(paymentType: PaymentType): string {
   if (paymentType === "pix") return "Pix";
-  if (paymentType === "debit") return "Debito";
+  if (paymentType === "debit") return "Débito";
   if (paymentType === "cash") return "Dinheiro";
-  return "Credito";
-}
-
-function getStatusLabel(status: FinanceStatus): string {
-  return status === "paid" ? "Pago" : "Pendente";
+  return "Crédito";
 }
 
 function addMonthsISO(dateISO: string, monthsToAdd: number): string {
@@ -50,7 +47,6 @@ function addMonthsISO(dateISO: string, monthsToAdd: number): string {
   const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
   const safeDay = Math.min(day, lastDay);
   target.setDate(safeDay);
-
   const yyyy = target.getFullYear();
   const mm = String(target.getMonth() + 1).padStart(2, "0");
   const dd = String(target.getDate()).padStart(2, "0");
@@ -60,15 +56,12 @@ function addMonthsISO(dateISO: string, monthsToAdd: number): string {
 function nextRecurringStartISO(dateISO: string): string {
   const today = todayISO();
   if (dateISO >= today) return dateISO;
-
   const day = Number(dateISO.slice(8, 10));
   const now = new Date();
   const currentMonthCandidate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
     Math.min(day, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()),
   ).padStart(2, "0")}`;
-
   if (currentMonthCandidate >= today) return currentMonthCandidate;
-
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const lastDay = new Date(nextMonth.getFullYear(), nextMonth.getMonth() + 1, 0).getDate();
   return `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}-${String(
@@ -76,7 +69,29 @@ function nextRecurringStartISO(dateISO: string): string {
   ).padStart(2, "0")}`;
 }
 
+function DonutRing({ recCents, desCents }: { recCents: number; desCents: number }) {
+  const r = 51;
+  const circ = 2 * Math.PI * r;
+  const total = recCents + desCents;
+  const pctRec = total > 0 ? Math.round((recCents / total) * 100) : 50;
+  const gLen = circ * pctRec / 100;
+  return (
+    <div className="ov-ring">
+      <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx="60" cy="60" r={r} fill="none" stroke="rgba(148,163,184,.14)" strokeWidth="13" />
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#ef4444" strokeWidth="13" strokeLinecap="round" strokeDasharray={`${circ}`} />
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#22c55e" strokeWidth="13" strokeLinecap="round" strokeDasharray={`${gLen} ${circ - gLen}`} />
+      </svg>
+      <div className="ov-ring-ctr">
+        <small>Entrou</small>
+        <b style={{ color: "#86efac" }}>{pctRec}%</b>
+      </div>
+    </div>
+  );
+}
+
 export default function Despesas() {
+  const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.DESPESA[0]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORIES.DESPESA);
@@ -93,32 +108,25 @@ export default function Despesas() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<FinanceItem | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeChip, setActiveChip] = useState("Tudo");
   const savingRef = useRef(false);
 
   useEffect(() => {
-    const load = () => {
-      setItems(financeList());
-    };
-
+    const load = () => { setItems(financeList()); };
     load();
     void financeRefreshFromApi().then(setItems).catch(() => undefined);
-
     const unsubscribe = financeSubscribe(load);
-
-    const refresh = () => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined);
-    };
-
+    const refresh = () => { void financeRefreshFromApi().then(setItems).catch(() => undefined); };
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
-
     const handleFinanceError = (event: Event) => {
       const customEvent = event as CustomEvent<string>;
       setFeedback(customEvent.detail || "Nao foi possivel sincronizar agora.");
     };
-
     window.addEventListener("conciliaai_finance_error", handleFinanceError as EventListener);
-
     return () => {
       unsubscribe();
       window.removeEventListener("focus", refresh);
@@ -129,7 +137,6 @@ export default function Despesas() {
 
   useEffect(() => {
     let isMounted = true;
-
     void listFinanceCategories()
       .then((categories) => {
         if (!isMounted) return;
@@ -139,28 +146,17 @@ export default function Despesas() {
         setCategory((current) => (options.includes(current) ? current : options[0] ?? "Outros"));
       })
       .catch(() => undefined);
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
     setAnimate(false);
-
-    const timeoutId = window.setTimeout(() => {
-      setAnimate(true);
-    }, 40);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    const timeoutId = window.setTimeout(() => { setAnimate(true); }, 40);
+    return () => { window.clearTimeout(timeoutId); };
   }, [items]);
 
   const despesas = useMemo(() => items.filter((x) => x.type === "DESPESA"), [items]);
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeChip, setActiveChip] = useState("Tudo");
 
   const chipOptions = useMemo(() => {
     const parents = new Set<string>();
@@ -175,9 +171,9 @@ export default function Despesas() {
     return despesas.filter((item) => {
       const matchesSearch = !searchQuery ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesChip = activeChip === "Tudo" ||
-        item.category.split(">")[0].trim() === activeChip;
+        item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        formatCentsBRL(item.amountCents).includes(searchQuery);
+      const matchesChip = activeChip === "Tudo" || item.category.split(">")[0].trim() === activeChip;
       return matchesSearch && matchesChip;
     });
   }, [despesas, searchQuery, activeChip]);
@@ -189,7 +185,6 @@ export default function Despesas() {
     const options = categoriesForType(categories, "DESPESA");
     setCategoryRecords(categories.filter((item) => item.type === "DESPESA"));
     setCategoryOptions(options);
-
     const expectedPath = parentPath ? `${parentPath} > ${created.name}` : created.name;
     const createdValue = options.find((option) => option === expectedPath || option === created.name || option.endsWith(`> ${created.name}`)) ?? expectedPath;
     setCategory(createdValue);
@@ -200,90 +195,49 @@ export default function Despesas() {
     event?.preventDefault();
     event?.stopPropagation();
     financeDebugLog("onAdd despesa iniciou", { title, amount, dateISO, paymentType, status, saving, isRecurring });
-
     if (savingRef.current || saving) return;
     setFeedback(null);
-
     const amountCents = parseAmountToCents(amount);
     const parsedMonths = Number(recurrenceMonths);
     const totalMonths = isRecurring ? (recurrenceMode === "forever" ? 12 : Math.min(Math.max(Math.trunc(parsedMonths || 0), 1), 60)) : 1;
-
-    if (!title.trim()) {
-      financeDebugLog("validacao falhou despesa titulo", { title });
-      alert("Informe um titulo.");
-      return;
-    }
-
-    if (amountCents <= 0) {
-      financeDebugLog("valor invalido despesa", { amount, amountCents });
-      alert("Informe um valor valido.");
-      return;
-    }
-
-    if (isRecurring && recurrenceMode === "months" && (!parsedMonths || parsedMonths < 1)) {
-      alert("Informe por quantos meses essa despesa deve se repetir.");
-      return;
-    }
-
+    if (!title.trim()) { financeDebugLog("validacao falhou despesa titulo", { title }); alert("Informe um titulo."); return; }
+    if (amountCents <= 0) { financeDebugLog("valor invalido despesa", { amount, amountCents }); alert("Informe um valor valido."); return; }
+    if (isRecurring && recurrenceMode === "months" && (!parsedMonths || parsedMonths < 1)) { alert("Informe por quantos meses essa despesa deve se repetir."); return; }
     savingRef.current = true;
     setSaving(true);
     setFeedback(isRecurring ? "Criando despesas mensais..." : "Salvando lancamento...");
-
     let updated = financeList();
     const createdAtISO = new Date().toISOString();
     const firstDateISO = isRecurring ? nextRecurringStartISO(dateISO) : dateISO;
-
     for (let index = 0; index < totalMonths; index += 1) {
       const installmentDateISO = addMonthsISO(firstDateISO, index);
       const newItem: FinanceItem = {
-        id: makeId(),
-        type: "DESPESA",
-        title: title.trim(),
-        category,
-        amountCents,
-        dateISO: installmentDateISO,
-        createdAtISO,
-        paymentType,
+        id: makeId(), type: "DESPESA", title: title.trim(), category, amountCents,
+        dateISO: installmentDateISO, createdAtISO, paymentType,
         status: index === 0 && installmentDateISO <= todayISO() ? status : "pending",
       };
-
       updated = financeAdd(newItem);
     }
-
     setItems(updated);
     window.setTimeout(() => {
-      void financeRefreshFromApi()
-        .then(setItems)
-        .catch(() => undefined)
-        .finally(() => {
-          savingRef.current = false;
-          setSaving(false);
-        });
+      void financeRefreshFromApi().then(setItems).catch(() => undefined).finally(() => { savingRef.current = false; setSaving(false); });
     }, isRecurring ? 1200 : 700);
-
-    setTitle("");
-    setAmount("");
-    setDateISO(todayISO());
+    setTitle(""); setAmount(""); setDateISO(todayISO());
     setCategory(categoryOptions[0] ?? "Outros");
-    setPaymentType("pix");
-    setStatus("paid");
-    setIsRecurring(false);
-    setRecurrenceMode("forever");
-    setRecurrenceMonths("6");
+    setPaymentType("pix"); setStatus("paid"); setIsRecurring(false);
+    setRecurrenceMode("forever"); setRecurrenceMonths("6");
+    setShowForm(false);
   }, [amount, category, categoryOptions, dateISO, isRecurring, paymentType, recurrenceMode, recurrenceMonths, saving, status, title]);
 
   useEffect(() => {
     function handleNativeAdd(event: Event) {
       const target = event.target as HTMLElement | null;
       if (!target?.closest("[data-finance-add='despesa']")) return;
-
       onAdd(event);
     }
-
     document.addEventListener("click", handleNativeAdd, true);
     document.addEventListener("pointerdown", handleNativeAdd, true);
     document.addEventListener("touchstart", handleNativeAdd, true);
-
     return () => {
       document.removeEventListener("click", handleNativeAdd, true);
       document.removeEventListener("pointerdown", handleNativeAdd, true);
@@ -294,27 +248,20 @@ export default function Despesas() {
   function onDelete(id: string) {
     const ok = confirm("Remover esta despesa?");
     if (!ok) return;
-
     const updated = financeRemove(id);
     setItems(updated);
+    setOpenRowId(null);
   }
 
   function onDeleteAll() {
     if (despesas.length === 0) return;
-
     const ok = window.confirm(`Apagar todas as ${despesas.length} despesa(s)? Essa acao nao pode ser desfeita.`);
     if (!ok) return;
-
     let updated = items;
-    for (const item of despesas) {
-      updated = financeRemove(item.id);
-    }
-
+    for (const item of despesas) { updated = financeRemove(item.id); }
     setItems(updated);
     setFeedback(`${despesas.length} despesa(s) removida(s).`);
-    window.setTimeout(() => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined);
-    }, 1500);
+    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 1500);
   }
 
   function toggleStatus(item: FinanceItem) {
@@ -326,58 +273,78 @@ export default function Despesas() {
   function handleEditSaved(updated: FinanceItem[]) {
     setItems(updated);
     setFeedback("Despesa atualizada.");
-    window.setTimeout(() => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined);
-    }, 700);
+    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 700);
   }
 
   return (
     <div className={`finance-view finance-expense${animate ? " is-ready" : ""}`}>
       <section className="finance-hero">
         <div>
-          <span className="finance-kicker">Saidas</span>
+          <span className="finance-kicker">Saídas</span>
           <h2>Despesas</h2>
         </div>
         <p>Registre gastos, separe por categoria e acompanhe o impacto no saldo.</p>
       </section>
 
-      <div className="dashboard-grid finance-summary-grid">
-        <div className="stat-card">
-          <div className="stat-title">Total Receitas</div>
-          <div className="stat-value green">{formatCentsBRL(summary.totalReceitasCents)}</div>
-        </div>
+      <div className="fin-type-tabs">
+        <button type="button" className="fin-type-tab" onClick={() => navigate("/receitas")}>Receitas</button>
+        <button type="button" className="fin-type-tab is-active">Despesas</button>
+      </div>
 
-        <div className="stat-card">
-          <div className="stat-title">Total Despesas</div>
-          <div className="stat-value red">{formatCentsBRL(summary.totalDespesasCents)}</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-title">Saldo</div>
-          <div className="stat-value">{formatCentsBRL(summary.saldoCents)}</div>
+      <div className="ov-card">
+        <DonutRing recCents={summary.totalReceitasCents} desCents={summary.totalDespesasCents} />
+        <div className="ov-side">
+          <div>
+            <div className="ov-stat-row">
+              <span className="ov-stat-dot" style={{ background: "#22c55e" }} />
+              <span className="ov-stat-label">Receitas</span>
+            </div>
+            <div className="ov-stat-val" style={{ color: "#86efac" }}>{formatCentsBRL(summary.totalReceitasCents)}</div>
+          </div>
+          <div>
+            <div className="ov-stat-row">
+              <span className="ov-stat-dot" style={{ background: "#ef4444" }} />
+              <span className="ov-stat-label">Despesas</span>
+            </div>
+            <div className="ov-stat-val" style={{ color: "#fca5a5" }}>{formatCentsBRL(summary.totalDespesasCents)}</div>
+          </div>
         </div>
       </div>
 
-      <div className="chart-card finance-panel finance-form-panel">
-        <div className="finance-section-heading">
-          <div>
-            <span className="finance-kicker">Nova saida</span>
-            <h3>Adicionar Despesa</h3>
+      <div className="ov-saldo">
+        <span className="ov-saldo-label">Saldo</span>
+        <span className="ov-saldo-val" style={{ color: summary.saldoCents >= 0 ? "#86efac" : "#fca5a5" }}>
+          {formatCentsBRL(summary.saldoCents)}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        className="fin-cta"
+        onClick={() => setShowForm((v) => !v)}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+          <path d="M12 5v14"/><path d="M5 12h14"/>
+        </svg>
+        {showForm ? "Fechar formulário" : "Adicionar despesa"}
+      </button>
+
+      {showForm ? (
+        <div className="chart-card finance-panel finance-form-panel">
+          <div className="fin-form-close">
+            <div>
+              <span className="finance-kicker">Nova saída</span>
+              <h3 style={{ margin: "3px 0 0", fontSize: 20, fontWeight: 700 }}>Adicionar Despesa</h3>
+            </div>
+            <button type="button" className="fin-form-close-btn" onClick={() => setShowForm(false)}>✕</button>
           </div>
-        </div>
 
-        {feedback ? <div className="finance-feedback">{feedback}</div> : null}
+          {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
-        <div>
           <div className="finance-form-grid">
             <label className="finance-field finance-field-title">
-              <span>Titulo</span>
-              <input
-                className="finance-control"
-                placeholder="Ex: Mercado"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+              <span>Título</span>
+              <input className="finance-control" placeholder="Ex: Mercado" value={title} onChange={(e) => setTitle(e.target.value)} />
             </label>
 
             <CategoryPicker
@@ -390,13 +357,7 @@ export default function Despesas() {
 
             <label className="finance-field">
               <span>Valor</span>
-              <input
-                className="finance-control"
-                inputMode="decimal"
-                placeholder="Ex: 150,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
+              <input className="finance-control" inputMode="decimal" placeholder="Ex: 150,00" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </label>
 
             <label className="finance-field">
@@ -406,25 +367,17 @@ export default function Despesas() {
 
             <label className="finance-field">
               <span>Pagamento</span>
-              <select
-                className="finance-control"
-                value={paymentType}
-                onChange={(e) => setPaymentType(e.target.value as PaymentType)}
-              >
+              <select className="finance-control" value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)}>
                 <option value="pix">Pix</option>
-                <option value="debit">Debito</option>
+                <option value="debit">Débito</option>
                 <option value="cash">Dinheiro</option>
-                <option value="credit">Credito</option>
+                <option value="credit">Crédito</option>
               </select>
             </label>
 
             <label className="finance-field">
               <span>Status</span>
-              <select
-                className="finance-control"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as FinanceStatus)}
-              >
+              <select className="finance-control" value={status} onChange={(e) => setStatus(e.target.value as FinanceStatus)}>
                 <option value="paid">Pago</option>
                 <option value="pending">Pendente</option>
               </select>
@@ -433,11 +386,7 @@ export default function Despesas() {
 
           <div className="finance-recurring-box">
             <label className="finance-check-row">
-              <input
-                type="checkbox"
-                checked={isRecurring}
-                onChange={(event) => setIsRecurring(event.target.checked)}
-              />
+              <input type="checkbox" checked={isRecurring} onChange={(event) => setIsRecurring(event.target.checked)} />
               <span>
                 <strong>Gasto fixo mensal</strong>
                 <small>Ex: aluguel, internet, mensalidade ou qualquer conta que volta todo mes.</small>
@@ -447,42 +396,23 @@ export default function Despesas() {
             {isRecurring ? (
               <div className="finance-recurring-options">
                 <label className="finance-radio-card">
-                  <input
-                    type="radio"
-                    name="recurrence-mode"
-                    checked={recurrenceMode === "forever"}
-                    onChange={() => setRecurrenceMode("forever")}
-                  />
+                  <input type="radio" name="recurrence-mode" checked={recurrenceMode === "forever"} onChange={() => setRecurrenceMode("forever")} />
                   <span>
                     <strong>Sem data para acabar</strong>
                     <small>Cria os proximos 12 meses agora.</small>
                   </span>
                 </label>
-
                 <label className="finance-radio-card">
-                  <input
-                    type="radio"
-                    name="recurrence-mode"
-                    checked={recurrenceMode === "months"}
-                    onChange={() => setRecurrenceMode("months")}
-                  />
+                  <input type="radio" name="recurrence-mode" checked={recurrenceMode === "months"} onChange={() => setRecurrenceMode("months")} />
                   <span>
                     <strong>Por alguns meses</strong>
                     <small>Voce escolhe a quantidade de parcelas mensais.</small>
                   </span>
                 </label>
-
                 {recurrenceMode === "months" ? (
                   <label className="finance-field finance-recurring-months">
                     <span>Quantidade de meses</span>
-                    <input
-                      className="finance-control"
-                      type="number"
-                      min="1"
-                      max="60"
-                      value={recurrenceMonths}
-                      onChange={(event) => setRecurrenceMonths(event.target.value)}
-                    />
+                    <input className="finance-control" type="number" min="1" max="60" value={recurrenceMonths} onChange={(event) => setRecurrenceMonths(event.target.value)} />
                   </label>
                 ) : null}
               </div>
@@ -493,16 +423,16 @@ export default function Despesas() {
             {saving ? "Salvando..." : isRecurring ? "Adicionar despesas mensais" : "Adicionar Despesa"}
           </button>
         </div>
-      </div>
+      ) : null}
 
       <div className="chart-card finance-panel finance-list-panel">
-        <div className="finance-section-heading">
-          <div>
-            <span className="finance-kicker">Historico</span>
-            <h3>Lista de Despesas</h3>
+        <div className="fin-hist-head">
+          <div className="fin-hist-head-l">
+            <div className="k">Histórico</div>
+            <h3>Lançamentos</h3>
           </div>
-          <div className="finance-heading-actions">
-            <span className="finance-count">{despesas.length} cadastrada(s)</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="fin-hist-cnt">{despesas.length} no mês</span>
             {despesas.length > 0 ? (
               <button className="finance-danger-button finance-bulk-delete-button" type="button" onClick={onDeleteAll}>
                 Apagar todas
@@ -519,19 +449,14 @@ export default function Despesas() {
               </svg>
               <input
                 className="finance-control"
-                placeholder="Buscar despesa..."
+                placeholder="Buscar por nome ou valor…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="chip-row">
               {chipOptions.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  className={`chip${activeChip === chip ? " is-active" : ""}`}
-                  onClick={() => setActiveChip(chip)}
-                >
+                <button key={chip} type="button" className={`chip${activeChip === chip ? " is-active" : ""}`} onClick={() => setActiveChip(chip)}>
                   {chip}
                 </button>
               ))}
@@ -541,9 +466,9 @@ export default function Despesas() {
 
         {despesas.length === 0 ? (
           <div className="finance-empty-state">
-            <div className="finance-empty-icon">-</div>
+            <div className="finance-empty-icon">–</div>
             <strong>Nenhuma despesa cadastrada ainda.</strong>
-            <span>Adicione sua primeira saida pelo formulario acima.</span>
+            <span>Toque em "Adicionar despesa" para registrar sua primeira saída.</span>
           </div>
         ) : filteredDespesas.length === 0 ? (
           <div className="finance-empty-state">
@@ -554,31 +479,47 @@ export default function Despesas() {
         ) : (
           <div className="finance-list">
             {filteredDespesas.map((d) => (
-              <div key={d.id} className="finance-row">
-                <div className="finance-row-main">
-                  <div className="finance-row-icon">R$</div>
-                  <div>
-                    <div className="finance-row-title">{d.title}</div>
-                    <div className="finance-row-meta">
-                      {d.category} <span>•</span> {formatDateBR(d.dateISO)}
-                      <span>•</span> {getPaymentLabel(d.paymentType)}
-                      <span>•</span> {getStatusLabel(d.status)}
-                    </div>
+              <div
+                key={d.id}
+                className={`fin-tx${openRowId === d.id ? " open" : ""}`}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("button")) return;
+                  setOpenRowId((prev) => (prev === d.id ? null : d.id));
+                }}
+              >
+                <span className="fin-tx-ic" style={{ background: "rgba(239,68,68,.16)", fontSize: 20 }}>💸</span>
+                <div className="fin-tx-mid">
+                  <strong>{d.title}</strong>
+                  <div className="fin-tx-path">{d.category}</div>
+                  <div className="fin-tx-tags">
+                    <span className="fin-tx-tag">{formatDateBR(d.dateISO)}</span>
+                    <span className="fin-tx-tag">{getPaymentLabel(d.paymentType)}</span>
+                    <span className={`fin-tx-tag ${d.status === "paid" ? "pago" : "pend"}`}>
+                      {d.status === "paid" ? "Pago" : "Pendente"}
+                    </span>
                   </div>
                 </div>
-
-                <div className="finance-row-actions">
-                  <div className="finance-row-value red">- {formatCentsBRL(d.amountCents)}</div>
-                  <button className="categories-secondary-button" type="button" onClick={() => toggleStatus(d)}>
-                    {d.status === "paid" ? "Marcar pendente" : "Marcar pago"}
-                  </button>
-                  <button className="categories-secondary-button" type="button" onClick={() => setEditingItem(d)}>
-                    Editar
-                  </button>
-                  <button className="finance-danger-button" onClick={() => onDelete(d.id)}>
-                    Remover
-                  </button>
+                <div className="fin-tx-right">
+                  <span className="fin-tx-amt" style={{ color: "#fca5a5" }}>– {formatCentsBRL(d.amountCents)}</span>
+                  <button
+                    type="button"
+                    className="fin-tx-menu-btn"
+                    onClick={(e) => { e.stopPropagation(); setOpenRowId((prev) => (prev === d.id ? null : d.id)); }}
+                  >•••</button>
                 </div>
+                {openRowId === d.id ? (
+                  <div className="fin-tx-actions">
+                    <button type="button" className="fin-tx-act" onClick={(e) => { e.stopPropagation(); toggleStatus(d); }}>
+                      {d.status === "paid" ? "Marcar pendente" : "Marcar pago"}
+                    </button>
+                    <button type="button" className="fin-tx-act" onClick={(e) => { e.stopPropagation(); setEditingItem(d); setOpenRowId(null); }}>
+                      Editar
+                    </button>
+                    <button type="button" className="fin-tx-act danger" onClick={(e) => { e.stopPropagation(); onDelete(d.id); }}>
+                      Remover
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

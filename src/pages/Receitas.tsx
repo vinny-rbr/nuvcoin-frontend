@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type SyntheticEvent } from "react";
-import type { FinanceCategory, FinanceCategoryOption, FinanceItem } from "../types/finance";
+import { useNavigate } from "react-router-dom";
+import type { FinanceCategory, FinanceCategoryOption, FinanceItem, FinanceStatus } from "../types/finance";
 import {
   financeAdd,
   financeDebugLog,
@@ -7,6 +8,7 @@ import {
   financeRefreshFromApi,
   financeRemove,
   financeSubscribe,
+  financeUpdate,
   makeId,
   todayISO,
 } from "../lib/financeService";
@@ -31,7 +33,29 @@ function formatDateBR(dateISO: string): string {
   return new Date(`${dateISO}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
+function DonutRing({ recCents, desCents }: { recCents: number; desCents: number }) {
+  const r = 51;
+  const circ = 2 * Math.PI * r;
+  const total = recCents + desCents;
+  const pctRec = total > 0 ? Math.round((recCents / total) * 100) : 50;
+  const gLen = circ * pctRec / 100;
+  return (
+    <div className="ov-ring">
+      <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: "rotate(-90deg)" }}>
+        <circle cx="60" cy="60" r={r} fill="none" stroke="rgba(148,163,184,.14)" strokeWidth="13" />
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#ef4444" strokeWidth="13" strokeLinecap="round" strokeDasharray={`${circ}`} />
+        <circle cx="60" cy="60" r={r} fill="none" stroke="#22c55e" strokeWidth="13" strokeLinecap="round" strokeDasharray={`${gLen} ${circ - gLen}`} />
+      </svg>
+      <div className="ov-ring-ctr">
+        <small>Entrou</small>
+        <b style={{ color: "#86efac" }}>{pctRec}%</b>
+      </div>
+    </div>
+  );
+}
+
 export default function Receitas() {
+  const navigate = useNavigate();
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -39,35 +63,29 @@ export default function Receitas() {
   const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.RECEITA[0]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORIES.RECEITA);
   const [categoryRecords, setCategoryRecords] = useState<FinanceCategoryOption[]>([]);
+  const [status, setStatus] = useState<FinanceStatus>("paid");
   const [animate, setAnimate] = useState(false);
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<FinanceItem | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeChip, setActiveChip] = useState("Tudo");
 
   useEffect(() => {
-    const load = () => {
-      setItems(financeList());
-    };
-
+    const load = () => { setItems(financeList()); };
     load();
     void financeRefreshFromApi().then(setItems).catch(() => undefined);
-
     const unsubscribe = financeSubscribe(load);
-
-    const refresh = () => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined);
-    };
-
+    const refresh = () => { void financeRefreshFromApi().then(setItems).catch(() => undefined); };
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
-
     const handleFinanceError = (event: Event) => {
       const customEvent = event as CustomEvent<string>;
       setFeedback(customEvent.detail || "Nao foi possivel sincronizar agora.");
     };
-
     window.addEventListener("conciliaai_finance_error", handleFinanceError as EventListener);
-
     return () => {
       unsubscribe();
       window.removeEventListener("focus", refresh);
@@ -78,7 +96,6 @@ export default function Receitas() {
 
   useEffect(() => {
     let isMounted = true;
-
     void listFinanceCategories()
       .then((categories) => {
         if (!isMounted) return;
@@ -88,28 +105,17 @@ export default function Receitas() {
         setCategory((current) => (options.includes(current) ? current : options[0] ?? "Outros"));
       })
       .catch(() => undefined);
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
     setAnimate(false);
-
-    const timeoutId = window.setTimeout(() => {
-      setAnimate(true);
-    }, 40);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
+    const timeoutId = window.setTimeout(() => { setAnimate(true); }, 40);
+    return () => { window.clearTimeout(timeoutId); };
   }, [items]);
 
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
   const receitas = useMemo(() => items.filter((x) => x.type === "RECEITA"), [items]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeChip, setActiveChip] = useState("Tudo");
 
   const chipOptions = useMemo(() => {
     const parents = new Set<string>();
@@ -124,9 +130,9 @@ export default function Receitas() {
     return receitas.filter((item) => {
       const matchesSearch = !searchQuery ||
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.category.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesChip = activeChip === "Tudo" ||
-        item.category.split(">")[0].trim() === activeChip;
+        item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        formatBRLFromCents(item.amountCents).includes(searchQuery);
+      const matchesChip = activeChip === "Tudo" || item.category.split(">")[0].trim() === activeChip;
       return matchesSearch && matchesChip;
     });
   }, [receitas, searchQuery, activeChip]);
@@ -138,7 +144,6 @@ export default function Receitas() {
     const options = categoriesForType(categories, "RECEITA");
     setCategoryRecords(categories.filter((item) => item.type === "RECEITA"));
     setCategoryOptions(options);
-
     const expectedPath = parentPath ? `${parentPath} > ${created.name}` : created.name;
     const createdValue = options.find((option) => option === expectedPath || option === created.name || option.endsWith(`> ${created.name}`)) ?? expectedPath;
     setCategory(createdValue);
@@ -149,65 +154,36 @@ export default function Receitas() {
     event?.preventDefault();
     event?.stopPropagation();
     financeDebugLog("handleAdd receita iniciou", { title, amount, dateISO, saving });
-
     if (saving) return;
     setFeedback(null);
-
-    if (!title.trim() || !amount.trim()) {
-      financeDebugLog("validacao falhou receita", { title, amount });
-      alert("Preencha titulo e valor.");
-      return;
-    }
-
+    if (!title.trim() || !amount.trim()) { financeDebugLog("validacao falhou receita", { title, amount }); alert("Preencha titulo e valor."); return; }
     const amountCents = parseBRLToCents(amount);
-
-    if (amountCents <= 0) {
-      financeDebugLog("valor invalido receita", { amount, amountCents });
-      alert("Informe um valor valido.");
-      return;
-    }
-
+    if (amountCents <= 0) { financeDebugLog("valor invalido receita", { amount, amountCents }); alert("Informe um valor valido."); return; }
     const newItem: FinanceItem = {
-      id: makeId(),
-      type: "RECEITA",
-      title: title.trim(),
-      category,
-      amountCents,
-      dateISO,
-      createdAtISO: new Date().toISOString(),
-      paymentType: "pix",
-      status: "paid",
+      id: makeId(), type: "RECEITA", title: title.trim(), category, amountCents,
+      dateISO, createdAtISO: new Date().toISOString(), paymentType: "pix", status,
     };
-
     setSaving(true);
     setFeedback("Salvando lancamento...");
     const updated = financeAdd(newItem);
     setItems(updated);
     window.setTimeout(() => {
-      void financeRefreshFromApi()
-        .then(setItems)
-        .catch(() => undefined)
-        .finally(() => setSaving(false));
+      void financeRefreshFromApi().then(setItems).catch(() => undefined).finally(() => setSaving(false));
     }, 700);
-
-    setTitle("");
-    setAmount("");
-    setDateISO(todayISO());
-    setCategory(categoryOptions[0] ?? "Outros");
-  }, [amount, category, categoryOptions, dateISO, saving, title]);
+    setTitle(""); setAmount(""); setDateISO(todayISO());
+    setCategory(categoryOptions[0] ?? "Outros"); setStatus("paid");
+    setShowForm(false);
+  }, [amount, category, categoryOptions, dateISO, saving, status, title]);
 
   useEffect(() => {
     function handleNativeAdd(event: Event) {
       const target = event.target as HTMLElement | null;
       if (!target?.closest("[data-finance-add='receita']")) return;
-
       handleAdd(event);
     }
-
     document.addEventListener("click", handleNativeAdd, true);
     document.addEventListener("pointerdown", handleNativeAdd, true);
     document.addEventListener("touchstart", handleNativeAdd, true);
-
     return () => {
       document.removeEventListener("click", handleNativeAdd, true);
       document.removeEventListener("pointerdown", handleNativeAdd, true);
@@ -216,34 +192,34 @@ export default function Receitas() {
   }, [handleAdd]);
 
   function handleRemove(id: string) {
+    const ok = confirm("Remover esta receita?");
+    if (!ok) return;
     const updated = financeRemove(id);
+    setItems(updated);
+    setOpenRowId(null);
+  }
+
+  function toggleStatus(item: FinanceItem) {
+    const nextStatus: FinanceStatus = item.status === "paid" ? "pending" : "paid";
+    const updated = financeUpdate(item.id, { status: nextStatus });
     setItems(updated);
   }
 
   function handleEditSaved(updated: FinanceItem[]) {
     setItems(updated);
     setFeedback("Receita atualizada.");
-    window.setTimeout(() => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined);
-    }, 700);
+    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 700);
   }
 
   function handleRemoveAll() {
     if (receitas.length === 0) return;
-
     const ok = window.confirm(`Apagar todas as ${receitas.length} receita(s)? Essa acao nao pode ser desfeita.`);
     if (!ok) return;
-
     let updated = items;
-    for (const item of receitas) {
-      updated = financeRemove(item.id);
-    }
-
+    for (const item of receitas) { updated = financeRemove(item.id); }
     setItems(updated);
     setFeedback(`${receitas.length} receita(s) removida(s).`);
-    window.setTimeout(() => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined);
-    }, 1500);
+    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 1500);
   }
 
   return (
@@ -256,43 +232,65 @@ export default function Receitas() {
         <p>Cadastre ganhos, acompanhe o saldo e mantenha suas entradas organizadas.</p>
       </section>
 
-      <div className="dashboard-grid finance-summary-grid">
-        <div className="stat-card">
-          <div className="stat-title">Total Receitas</div>
-          <div className="stat-value green">{formatBRLFromCents(summary.totalReceitasCents)}</div>
-        </div>
+      <div className="fin-type-tabs">
+        <button type="button" className="fin-type-tab is-active">Receitas</button>
+        <button type="button" className="fin-type-tab" onClick={() => navigate("/despesas")}>Despesas</button>
+      </div>
 
-        <div className="stat-card">
-          <div className="stat-title">Total Despesas</div>
-          <div className="stat-value red">{formatBRLFromCents(summary.totalDespesasCents)}</div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-title">Saldo</div>
-          <div className="stat-value">{formatBRLFromCents(summary.saldoCents)}</div>
+      <div className="ov-card">
+        <DonutRing recCents={summary.totalReceitasCents} desCents={summary.totalDespesasCents} />
+        <div className="ov-side">
+          <div>
+            <div className="ov-stat-row">
+              <span className="ov-stat-dot" style={{ background: "#22c55e" }} />
+              <span className="ov-stat-label">Receitas</span>
+            </div>
+            <div className="ov-stat-val" style={{ color: "#86efac" }}>{formatBRLFromCents(summary.totalReceitasCents)}</div>
+          </div>
+          <div>
+            <div className="ov-stat-row">
+              <span className="ov-stat-dot" style={{ background: "#ef4444" }} />
+              <span className="ov-stat-label">Despesas</span>
+            </div>
+            <div className="ov-stat-val" style={{ color: "#fca5a5" }}>{formatBRLFromCents(summary.totalDespesasCents)}</div>
+          </div>
         </div>
       </div>
 
-      <div className="chart-card finance-panel finance-form-panel">
-        <div className="finance-section-heading">
-          <div>
-            <span className="finance-kicker">Nova entrada</span>
-            <h3>Adicionar Receita</h3>
+      <div className="ov-saldo">
+        <span className="ov-saldo-label">Saldo</span>
+        <span className="ov-saldo-val" style={{ color: summary.saldoCents >= 0 ? "#86efac" : "#fca5a5" }}>
+          {formatBRLFromCents(summary.saldoCents)}
+        </span>
+      </div>
+
+      <button
+        type="button"
+        className="fin-cta"
+        onClick={() => setShowForm((v) => !v)}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
+          <path d="M12 5v14"/><path d="M5 12h14"/>
+        </svg>
+        {showForm ? "Fechar formulário" : "Adicionar receita"}
+      </button>
+
+      {showForm ? (
+        <div className="chart-card finance-panel finance-form-panel">
+          <div className="fin-form-close">
+            <div>
+              <span className="finance-kicker">Nova entrada</span>
+              <h3 style={{ margin: "3px 0 0", fontSize: 20, fontWeight: 700 }}>Adicionar Receita</h3>
+            </div>
+            <button type="button" className="fin-form-close-btn" onClick={() => setShowForm(false)}>✕</button>
           </div>
-        </div>
 
-        {feedback ? <div className="finance-feedback">{feedback}</div> : null}
+          {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
-        <div>
           <div className="finance-form-grid">
             <label className="finance-field finance-field-title">
-              <span>Titulo</span>
-              <input
-                className="finance-control"
-                placeholder="Ex: Salario"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+              <span>Título</span>
+              <input className="finance-control" placeholder="Ex: Salário" value={title} onChange={(e) => setTitle(e.target.value)} />
             </label>
 
             <CategoryPicker
@@ -305,23 +303,20 @@ export default function Receitas() {
 
             <label className="finance-field">
               <span>Valor</span>
-              <input
-                className="finance-control"
-                inputMode="decimal"
-                placeholder="Ex: 2500,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
+              <input className="finance-control" inputMode="decimal" placeholder="Ex: 2500,00" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </label>
 
             <label className="finance-field">
               <span>Data</span>
-              <input
-                className="finance-control"
-                type="date"
-                value={dateISO}
-                onChange={(e) => setDateISO(e.target.value)}
-              />
+              <input className="finance-control" type="date" value={dateISO} onChange={(e) => setDateISO(e.target.value)} />
+            </label>
+
+            <label className="finance-field">
+              <span>Status</span>
+              <select className="finance-control" value={status} onChange={(e) => setStatus(e.target.value as FinanceStatus)}>
+                <option value="paid">Recebido</option>
+                <option value="pending">Previsto</option>
+              </select>
             </label>
           </div>
 
@@ -329,16 +324,16 @@ export default function Receitas() {
             {saving ? "Salvando..." : "Adicionar Receita"}
           </button>
         </div>
-      </div>
+      ) : null}
 
       <div className="chart-card finance-panel finance-list-panel">
-        <div className="finance-section-heading">
-          <div>
-            <span className="finance-kicker">Historico</span>
-            <h3>Lista de Receitas</h3>
+        <div className="fin-hist-head">
+          <div className="fin-hist-head-l">
+            <div className="k">Histórico</div>
+            <h3>Lançamentos</h3>
           </div>
-          <div className="finance-heading-actions">
-            <span className="finance-count">{receitas.length} cadastrada(s)</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="fin-hist-cnt">{receitas.length} no mês</span>
             {receitas.length > 0 ? (
               <button className="finance-danger-button finance-bulk-delete-button" type="button" onClick={handleRemoveAll}>
                 Apagar todas
@@ -355,19 +350,14 @@ export default function Receitas() {
               </svg>
               <input
                 className="finance-control"
-                placeholder="Buscar receita..."
+                placeholder="Buscar por nome ou valor…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="chip-row">
               {chipOptions.map((chip) => (
-                <button
-                  key={chip}
-                  type="button"
-                  className={`chip${activeChip === chip ? " is-active" : ""}`}
-                  onClick={() => setActiveChip(chip)}
-                >
+                <button key={chip} type="button" className={`chip${activeChip === chip ? " is-active" : ""}`} onClick={() => setActiveChip(chip)}>
                   {chip}
                 </button>
               ))}
@@ -379,7 +369,7 @@ export default function Receitas() {
           <div className="finance-empty-state">
             <div className="finance-empty-icon">+</div>
             <strong>Nenhuma receita cadastrada ainda.</strong>
-            <span>Adicione sua primeira entrada pelo formulario acima.</span>
+            <span>Toque em "Adicionar receita" para registrar sua primeira entrada.</span>
           </div>
         ) : filteredReceitas.length === 0 ? (
           <div className="finance-empty-state">
@@ -390,28 +380,46 @@ export default function Receitas() {
         ) : (
           <div className="finance-list">
             {filteredReceitas.map((item) => (
-              <div key={item.id} className="finance-row">
-                <div className="finance-row-main">
-                  <div className="finance-row-icon">R$</div>
-                  <div>
-                    <div className="finance-row-title">{item.title}</div>
-                    <div className="finance-row-meta">
-                      {item.category} <span>•</span> {formatDateBR(item.dateISO)}
-                    </div>
+              <div
+                key={item.id}
+                className={`fin-tx${openRowId === item.id ? " open" : ""}`}
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).closest("button")) return;
+                  setOpenRowId((prev) => (prev === item.id ? null : item.id));
+                }}
+              >
+                <span className="fin-tx-ic" style={{ background: "rgba(34,197,94,.16)", fontSize: 20 }}>💰</span>
+                <div className="fin-tx-mid">
+                  <strong>{item.title}</strong>
+                  <div className="fin-tx-path">{item.category}</div>
+                  <div className="fin-tx-tags">
+                    <span className="fin-tx-tag">{formatDateBR(item.dateISO)}</span>
+                    <span className={`fin-tx-tag ${item.status === "paid" ? "pago" : "pend"}`}>
+                      {item.status === "paid" ? "Recebido" : "Previsto"}
+                    </span>
                   </div>
                 </div>
-
-                <div className="finance-row-actions">
-                  <div className="finance-row-value green">{formatBRLFromCents(item.amountCents)}</div>
-
-                  <button className="categories-secondary-button" type="button" onClick={() => setEditingItem(item)}>
-                    Editar
-                  </button>
-
-                  <button className="finance-danger-button" onClick={() => handleRemove(item.id)}>
-                    Remover
-                  </button>
+                <div className="fin-tx-right">
+                  <span className="fin-tx-amt" style={{ color: "#86efac" }}>+ {formatBRLFromCents(item.amountCents)}</span>
+                  <button
+                    type="button"
+                    className="fin-tx-menu-btn"
+                    onClick={(e) => { e.stopPropagation(); setOpenRowId((prev) => (prev === item.id ? null : item.id)); }}
+                  >•••</button>
                 </div>
+                {openRowId === item.id ? (
+                  <div className="fin-tx-actions">
+                    <button type="button" className="fin-tx-act" onClick={(e) => { e.stopPropagation(); toggleStatus(item); }}>
+                      {item.status === "paid" ? "Marcar previsto" : "Marcar recebido"}
+                    </button>
+                    <button type="button" className="fin-tx-act" onClick={(e) => { e.stopPropagation(); setEditingItem(item); setOpenRowId(null); }}>
+                      Editar
+                    </button>
+                    <button type="button" className="fin-tx-act danger" onClick={(e) => { e.stopPropagation(); handleRemove(item.id); }}>
+                      Remover
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
