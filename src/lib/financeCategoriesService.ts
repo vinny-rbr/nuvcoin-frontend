@@ -114,14 +114,20 @@ export async function updateFinanceCategory(
 }
 
 export async function moveFinanceCategory(
-  id: string,
+  category: FinanceCategoryOption,
   type: FinanceType,
   parentId: string | null,
 ): Promise<FinanceCategoryOption> {
-  const response = await fetch(apiUrl(`/api/finance-categories/${encodeURIComponent(id)}`), {
-    method: "PATCH",
+  const response = await fetch(apiUrl(`/api/finance-categories/${encodeURIComponent(category.id)}`), {
+    method: "PUT",
     headers: makeHeaders(),
-    body: JSON.stringify({ type, parentId }),
+    body: JSON.stringify({
+      name: category.name,
+      icon: category.icon,
+      color: category.color,
+      type,
+      parentId,
+    }),
   });
 
   if (!response.ok) {

@@ -304,17 +304,17 @@ export default function Categorias() {
 
       if (mode === "self") {
         const directChildren = categories.filter((c) => c.parentId === item.id);
-        await moveFinanceCategory(item.id, targetType, targetParentId);
+        await moveFinanceCategory(item, targetType, targetParentId);
         for (const child of directChildren) {
-          await moveFinanceCategory(child.id, child.type, item.parentId ?? null);
+          await moveFinanceCategory(child, child.type, item.parentId ?? null);
         }
       } else {
-        await moveFinanceCategory(item.id, targetType, targetParentId);
+        await moveFinanceCategory(item, targetType, targetParentId);
         if (targetType !== item.type) {
           const desc = descendantIds(categories, item.id);
           const descList = categories.filter((c) => desc.has(c.id));
           for (const d of descList) {
-            await moveFinanceCategory(d.id, targetType, d.parentId ?? null);
+            await moveFinanceCategory(d, targetType, d.parentId ?? null);
           }
         }
       }
