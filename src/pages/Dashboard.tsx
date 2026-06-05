@@ -203,7 +203,28 @@ function groupByCategory(items: FinanceItem[], type: "RECEITA" | "DESPESA"): Don
   );
 }
 
-function summarizeParentCategories(items: FinanceItem[], registeredParentNames: string[]): ParentCategorySummary[] {
+function buildChildToRootMap(allCategories: FinanceCategoryOption[]): Map<string, string> {
+  const byId = new Map(allCategories.map((c) => [c.id, c]));
+  const result = new Map<string, string>();
+
+  for (const cat of allCategories) {
+    if (!cat.parentId) continue;
+    let current = cat;
+    while (current.parentId && byId.has(current.parentId)) {
+      current = byId.get(current.parentId)!;
+    }
+    result.set(cat.name.trim().toLocaleLowerCase("pt-BR"), current.name.trim());
+  }
+
+  return result;
+}
+
+function summarizeParentCategories(
+  items: FinanceItem[],
+  registeredParentNames: string[],
+  allCategories: FinanceCategoryOption[],
+): ParentCategorySummary[] {
+  const childToRoot = buildChildToRootMap(allCategories);
   const map = new Map<string, ParentCategorySummary>();
 
   for (const name of registeredParentNames) {
@@ -219,7 +240,12 @@ function summarizeParentCategories(items: FinanceItem[], registeredParentNames: 
   }
 
   for (const item of items) {
-    const name = getParentCategoryName(item.category);
+    let name = getParentCategoryName(item.category);
+    // If there's no ">" in category, look up root parent from hierarchy
+    if (!item.category.includes(">") && !map.has(name)) {
+      const root = childToRoot.get(name.toLocaleLowerCase("pt-BR"));
+      if (root) name = root;
+    }
     const current =
       map.get(name) ??
       {
@@ -715,8 +741,8 @@ export default function Dashboard() {
     return Array.from(names.values());
   }, [registeredCategories]);
   const parentCategorySummaries = useMemo(
-    () => summarizeParentCategories(filteredItems, registeredParentCategoryNames),
-    [filteredItems, registeredParentCategoryNames],
+    () => summarizeParentCategories(filteredItems, registeredParentCategoryNames, registeredCategories),
+    [filteredItems, registeredParentCategoryNames, registeredCategories],
   );
   const parentCategoryNames = useMemo(() => parentCategorySummaries.map((item) => item.name), [parentCategorySummaries]);
 
