@@ -2,7 +2,14 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { financeAdd } from "../lib/financeService";
 import { listFinanceCategories } from "../lib/financeCategoriesService";
 import type { FinanceStatus, PaymentType } from "../types/finance";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import { apiUrl } from "../lib/api";
 import "../pages/import-extrato.css";
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/legacy/build/pdf.worker.mjs",
+  import.meta.url,
+).toString();
 
 type PhotoStage = "source" | "reading" | "review" | "done";
 
@@ -36,6 +43,78 @@ const DEFAULT_TREE: CategoryNode[] = [
 
 function todayISO(): string {
   return new Date().toISOString().split("T")[0]!;
+}
+
+function getToken(): string | null {
+  return (
+    localStorage.getItem("conciliaai_token") ??
+    localStorage.getItem("token") ??
+    localStorage.getItem("auth_token")
+  );
+}
+
+type OcrResult = {
+  amount: string;
+  description: string;
+  date: string;
+  paymentType: PaymentType | "";
+  category: string;
+  detectedFields: number;
+};
+
+async function ocrImage(file: File): Promise<OcrResult | null> {
+  const token = getToken();
+  if (!token) return null;
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      const comma = dataUrl.indexOf(",");
+      const imageBase64 = dataUrl.slice(comma + 1);
+      const mimeType = dataUrl.slice(5, comma).split(";")[0];
+
+      try {
+        const res = await fetch(apiUrl("/api/finance/receipt-ocr/image"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ imageBase64, mimeType }),
+        });
+        if (!res.ok) { resolve(null); return; }
+        resolve(await res.json());
+      } catch {
+        resolve(null);
+      }
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function ocrPdf(file: File): Promise<OcrResult | null> {
+  const token = getToken();
+  if (!token) return null;
+
+  try {
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+    let text = "";
+    for (let i = 1; i <= Math.min(pdf.numPages, 3); i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += (content.items as { str: string }[]).map((it) => it.str).join(" ") + "\n";
+    }
+
+    const res = await fetch(apiUrl("/api/finance/receipt-ocr/text"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ text: text.slice(0, 3000) }),
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
 }
 
 function buildTree(cats: { id: string; name: string; parentId?: string | null }[]): CategoryNode[] {
@@ -342,6 +421,10 @@ export default function PhotoFlow({ onClose }: Props) {
   const [status, setStatus] = useState<FinanceStatus>("paid");
   const [categoryTree, setCategoryTree] = useState<CategoryNode[]>(DEFAULT_TREE);
 
+  const [detectedFields, setDetectedFields] = useState(0);
+  const ocrResultRef = useRef<OcrResult | null>(null);
+  const pendingFileRef = useRef<File | null>(null);
+
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -358,6 +441,15 @@ export default function PhotoFlow({ onClose }: Props) {
 
   useEffect(() => {
     if (stage !== "reading") return;
+
+    // Start OCR in parallel with the progress animation
+    const file = pendingFileRef.current;
+    if (file) {
+      const isPdf = file.type === "application/pdf";
+      const ocrPromise = isPdf ? ocrPdf(file) : ocrImage(file);
+      ocrPromise.then((result) => { ocrResultRef.current = result; });
+    }
+
     let p = 0;
     const total = READ_STEPS.length;
     const tick = setInterval(() => {
@@ -367,7 +459,18 @@ export default function PhotoFlow({ onClose }: Props) {
       setReadStep(Math.min(total - 1, Math.floor((clamped / 100) * total)));
       if (clamped >= 100) {
         clearInterval(tick);
-        setTimeout(() => setStage("review"), 360);
+        setTimeout(() => {
+          const result = ocrResultRef.current;
+          if (result) {
+            if (result.amount)      setAmount(result.amount);
+            if (result.description) setDescription(result.description);
+            if (result.date)        setDate(result.date);
+            if (result.paymentType) setPayment(result.paymentType as PaymentType);
+            if (result.category)    setCatPath([result.category]);
+            setDetectedFields(result.detectedFields ?? 0);
+          }
+          setStage("review");
+        }, 360);
       }
     }, 110);
     return () => clearInterval(tick);
@@ -380,11 +483,15 @@ export default function PhotoFlow({ onClose }: Props) {
   }, [imageUrl]);
 
   function handleFileSelected(file: File) {
-    const url = URL.createObjectURL(file);
+    pendingFileRef.current = file;
+    ocrResultRef.current = null;
+    const isPdf = file.type === "application/pdf";
+    const url = isPdf ? null : URL.createObjectURL(file);
     setImageUrl(url);
     setStage("reading");
     setProgress(0);
     setReadStep(0);
+    setDetectedFields(0);
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -419,12 +526,15 @@ export default function PhotoFlow({ onClose }: Props) {
       URL.revokeObjectURL(imageUrl);
       setImageUrl(null);
     }
+    pendingFileRef.current = null;
+    ocrResultRef.current = null;
     setStage("source");
     setProgress(0);
     setReadStep(0);
     setAmount("");
     setDescription("");
     setDate(todayISO());
+    setDetectedFields(0);
   }
 
   const isIn = type === "RECEITA";
@@ -468,15 +578,15 @@ export default function PhotoFlow({ onClose }: Props) {
               onClick={() => galleryInputRef.current?.click()}
             >
               <div className="ix-src-ic"><ImageIcon /></div>
-              <strong>Escolher imagem</strong>
-              <span>da galeria</span>
+              <strong>Escolher arquivo</strong>
+              <span>imagem ou PDF</span>
             </button>
           </div>
           <div className="ix-src-tip">
             <div className="ix-src-tip-ic"><SparkleIcon /></div>
             <p>
-              Funciona com cupom fiscal, recibo, comprovante de Pix ou print do app do banco. Quanto mais
-              nítida a foto, melhor a leitura.
+              Funciona com cupom fiscal, recibo, comprovante de Pix, print do banco ou PDF. O Conciliaaí lê
+              automaticamente o valor, a data, a forma de pagamento e sugere a categoria.
             </p>
           </div>
           <input
@@ -490,7 +600,7 @@ export default function PhotoFlow({ onClose }: Props) {
           <input
             ref={galleryInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             hidden
             onChange={handleInputChange}
           />
@@ -534,7 +644,9 @@ export default function PhotoFlow({ onClose }: Props) {
                 <h2>Lido do comprovante</h2>
                 <span className="ix-rcpt-read-flag">
                   <SparkleIcon />
-                  Confira antes de lançar
+                  {detectedFields > 0
+                    ? `${detectedFields} campo${detectedFields > 1 ? "s" : ""} detectado${detectedFields > 1 ? "s" : ""}`
+                    : "Confira antes de lançar"}
                 </span>
               </div>
             </div>
