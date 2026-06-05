@@ -1139,3 +1139,491 @@
     transition: none !important;
   }
 }
+
+/* ── Ghost button ── */
+.ix-btn-ghost {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 15px;
+  margin-top: 9px;
+  border: 1px solid var(--stroke);
+  color: var(--text-2);
+  font-weight: 800;
+  font-size: 14px;
+  background: rgba(30, 41, 59, 0.5);
+  cursor: pointer;
+  transition: 0.18s var(--ease);
+}
+
+.ix-btn-ghost:hover {
+  color: var(--text-main);
+  border-color: var(--stroke);
+}
+
+/* ── Back / Close button ── */
+.ix-back {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--stroke);
+  background: rgba(30, 41, 59, 0.55);
+  transition: 0.18s var(--ease);
+  cursor: pointer;
+}
+
+.ix-back svg {
+  width: 18px;
+  height: 18px;
+  stroke: var(--text-2);
+}
+
+/* ============================================================ */
+/* Photo / receipt capture overlay                              */
+/* ============================================================ */
+
+.ix-photo {
+  /* scoped palette vars for contexts outside .ix-wrap */
+  --warn: #FACC15;
+  --warn-lt: #FDE68A;
+  --bg-card-2: #18233B;
+
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background:
+    radial-gradient(800px 520px at 50% -8%, rgba(37, 99, 235, 0.2), transparent 55%),
+    var(--bg-deep);
+  animation: ixSheetUp 0.3s var(--ease) both;
+  overflow-y: auto;
+}
+
+@keyframes ixSheetUp {
+  from { transform: translateY(24px); }
+  to   { transform: translateY(0); }
+}
+
+.ix-photo-bar {
+  width: 100%;
+  max-width: 520px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px 4px;
+}
+
+.ix-photo-bar .ttl {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17px;
+  flex: 1;
+}
+
+.ix-photo-body {
+  width: 100%;
+  max-width: 520px;
+  padding: 8px 20px 40px;
+}
+
+/* source step */
+.ix-src-hero {
+  text-align: center;
+  padding: 10px 4px 4px;
+}
+
+.ix-src-hero .ix-kicker {
+  color: var(--primary-lt);
+}
+
+.ix-src-hero h1 {
+  font-family: var(--display);
+  font-size: 27px;
+  font-weight: 700;
+}
+
+.ix-src-hero p {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.5;
+  margin-top: 8px;
+}
+
+.ix-src-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.ix-src-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--stroke);
+  background: var(--bg-card);
+  transition: 0.18s var(--ease);
+  cursor: pointer;
+}
+
+.ix-src-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+.ix-src-ic {
+  width: 58px;
+  height: 58px;
+  border-radius: 17px;
+  display: grid;
+  place-items: center;
+}
+
+.ix-src-ic svg {
+  width: 27px;
+  height: 27px;
+  stroke: #fff;
+}
+
+.ix-src-card.cam .ix-src-ic {
+  background: var(--grad-primary);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.4);
+}
+
+.ix-src-card.gal .ix-src-ic {
+  background: linear-gradient(135deg, #34D399, #059669);
+  box-shadow: 0 12px 28px rgba(5, 150, 105, 0.36);
+}
+
+.ix-src-card strong {
+  font-family: var(--display);
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.ix-src-card span {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.ix-src-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--stroke-soft);
+}
+
+.ix-src-tip-ic {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(96, 165, 250, 0.14);
+}
+
+.ix-src-tip-ic svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--primary-lt);
+}
+
+.ix-src-tip p {
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+/* reading step with scan */
+.ix-scan-wrap {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  margin: 8px auto 0;
+  max-width: 300px;
+  border: 1px solid var(--stroke);
+}
+
+.ix-scan-wrap img {
+  display: block;
+  width: 100%;
+}
+
+.ix-scan-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 38%;
+  background: linear-gradient(180deg, transparent, rgba(96, 165, 250, 0.28) 70%, rgba(96, 165, 250, 0.7));
+  border-bottom: 2px solid #93C5FD;
+  box-shadow: 0 0 28px rgba(96, 165, 250, 0.7);
+  animation: ixScan 1.7s ease-in-out infinite;
+}
+
+@keyframes ixScan {
+  0%   { top: -38%; }
+  100% { top: 100%; }
+}
+
+.ix-scan-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(96, 165, 250, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(96, 165, 250, 0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* review step */
+.ix-rcpt-head {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ix-rcpt-thumb {
+  width: 64px;
+  height: 84px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid var(--stroke);
+  flex-shrink: 0;
+}
+
+.ix-rcpt-head .info {
+  min-width: 0;
+}
+
+.ix-rcpt-head .ix-kicker {
+  color: var(--primary-lt);
+}
+
+.ix-rcpt-head h2 {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ix-rcpt-read-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--primary-lt);
+  background: rgba(96, 165, 250, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+}
+
+.ix-rcpt-read-flag svg {
+  width: 12px;
+  height: 12px;
+  stroke: var(--primary-lt);
+}
+
+/* type toggle */
+.ix-type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ix-type-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  border: 1px solid var(--stroke);
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--text-3);
+  cursor: pointer;
+  transition: 0.16s var(--ease);
+}
+
+.ix-type-opt svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+}
+
+.ix-type-opt.in.is-active  {
+  color: var(--success-lt);
+  border-color: rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.ix-type-opt.out.is-active {
+  color: var(--danger-lt);
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+/* amount display */
+.ix-amount-display {
+  text-align: center;
+  padding: 6px 0 18px;
+}
+
+.ix-amount-display .lbl {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+.ix-amount-display .val {
+  font-family: var(--display);
+  font-size: 40px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.ix-amount-display .val.out { color: var(--danger-lt); }
+.ix-amount-display .val.in  { color: var(--success-lt); }
+
+/* form fields */
+.ix-field {
+  margin-bottom: 14px;
+}
+
+.ix-field > label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-2);
+  margin-bottom: 8px;
+}
+
+.ix-input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 15px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--stroke);
+  color: var(--text-main);
+  font-size: 15px;
+  font-weight: 600;
+  transition: 0.16s var(--ease);
+}
+
+.ix-input:focus {
+  outline: none;
+  border-color: rgba(96, 165, 250, 0.6);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.ix-input-icon {
+  position: relative;
+}
+
+.ix-input-icon svg {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  stroke: var(--text-3);
+}
+
+.ix-input-icon .ix-input {
+  padding-left: 44px;
+}
+
+/* payment chips */
+.ix-pay-chips {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.ix-pay-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border-radius: 13px;
+  border: 1px solid var(--stroke);
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.16s var(--ease);
+}
+
+.ix-pay-chip svg {
+  width: 19px;
+  height: 19px;
+  stroke: currentColor;
+}
+
+.ix-pay-chip.is-active {
+  color: var(--primary-lt);
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(96, 165, 250, 0.13);
+}
+
+/* category chips */
+.ix-cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ix-cat-chip {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--stroke);
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: 0.16s var(--ease);
+}
+
+.ix-cat-chip.is-active {
+  color: var(--primary-lt);
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(96, 165, 250, 0.13);
+}
+
+/* photo flow sticky footer */
+.ix-photo-footer {
+  width: 100%;
+  max-width: 520px;
+  margin-top: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ix-photo,
+  .ix-photo * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState, type ChangeEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom"; // Links sem recarregar a pÃ¡gina
+import PhotoFlow from "./PhotoFlow";
 import {
   deriveSubscriptionStatusFromAuthData,
   INACTIVE_SUBSCRIPTION_MESSAGE,
@@ -131,6 +132,7 @@ export default function Layout({ children }: Props) {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [isPhotoFlowOpen, setIsPhotoFlowOpen] = useState(false);
   const [isActivatePlanModalOpen, setIsActivatePlanModalOpen] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [isCheckingSubscriptionStatus, setIsCheckingSubscriptionStatus] = useState(true);
@@ -1024,6 +1026,15 @@ export default function Layout({ children }: Props) {
                   <span className="quick-add-dot quick-add-dot-import" aria-hidden="true" />
                   Importar extrato
                 </button>
+                <button
+                  type="button"
+                  className="mobile-curved-item mobile-curved-item-photo"
+                  onClick={() => { setIsQuickAddOpen(false); setIsPhotoFlowOpen(true); }}
+                >
+                  <span className="quick-add-dot quick-add-dot-photo" aria-hidden="true" />
+                  Lançar por foto
+                  <span className="quick-add-new-badge" aria-label="Novo">NOVO</span>
+                </button>
                 <button type="button" className="mobile-curved-item mobile-curved-item-report" onClick={() => handleMobileRoute("/relatorios")}>
                   <span className="quick-add-dot quick-add-dot-report" aria-hidden="true" />
                   Relatórios
@@ -1125,6 +1136,10 @@ export default function Layout({ children }: Props) {
             </div>
           </nav>
         </>
+      ) : null}
+
+      {isPhotoFlowOpen ? (
+        <PhotoFlow onClose={() => setIsPhotoFlowOpen(false)} />
       ) : null}
 
       {isLoggingOut ? (
@@ -1524,6 +1539,11 @@ export default function Layout({ children }: Props) {
             to {
               opacity: 1;
             }
+          }
+
+          .quick-add-dot-photo {
+            background: #60A5FA;
+            box-shadow: 0 0 8px #60A5FA;
           }
         `}
       </style>
