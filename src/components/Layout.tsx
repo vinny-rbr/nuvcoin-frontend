@@ -11,7 +11,6 @@ import {
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
-import { APP_VERSION } from "../lib/appVersion";
 import { hasCompletedOnboarding } from "../lib/onboarding";
 
 import "./layout.css"; // Importa o CSS do layout premium
@@ -577,61 +576,6 @@ export default function Layout({ children }: Props) {
     setIsActivatePlanModalOpen(false);
   }
 
-  function handleProfilePhotoClick() {
-    logClientEvent({ event: "profile.photo_picker.open", message: "Abriu seletor de foto" });
-    profilePhotoInputRef.current?.click();
-  }
-
-  function handleProfilePhotoChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    logClientEvent({
-      event: "profile.photo.change.selected",
-      message: "Selecionou foto de perfil",
-      data: { fileType: file.type, fileSize: file.size },
-    });
-
-    if (!file.type.startsWith("image/")) {
-      window.alert("Escolha uma imagem para usar como foto de perfil.");
-      event.target.value = "";
-      return;
-    }
-
-    if (file.size > 1024 * 1024 * 2) {
-      window.alert("Escolha uma imagem com até 2MB.");
-      event.target.value = "";
-      return;
-    }
-
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      const result = typeof reader.result === "string" ? reader.result : null;
-      if (!result) return;
-
-      window.localStorage.setItem(getProfilePhotoStorageKey(profileUserId), result);
-      setProfilePhoto(result);
-      logClientEvent({
-        event: "profile.photo.change.saved",
-        message: "Foto de perfil salva",
-        data: { userId: profileUserId || null },
-      });
-    };
-
-    reader.readAsDataURL(file);
-    event.target.value = "";
-  }
-
-  function handleRemoveProfilePhoto() {
-    window.localStorage.removeItem(getProfilePhotoStorageKey(profileUserId));
-    setProfilePhoto(null);
-    logClientEvent({
-      event: "profile.photo.remove",
-      message: "Foto de perfil removida",
-      data: { userId: profileUserId || null },
-    });
-  }
-
   function formatCpf(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     return digits
@@ -813,28 +757,7 @@ export default function Layout({ children }: Props) {
     }, 1500);
   }
 
-  const planBadgeLabel =
-    subscriptionStatus === "active" && isLifetimeSubscription
-      ? "Plano vitalício"
-      : subscriptionStatus === "active"
-      ? "Plano ativo"
-      : subscriptionStatus === "trial"
-        ? "Periodo de teste"
-        : subscriptionStatus === "inactive"
-          ? "Conta inativa"
-          : "Status do plano";
   const hasConfirmedPaidSubscription = !isCheckingSubscriptionStatus && subscriptionStatus === "active";
-  const lifetimeBadgeLabel = subscriptionStatus === "active" && isLifetimeSubscription ? "Vitalício" : null;
-  const remainingDaysBadge =
-    (subscriptionStatus === "trial" || subscriptionStatus === "active") && !isLifetimeSubscription && remainingDays !== null
-      ? remainingDays > 1
-        ? subscriptionStatus === "trial"
-          ? `Teste ativo - ${remainingDays} dias restantes`
-          : `${remainingDays} dias restantes`
-        : remainingDays === 1
-          ? subscriptionStatus === "trial" ? "Termina amanha" : "Vence amanha"
-          : subscriptionStatus === "trial" ? "Trial expirado" : "Vence hoje"
-      : null;
 
   return (
     <div className="app-shell">
