@@ -442,12 +442,40 @@ export default function PhotoFlow({ onClose }: Props) {
   useEffect(() => {
     if (stage !== "reading") return;
 
-    // Start OCR in parallel with the progress animation
+    let animDone = false;
+    let ocrDone = false;
+    let ocrResult: OcrResult | null = null;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function applyAndTransition() {
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      if (ocrResult) {
+        if (ocrResult.amount)      setAmount(ocrResult.amount);
+        if (ocrResult.description) setDescription(ocrResult.description);
+        if (ocrResult.date)        setDate(ocrResult.date);
+        if (ocrResult.paymentType) setPayment(ocrResult.paymentType as PaymentType);
+        if (ocrResult.category)    setCatPath([ocrResult.category]);
+        setDetectedFields(ocrResult.detectedFields ?? 0);
+      }
+      setStage("review");
+    }
+
+    function tryTransition() {
+      if (animDone && ocrDone) applyAndTransition();
+    }
+
     const file = pendingFileRef.current;
     if (file) {
       const isPdf = file.type === "application/pdf";
       const ocrPromise = isPdf ? ocrPdf(file) : ocrImage(file);
-      ocrPromise.then((result) => { ocrResultRef.current = result; });
+      ocrPromise.then((result) => {
+        ocrResultRef.current = result;
+        ocrResult = result;
+        ocrDone = true;
+        tryTransition();
+      });
+    } else {
+      ocrDone = true;
     }
 
     let p = 0;
@@ -460,20 +488,20 @@ export default function PhotoFlow({ onClose }: Props) {
       if (clamped >= 100) {
         clearInterval(tick);
         setTimeout(() => {
-          const result = ocrResultRef.current;
-          if (result) {
-            if (result.amount)      setAmount(result.amount);
-            if (result.description) setDescription(result.description);
-            if (result.date)        setDate(result.date);
-            if (result.paymentType) setPayment(result.paymentType as PaymentType);
-            if (result.category)    setCatPath([result.category]);
-            setDetectedFields(result.detectedFields ?? 0);
-          }
-          setStage("review");
+          animDone = true;
+          // fallback: if OCR takes too long, proceed anyway after 8s
+          fallbackTimer = setTimeout(() => {
+            ocrDone = true;
+            applyAndTransition();
+          }, 8000);
+          tryTransition();
         }, 360);
       }
     }, 110);
-    return () => clearInterval(tick);
+    return () => {
+      clearInterval(tick);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+    };
   }, [stage]);
 
   useEffect(() => {
