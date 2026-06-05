@@ -522,9 +522,16 @@ export default function Layout({ children }: Props) {
   async function handleSubscribe(planId: string, cpfCnpj?: string, fullName?: string) {
     const token = localStorage.getItem("token") ?? "";
 
-    const cpfDigits = cpfCnpj?.replace(/\D/g, "");
+    const storedCpf = localStorage.getItem("conciliaai_cpf") ?? "";
+    const storedName = localStorage.getItem("conciliaai_name") ?? "";
+    const resolvedCpf = cpfCnpj ?? storedCpf;
+    const resolvedName = fullName ?? storedName;
+
+    const cpfDigits = resolvedCpf.replace(/\D/g, "");
     if (!cpfDigits || cpfDigits.length !== 11) {
       setPendingPlanId(planId);
+      setFullNameInput(storedName);
+      setCpfInput(storedCpf);
       setShowCpfModal(true);
       return;
     }
@@ -541,7 +548,7 @@ export default function Layout({ children }: Props) {
         body: JSON.stringify({
           planId,
           cpfCnpj: cpfDigits,
-          ...(fullName?.trim() ? { fullName: fullName.trim() } : {}),
+          ...(resolvedName.trim() ? { fullName: resolvedName.trim() } : {}),
         }),
       });
 

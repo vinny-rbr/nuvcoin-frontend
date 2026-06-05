@@ -237,6 +237,7 @@ export default function Perfil() {
           }
           if (d.cpfCnpj && typeof d.cpfCnpj === "string") {
             setCpf(d.cpfCnpj);
+            localStorage.setItem("conciliaai_cpf", d.cpfCnpj);
           }
         }),
       fetch(apiUrl("/api/subscriptions/me"), { headers: { Authorization: `Bearer ${token}` } })
