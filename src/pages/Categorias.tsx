@@ -259,18 +259,22 @@ export default function Categorias() {
           <div className="finance-empty-state">
             <strong>Carregando categorias...</strong>
           </div>
-        ) : rootCategories.length === 0 ? (
-          <div className="finance-empty-state">
-            <div className="finance-empty-icon">+</div>
-            <strong>{typeLabels[activeType].empty}</strong>
-            <span>Crie uma categoria usando o botão abaixo.</span>
-          </div>
         ) : (
           <div className="cat-grid">
+            <button
+              type="button"
+              className="cat-new-tile"
+              aria-label="Criar nova categoria"
+              onClick={() => openCreate()}
+            >
+              <span className="cat-new-tile-ic">+</span>
+              <strong>Nova</strong>
+            </button>
+
             {rootCategories.map((category, idx) => {
               const children = childrenByParentId.get(category.id) ?? [];
               const color = category.color ?? "#60a5fa";
-              const colorAlpha = color + "29";
+              const colorAlpha = color + "26";
               return (
                 <div
                   key={category.id}
@@ -278,15 +282,9 @@ export default function Categorias() {
                   style={{ animationDelay: `${idx * 0.06}s` }}
                 >
                   <div className="cat-card-top">
-                    <span className="cat-ic" style={{ background: colorAlpha, fontSize: 22 }}>
+                    <span className="cat-ic" style={{ background: colorAlpha, fontSize: 20 }}>
                       {category.icon ?? "💼"}
                     </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <h4>{category.name}</h4>
-                      <div className="cat-card-meta">
-                        {children.length} {children.length === 1 ? "subcategoria" : "subcategorias"}
-                      </div>
-                    </div>
                     <div className="cat-card-menu">
                       <button
                         type="button"
@@ -308,6 +306,13 @@ export default function Categorias() {
                     </div>
                   </div>
 
+                  <div className="cat-card-id">
+                    <h4>{category.name}</h4>
+                    <div className="cat-card-meta">
+                      {children.length} {children.length === 1 ? "subcategoria" : "subcategorias"}
+                    </div>
+                  </div>
+
                   <div className="cat-bar">
                     <i style={{ width: "100%", background: color }} />
                   </div>
@@ -325,34 +330,8 @@ export default function Categorias() {
                 </div>
               );
             })}
-
-            <div
-              className="cat-card cat-card-new card"
-              role="button"
-              tabIndex={0}
-              aria-label="Criar nova categoria"
-              onClick={() => openCreate()}
-              onKeyDown={(e) => { if (e.key === "Enter") openCreate(); }}
-            >
-              <span className="cat-ic" style={{ background: "rgba(59,130,246,.14)", color: "#bfdbfe" }}>+</span>
-              <strong>Criar categoria</strong>
-              <span className="cat-card-meta">Adicione um novo grupo</span>
-            </div>
           </div>
         )}
-
-        <button
-          className="categories-fab"
-          type="button"
-          aria-label="Adicionar categoria"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            openCreate();
-          }}
-        >
-          +
-        </button>
 
       </div>
 

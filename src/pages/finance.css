@@ -1611,20 +1611,21 @@
 
 .cat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr));
+  gap: 12px;
   margin-top: 18px;
 }
 
 .cat-card {
-  padding: 18px;
+  padding: 15px;
   border-radius: var(--r-md) !important;
   transition: transform 0.2s var(--ease), border-color 0.2s var(--ease);
   cursor: default;
   animation: catCardIn 0.5s var(--ease) both;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 11px;
+  min-width: 0;
 }
 
 @keyframes catCardIn {
@@ -1640,16 +1641,68 @@
 .cat-card-top {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cat-card-id {
+  min-width: 0;
+}
+
+.cat-card-id h4 {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
 }
 
 .cat-ic {
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   display: grid;
   place-items: center;
   flex-shrink: 0;
+}
+
+/* compact "Nova" tile — first item in grid */
+.cat-new-tile {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border: 1px dashed rgba(96, 165, 250, 0.4);
+  border-radius: var(--r-md);
+  background: rgba(59, 130, 246, 0.07);
+  color: #bfdbfe;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+
+.cat-new-tile:hover {
+  background: rgba(59, 130, 246, 0.14);
+  transform: translateY(-2px);
+}
+
+.cat-new-tile-ic {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  font-size: 20px;
+  background: rgba(59, 130, 246, 0.18);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.cat-new-tile strong {
+  font-size: 12.5px;
+  font-weight: 800;
 }
 
 .cat-card h4 {
@@ -1701,29 +1754,23 @@
   border: 1px solid var(--stroke-soft);
 }
 
-/* Dashed "create" card */
-.cat-card-new {
-  display: grid;
-  place-items: center;
-  text-align: center;
-  border-style: dashed !important;
-  color: var(--text-2);
-  min-height: 150px;
-  cursor: pointer;
-  gap: 8px;
+/* overflow safety — prevent horizontal scroll on mobile */
+.categories-view,
+.cat-grid {
+  max-width: 100%;
+  min-width: 0;
 }
 
-.cat-card-new .cat-ic {
-  font-size: 24px;
-  width: 44px;
-  height: 44px;
-  border-radius: 13px;
+.categories-view {
+  overflow-x: clip;
 }
 
-.cat-card-new strong { font-size: 14px; font-weight: 800; }
+.cat-grid > * {
+  min-width: 0;
+}
 
 @media (max-width: 520px) {
-  .cat-grid { grid-template-columns: 1fr 1fr; }
+  .cat-grid { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {
