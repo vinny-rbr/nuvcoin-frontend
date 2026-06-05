@@ -324,6 +324,7 @@ export function InteractiveDonut({
                   width: "100%",
                   cursor: "pointer",
                   textAlign: "left",
+                  color: "inherit",
                   transition: "background 0.18s, border-color 0.18s",
                 }}
               >
@@ -337,7 +338,7 @@ export function InteractiveDonut({
               </button>
 
               {isSelected && (
-                <div style={{
+                <div className="donut-drilldown" style={{
                   border: `1px solid ${seg.c}44`,
                   borderTop: "none",
                   borderRadius: "0 0 12px 12px",

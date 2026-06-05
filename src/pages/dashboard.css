@@ -1699,6 +1699,15 @@
   }
 }
 
+@keyframes donutDrillDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.donut-drilldown {
+  animation: donutDrillDown 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /*
 Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
