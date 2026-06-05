@@ -1825,6 +1825,7 @@
 .cat-drill-sep { color: #475569; margin: 0 1px; }
 
 .cat-drill-title {
+  font-family: var(--display);
   font-size: 21px;
   font-weight: 700;
   display: flex;
@@ -1835,7 +1836,7 @@
   overflow: hidden;
 }
 .cat-drill-name {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1878,6 +1879,14 @@
   transition: background .15s, transform .15s;
   text-align: left;
   width: 100%;
+  min-width: 0;
+}
+.cat-drill-addrow-txt {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 .cat-drill-addrow:hover {
   background: rgba(59, 130, 246, 0.14);
@@ -1933,6 +1942,25 @@
 .cat-drill-chev { color: #64748b; font-size: 18px; line-height: 1; flex-shrink: 0; }
 .cat-drill-head-acts,
 .cat-drill-row-acts { position: relative; flex-shrink: 0; }
+
+/* override categories-menu when inside drill head/row acts — add icon support + danger hover */
+.cat-drill-head-acts .categories-menu button,
+.cat-drill-row-acts .categories-menu button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cat-drill-head-acts .categories-menu button svg,
+.cat-drill-row-acts .categories-menu button svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+.cat-drill-head-acts .categories-menu button:last-child:hover,
+.cat-drill-row-acts .categories-menu button:last-child:hover {
+  background: rgba(127, 29, 29, 0.2);
+}
 
 .cat-drill-empty {
   color: #64748b;

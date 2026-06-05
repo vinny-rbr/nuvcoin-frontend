@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.47": [
+    { emoji: "🗂️", text: "Drill-in refinado — titulo com Space Grotesk, nome trunca correto (flex:0 1 auto), addrow nao estoura, icones SVG no menu editar/remover" },
+  ],
   "1.0.46": [
     { emoji: "🗑️", text: "Subcategorias agora tem botao de remover e editar no drill — nome longo nao quebra mais o layout" },
   ],

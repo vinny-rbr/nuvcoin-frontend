@@ -360,8 +360,14 @@ export default function Categorias() {
                 </button>
                 {actionMenuId === drillNode.id ? (
                   <div className="categories-menu">
-                    <button type="button" onClick={() => startEdit(drillNode)}>Editar</button>
-                    <button type="button" disabled={saving} onClick={() => void handleDeleteDrillNode(drillNode)}>Remover</button>
+                    <button type="button" onClick={() => startEdit(drillNode)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                      Editar
+                    </button>
+                    <button type="button" disabled={saving} onClick={() => void handleDeleteDrillNode(drillNode)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                      Remover
+                    </button>
                   </div>
                 ) : null}
               </div>
@@ -375,7 +381,7 @@ export default function Categorias() {
                   onClick={() => openCreate(drillNode.id)}
                 >
                   <span className="cat-drill-ap">+</span>
-                  Nova {(drillNode.level ?? 2) >= 2 ? "sub-subcategoria" : "subcategoria"} em {drillNode.name}
+                  <span className="cat-drill-addrow-txt">Nova {(drillNode.level ?? 2) >= 2 ? "sub-subcategoria" : "subcategoria"} em {drillNode.name}</span>
                 </button>
               ) : null}
 
@@ -418,8 +424,14 @@ export default function Categorias() {
                         </button>
                         {actionMenuId === child.id ? (
                           <div className="categories-menu">
-                            <button type="button" onClick={(e) => { e.stopPropagation(); startEdit(child); }}>Editar</button>
-                            <button type="button" disabled={saving} onClick={(e) => { e.stopPropagation(); void handleDelete(child); }}>Remover</button>
+                            <button type="button" onClick={(e) => { e.stopPropagation(); startEdit(child); }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                              Editar
+                            </button>
+                            <button type="button" disabled={saving} onClick={(e) => { e.stopPropagation(); void handleDelete(child); }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                              Remover
+                            </button>
                           </div>
                         ) : null}
                       </div>
