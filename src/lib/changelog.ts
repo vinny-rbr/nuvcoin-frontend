@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.44": [
+    { emoji: "🔍", text: "Subcategorias com drill-in — clique num chip pra entrar e navegar nos niveis com animacao" },
+  ],
   "1.0.43": [
     { emoji: "⊞", text: "Categorias sempre em grade — 2 colunas no celular, nunca mais empilha em coluna unica" },
   ],

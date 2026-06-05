@@ -56,6 +56,8 @@ export default function Categorias() {
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [showAllColors, setShowAllColors] = useState(false);
   const [showAllIcons, setShowAllIcons] = useState(false);
+  const [drillPath, setDrillPath] = useState<string[]>([]);
+  const [drillAnim, setDrillAnim] = useState<string>("");
 
   const visibleCategories = useMemo(
     () =>
@@ -89,6 +91,30 @@ export default function Categorias() {
 
     return map;
   }, [visibleCategories]);
+
+  const categoryById = useMemo(() => {
+    const map = new Map<string, FinanceCategoryOption>();
+    for (const c of visibleCategories) map.set(c.id, c);
+    return map;
+  }, [visibleCategories]);
+
+  const drillNode = drillPath.length > 0 ? (categoryById.get(drillPath[drillPath.length - 1]) ?? null) : null;
+  const drillChildren = drillNode ? (childrenByParentId.get(drillNode.id) ?? []) : [];
+
+  const drillAncestors = useMemo(() => {
+    if (drillPath.length === 0) return [] as Array<{ name: string; depth: number }>;
+    const result: Array<{ name: string; depth: number }> = [];
+    const firstSub = categoryById.get(drillPath[0]);
+    if (firstSub?.parentId) {
+      const rootCat = categoryById.get(firstSub.parentId);
+      if (rootCat) result.push({ name: rootCat.name, depth: 0 });
+    }
+    for (let i = 0; i < drillPath.length - 1; i++) {
+      const node = categoryById.get(drillPath[i]);
+      if (node) result.push({ name: node.name, depth: i + 1 });
+    }
+    return result;
+  }, [drillPath, categoryById]);
 
   useEffect(() => {
     let isMounted = true;
@@ -165,6 +191,21 @@ export default function Categorias() {
     }
   }
 
+  function drillInto(id: string) {
+    setDrillAnim("cat-drill-in");
+    setDrillPath((prev) => [...prev, id]);
+  }
+
+  function drillBack() {
+    setDrillAnim("cat-drill-back");
+    setDrillPath((prev) => prev.slice(0, -1));
+  }
+
+  function drillGoTo(depth: number) {
+    setDrillAnim("cat-drill-back");
+    setDrillPath((prev) => prev.slice(0, depth));
+  }
+
   function openCreate(parentId = "") {
     setNewName("");
     setNewParentId(parentId);
@@ -228,30 +269,34 @@ export default function Categorias() {
       </section>
 
       <div className="chart-card finance-panel categories-panel">
-        <div className="finance-section-heading">
-          <div>
-            <span className="finance-kicker">{typeLabels[activeType].kicker}</span>
-            <h3>{typeLabels[activeType].title}</h3>
-          </div>
+        {!drillNode ? (
+          <div className="finance-section-heading">
+            <div>
+              <span className="finance-kicker">{typeLabels[activeType].kicker}</span>
+              <h3>{typeLabels[activeType].title}</h3>
+            </div>
 
-          <div className="categories-tabs" aria-label="Tipo de categoria">
-            {(["RECEITA", "DESPESA"] as FinanceType[]).map((type) => (
-              <button
-                key={type}
-                type="button"
-                className={activeType === type ? "is-active" : ""}
-                onClick={() => {
-                  setActiveType(type);
-                  setNewParentId("");
-                  setEditingId(null);
-                  setFeedback(null);
-                }}
-              >
-                {type === "RECEITA" ? "Recebimentos" : "Gastos"}
-              </button>
-            ))}
+            <div className="categories-tabs" aria-label="Tipo de categoria">
+              {(["RECEITA", "DESPESA"] as FinanceType[]).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  className={activeType === type ? "is-active" : ""}
+                  onClick={() => {
+                    setActiveType(type);
+                    setNewParentId("");
+                    setEditingId(null);
+                    setFeedback(null);
+                    setDrillPath([]);
+                    setDrillAnim("");
+                  }}
+                >
+                  {type === "RECEITA" ? "Recebimentos" : "Gastos"}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
@@ -259,77 +304,162 @@ export default function Categorias() {
           <div className="finance-empty-state">
             <strong>Carregando categorias...</strong>
           </div>
-        ) : (
-          <div className="cat-grid">
-            <button
-              type="button"
-              className="cat-new-tile"
-              aria-label="Criar nova categoria"
-              onClick={() => openCreate()}
-            >
-              <span className="cat-new-tile-ic">+</span>
-              <strong>Nova</strong>
-            </button>
-
-            {rootCategories.map((category, idx) => {
-              const children = childrenByParentId.get(category.id) ?? [];
-              const color = category.color ?? "#60a5fa";
-              const colorAlpha = color + "26";
-              return (
-                <div
-                  key={category.id}
-                  className="cat-card card"
-                  style={{ animationDelay: `${idx * 0.06}s` }}
-                >
-                  <div className="cat-card-top">
-                    <span className="cat-ic" style={{ background: colorAlpha, fontSize: 20 }}>
-                      {category.icon ?? "💼"}
+        ) : drillNode ? (
+          <div className={`cat-drillview ${drillAnim}`} key={drillPath.join("-")}>
+            <div className="cat-drill-head">
+              <button type="button" className="cat-drill-back-btn" aria-label="Voltar" onClick={drillBack}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+              <div style={{ minWidth: 0 }}>
+                <div className="cat-drill-crumb">
+                  {drillAncestors.map((anc, idx) => (
+                    <span key={idx}>
+                      <b role="button" tabIndex={0} onClick={() => drillGoTo(anc.depth)} onKeyDown={(e) => { if (e.key === "Enter") drillGoTo(anc.depth); }}>{anc.name}</b>
+                      <span className="cat-drill-sep"> › </span>
                     </span>
-                    <div className="cat-card-menu">
-                      <button
-                        type="button"
-                        className="categories-icon-button"
-                        aria-label="Mais opções"
-                        onClick={(e) => { e.stopPropagation(); setActionMenuId((c) => c === category.id ? null : category.id); }}
-                      >
-                        •••
-                      </button>
-                      {actionMenuId === category.id ? (
-                        <div className="categories-menu">
-                          <button type="button" onClick={() => startEdit(category)}>Editar</button>
-                          {(category.level ?? 1) < 3 ? (
-                            <button type="button" onClick={() => openCreate(category.id)}>+ Sub</button>
-                          ) : null}
-                          <button type="button" disabled={saving} onClick={() => handleDelete(category)}>Remover</button>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="cat-card-id">
-                    <h4>{category.name}</h4>
-                    <div className="cat-card-meta">
-                      {children.length} {children.length === 1 ? "subcategoria" : "subcategorias"}
-                    </div>
-                  </div>
-
-                  <div className="cat-bar">
-                    <i style={{ width: "100%", background: color }} />
-                  </div>
-
-                  {children.length > 0 ? (
-                    <div className="subcats">
-                      {children.slice(0, 5).map((child) => (
-                        <span key={child.id} className="subcat">{child.icon} {child.name}</span>
-                      ))}
-                      {children.length > 5 ? (
-                        <span className="subcat">+{children.length - 5}</span>
-                      ) : null}
-                    </div>
-                  ) : null}
+                  ))}
                 </div>
-              );
-            })}
+                <div className="cat-drill-title">
+                  <span className="cat-drill-dot" style={{ background: drillNode.color ?? "#60a5fa" }} />
+                  {drillNode.name}
+                  <span className="cat-drill-pill">
+                    {(drillNode.level ?? 2) <= 2 ? "subcategoria" : "sub-subcategoria"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="cat-drill-list">
+              {(drillNode.level ?? 2) < 3 ? (
+                <button
+                  type="button"
+                  className="cat-drill-addrow"
+                  onClick={() => openCreate(drillNode.id)}
+                >
+                  <span className="cat-drill-ap">+</span>
+                  Nova {(drillNode.level ?? 2) >= 2 ? "sub-subcategoria" : "subcategoria"} em {drillNode.name}
+                </button>
+              ) : null}
+
+              {drillChildren.length === 0 ? (
+                <div className="cat-drill-empty">
+                  Nenhuma subcategoria em "{drillNode.name}" ainda.
+                </div>
+              ) : (
+                drillChildren.map((child) => {
+                  const grandchildren = childrenByParentId.get(child.id) ?? [];
+                  const childColor = child.color ?? "#60a5fa";
+                  return (
+                    <div
+                      key={child.id}
+                      className="cat-drill-subrow"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => drillInto(child.id)}
+                      onKeyDown={(e) => { if (e.key === "Enter") drillInto(child.id); }}
+                    >
+                      <span className="cat-drill-si" style={{ background: childColor + "26" }}>
+                        {child.icon ?? "💼"}
+                      </span>
+                      <div className="cat-drill-sm">
+                        <strong>{child.name}</strong>
+                        <span>
+                          {grandchildren.length > 0
+                            ? `${grandchildren.length} ${grandchildren.length === 1 ? "subcategoria" : "subcategorias"}`
+                            : "sem subcategorias"}
+                        </span>
+                      </div>
+                      <span className="cat-drill-chev">›</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className={drillAnim || undefined} key="grid">
+            <div className="cat-grid">
+              <button
+                type="button"
+                className="cat-new-tile"
+                aria-label="Criar nova categoria"
+                onClick={() => openCreate()}
+              >
+                <span className="cat-new-tile-ic">+</span>
+                <strong>Nova</strong>
+              </button>
+
+              {rootCategories.map((category, idx) => {
+                const children = childrenByParentId.get(category.id) ?? [];
+                const color = category.color ?? "#60a5fa";
+                const colorAlpha = color + "26";
+                return (
+                  <div
+                    key={category.id}
+                    className="cat-card card"
+                    style={{ animationDelay: `${idx * 0.06}s` }}
+                  >
+                    <div className="cat-card-top">
+                      <span className="cat-ic" style={{ background: colorAlpha, fontSize: 20 }}>
+                        {category.icon ?? "💼"}
+                      </span>
+                      <div className="cat-card-menu">
+                        <button
+                          type="button"
+                          className="categories-icon-button"
+                          aria-label="Mais opções"
+                          onClick={(e) => { e.stopPropagation(); setActionMenuId((c) => c === category.id ? null : category.id); }}
+                        >
+                          •••
+                        </button>
+                        {actionMenuId === category.id ? (
+                          <div className="categories-menu">
+                            <button type="button" onClick={() => startEdit(category)}>Editar</button>
+                            {(category.level ?? 1) < 3 ? (
+                              <button type="button" onClick={() => openCreate(category.id)}>+ Sub</button>
+                            ) : null}
+                            <button type="button" disabled={saving} onClick={() => handleDelete(category)}>Remover</button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="cat-card-id">
+                      <h4>{category.name}</h4>
+                      <div className="cat-card-meta">
+                        {children.length} {children.length === 1 ? "subcategoria" : "subcategorias"}
+                      </div>
+                    </div>
+
+                    <div className="cat-bar">
+                      <i style={{ width: "100%", background: color }} />
+                    </div>
+
+                    {children.length > 0 ? (
+                      <div className="subcats">
+                        {children.slice(0, 5).map((child) => (
+                          <span
+                            key={child.id}
+                            className="subcat"
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => { e.stopPropagation(); drillInto(child.id); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); drillInto(child.id); } }}
+                          >
+                            {child.icon} {child.name}
+                          </span>
+                        ))}
+                        {children.length > 5 ? (
+                          <span className="subcat">{`+${children.length - 5}`}</span>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
