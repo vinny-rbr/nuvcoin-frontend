@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { GroupBalancesResponse } from "../types/groups.types";
-import type { HeaderQuickAction } from "../hooks/useGroupsHeaderActions";
+import type { HeaderQuickAction, HeaderQuickActionId } from "../hooks/useGroupsHeaderActions";
 import { getInitials } from "../utils/groups.helpers";
 
 const AVATAR_COLORS = ["#3B82F6", "#22C55E", "#A78BFA", "#F97316", "#F472B6", "#14B8A6"];
@@ -25,7 +25,7 @@ type GroupsContextCardProps = {
   isMobile: boolean;
 };
 
-const ACTION_ORDER: Array<{ id: string; label: string; icon: string; primary?: boolean }> = [
+const ACTION_ORDER: Array<{ id: HeaderQuickActionId; label: string; icon: string; primary?: boolean }> = [
   { id: "expense", label: "Lançar despesa", icon: "R$", primary: true },
   { id: "people",  label: "Pessoas",        icon: "👥" },
   { id: "summary", label: "Resumo do mês",  icon: "Σ"  },
