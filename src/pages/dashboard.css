@@ -1091,7 +1091,7 @@
 
 @media (max-width: 980px) {
   .dashboard-grid {
-    grid-template-columns: repeat(2, minmax(180px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
 
@@ -1766,6 +1766,30 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 .donut-drow-anim { animation: donutRowIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* ============================= */
+/* FIX — overflow horizontal mobile */
+/* ============================= */
+
+.dashboard-view,
+.dashboard-hero,
+.dashboard-grid,
+.dashboard-charts,
+.dashboard-panel {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.dashboard-view {
+  overflow-x: clip;
+}
+
+.dashboard-grid > *,
+.dash-hero-stat,
+.dash-hero-stat > div,
+.dash-period-label {
+  min-width: 0;
+}
 
 /*
 Desenvolvido por Lucas Vinicius

@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.41": [
+    { emoji: "📱", text: "Dashboard não desloca mais pra direita no celular — cards agora cabem certinho na tela" },
+  ],
   "1.0.40": [
     { emoji: "🎞️", text: "Acordeão animado nos lançamentos do Confronto — abre e fecha suave sem quebrar o layout" },
   ],
