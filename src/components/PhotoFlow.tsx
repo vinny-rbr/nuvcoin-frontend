@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { financeAdd } from "../lib/financeService";
-import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
+import { listFinanceCategories } from "../lib/financeCategoriesService";
 import type { FinanceStatus, PaymentType } from "../types/finance";
 import "../pages/import-extrato.css";
 
 type PhotoStage = "source" | "reading" | "review" | "done";
+
+type CategoryNode = { id: string; name: string; children: CategoryNode[] };
 
 const READ_STEPS = [
   "Enviando a imagem…",
@@ -20,10 +22,39 @@ const PAYMENTS: { key: PaymentType; label: string }[] = [
   { key: "cash",   label: "Dinheiro" },
 ];
 
+const DEFAULT_TREE: CategoryNode[] = [
+  { id: "f1",  name: "Alimentação", children: [] },
+  { id: "f2",  name: "Transporte",  children: [] },
+  { id: "f3",  name: "Moradia",     children: [] },
+  { id: "f4",  name: "Saúde",       children: [] },
+  { id: "f5",  name: "Lazer",       children: [] },
+  { id: "f6",  name: "Educação",    children: [] },
+  { id: "f7",  name: "Salário",     children: [] },
+  { id: "f8",  name: "Vendas",      children: [] },
+  { id: "f9",  name: "Outros",      children: [] },
+];
+
 function todayISO(): string {
   return new Date().toISOString().split("T")[0]!;
 }
 
+function buildTree(cats: { id: string; name: string; parentId?: string | null }[]): CategoryNode[] {
+  const byId = new Map<string, CategoryNode>(
+    cats.map((c) => [c.id, { id: c.id, name: c.name, children: [] }]),
+  );
+  const roots: CategoryNode[] = [];
+  for (const c of cats) {
+    const node = byId.get(c.id)!;
+    if (c.parentId && byId.has(c.parentId)) {
+      byId.get(c.parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots.length > 0 ? roots : DEFAULT_TREE;
+}
+
+/* ── Icons ── */
 function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -36,6 +67,30 @@ function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
       <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  );
+}
+
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 18l-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ChevDownIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function ChevRightIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 6l6 6-6 6" />
     </svg>
   );
 }
@@ -136,6 +191,7 @@ function ClockIcon() {
   );
 }
 
+/* ── Status choice ── */
 function StatusChoice({
   value,
   onChange,
@@ -169,6 +225,105 @@ function StatusChoice({
   );
 }
 
+/* ── Hierarchical category picker ── */
+function CategoryPicker({
+  tree,
+  value,
+  onClose,
+  onSelect,
+}: {
+  tree: CategoryNode[];
+  value: string[];
+  onClose: () => void;
+  onSelect: (path: string[]) => void;
+}) {
+  const [stack, setStack] = useState<CategoryNode[]>([]);
+  const list = stack.length ? stack[stack.length - 1]!.children : tree;
+  const crumbNames = stack.map((n) => n.name);
+
+  return (
+    <div className="ix-catsheet-scrim" onClick={onClose}>
+      <div className="ix-catsheet" onClick={(e) => e.stopPropagation()}>
+        <div className="ix-catsheet-handle" />
+        <div className="ix-catsheet-top">
+          {stack.length > 0 && (
+            <button
+              type="button"
+              className="ix-back"
+              onClick={() => setStack(stack.slice(0, -1))}
+              aria-label="Voltar"
+            >
+              <BackIcon />
+            </button>
+          )}
+          <div className="info">
+            <span className="kick">Organização</span>
+            <h3>Categorias</h3>
+          </div>
+          <button type="button" className="closex" onClick={onClose} aria-label="Fechar">
+            <CloseIcon />
+          </button>
+        </div>
+
+        {crumbNames.length > 0 && (
+          <div className="ix-crumbbar">
+            <span className="c muted">Todas</span>
+            {crumbNames.map((n, i) => (
+              <Fragment key={n + i}>
+                <span className="sep">›</span>
+                <span className={`c${i === crumbNames.length - 1 ? "" : " muted"}`}>{n}</span>
+              </Fragment>
+            ))}
+          </div>
+        )}
+
+        {crumbNames.length > 0 && (
+          <button type="button" className="ix-cat-use" onClick={() => onSelect(crumbNames)}>
+            <CheckIcon />
+            Usar {crumbNames[crumbNames.length - 1]} como categoria
+          </button>
+        )}
+
+        <div className="ix-catlist">
+          {list.map((node) => {
+            const hasKids = node.children.length > 0;
+            const nodePath = [...crumbNames, node.name];
+            const selected = value.join(">") === nodePath.join(">");
+            return (
+              <div key={node.id} className={`ix-catrow${selected ? " is-selected" : ""}`}>
+                <button
+                  type="button"
+                  className="pickdot"
+                  onClick={() => onSelect(nodePath)}
+                  aria-label="Selecionar"
+                >
+                  <CheckIcon />
+                </button>
+                <button type="button" className="nm" onClick={() => onSelect(nodePath)}>
+                  <strong>{node.name}</strong>
+                  <span>{hasKids ? "Toque na seta para ver subcategorias" : "Selecionar esta categoria"}</span>
+                </button>
+                <span className="lvl">Nível {stack.length + 1}</span>
+                {hasKids && (
+                  <button
+                    type="button"
+                    className="drill"
+                    onClick={() => setStack([...stack, node])}
+                    aria-label="Ver subcategorias"
+                  >
+                    <ChevRightIcon />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main component ── */
 type Props = { onClose: () => void };
 
 export default function PhotoFlow({ onClose }: Props) {
@@ -182,9 +337,10 @@ export default function PhotoFlow({ onClose }: Props) {
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(todayISO());
   const [payment, setPayment] = useState<PaymentType>("debit");
-  const [category, setCategory] = useState("Alimentação");
+  const [catPath, setCatPath] = useState<string[]>(["Alimentação"]);
+  const [catOpen, setCatOpen] = useState(false);
   const [status, setStatus] = useState<FinanceStatus>("paid");
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryTree, setCategoryTree] = useState<CategoryNode[]>(DEFAULT_TREE);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
@@ -192,17 +348,14 @@ export default function PhotoFlow({ onClose }: Props) {
   useEffect(() => {
     listFinanceCategories()
       .then((cats) => {
-        const income = categoriesForType(cats, "RECEITA");
-        const expense = categoriesForType(cats, "DESPESA");
-        const unique = [...new Set([...expense, ...income])];
-        setCategories(unique.length > 0 ? unique : [...DEFAULT_CATEGORIES.DESPESA, ...DEFAULT_CATEGORIES.RECEITA]);
+        const tree = buildTree(cats);
+        setCategoryTree(tree);
       })
       .catch(() => {
-        setCategories([...DEFAULT_CATEGORIES.DESPESA, ...DEFAULT_CATEGORIES.RECEITA]);
+        setCategoryTree(DEFAULT_TREE);
       });
   }, []);
 
-  // Reading animation
   useEffect(() => {
     if (stage !== "reading") return;
     let p = 0;
@@ -220,7 +373,6 @@ export default function PhotoFlow({ onClose }: Props) {
     return () => clearInterval(tick);
   }, [stage]);
 
-  // Revoke object URL on unmount
   useEffect(() => {
     return () => {
       if (imageUrl) URL.revokeObjectURL(imageUrl);
@@ -245,6 +397,8 @@ export default function PhotoFlow({ onClose }: Props) {
     const raw = parseFloat(amount.replace(",", "."));
     const amountCents = Math.round(raw * 100);
     if (!amountCents || isNaN(amountCents)) return;
+
+    const category = catPath[catPath.length - 1] ?? "Outros";
 
     financeAdd({
       id: crypto.randomUUID(),
@@ -276,15 +430,7 @@ export default function PhotoFlow({ onClose }: Props) {
   const isIn = type === "RECEITA";
   const amountNum = parseFloat(amount.replace(",", "."));
   const amountValid = !isNaN(amountNum) && amountNum > 0;
-
-  const displayCats =
-    categories.length > 0
-      ? categories
-      : ["Alimentação", "Transporte", "Moradia", "Saúde", "Lazer", "Educação", "Vendas", "Salário", "Outros"];
-
-  const amountDisplay = amountValid
-    ? amountNum.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "0,00";
+  const category = catPath[catPath.length - 1] ?? "";
 
   return (
     <div className="ix-photo">
@@ -302,7 +448,8 @@ export default function PhotoFlow({ onClose }: Props) {
             <span className="ix-kicker">Comprovante</span>
             <h1>Fotografe o comprovante</h1>
             <p>
-              Tire uma foto ou escolha uma imagem da nota/recibo. Depois confira e ajuste os dados antes de lançar.
+              Tire uma foto ou escolha uma imagem da nota/recibo. O Conciliaaí lê o valor, a data e sugere a
+              categoria.
             </p>
           </div>
           <div className="ix-src-grid">
@@ -329,7 +476,7 @@ export default function PhotoFlow({ onClose }: Props) {
             <div className="ix-src-tip-ic"><SparkleIcon /></div>
             <p>
               Funciona com cupom fiscal, recibo, comprovante de Pix ou print do app do banco. Quanto mais
-              nítida a foto, melhor.
+              nítida a foto, melhor a leitura.
             </p>
           </div>
           <input
@@ -384,7 +531,7 @@ export default function PhotoFlow({ onClose }: Props) {
               )}
               <div className="info">
                 <span className="ix-kicker">Confira o lançamento</span>
-                <h2>Preencha os dados</h2>
+                <h2>Lido do comprovante</h2>
                 <span className="ix-rcpt-read-flag">
                   <SparkleIcon />
                   Confira antes de lançar
@@ -413,22 +560,23 @@ export default function PhotoFlow({ onClose }: Props) {
               <div className="ix-amount-display">
                 <div className="lbl">VALOR</div>
                 <div className={`val ${isIn ? "in" : "out"}`}>
-                  {isIn ? "+" : "−"}R$ {amountDisplay}
+                  {isIn ? "+" : "−"}R$ {amount || "0,00"}
                 </div>
               </div>
 
               <div className="ix-field">
                 <label>Valor (R$)</label>
-                <input
-                  className="ix-input"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
+                <div className="ix-input-icon">
+                  <WalletIcon />
+                  <input
+                    className="ix-input"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
               </div>
 
               <div className="ix-field">
@@ -476,18 +624,17 @@ export default function PhotoFlow({ onClose }: Props) {
 
               <div className="ix-field" style={{ marginBottom: 0 }}>
                 <label>Categoria</label>
-                <div className="ix-cat-chips">
-                  {displayCats.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      className={`ix-cat-chip${category === c ? " is-active" : ""}`}
-                      onClick={() => setCategory(c)}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
+                <button type="button" className="ix-cat-field" onClick={() => setCatOpen(true)}>
+                  <div className="ix-cat-chosen">
+                    {catPath.length > 1 && (
+                      <span className="crumb">{catPath.slice(0, -1).join(" › ")}</span>
+                    )}
+                    <span className={`leaf${category ? "" : " empty"}`}>
+                      {category || "Escolher categoria"}
+                    </span>
+                  </div>
+                  <span className="ix-cat-chev"><ChevDownIcon /></span>
+                </button>
               </div>
             </div>
 
@@ -506,7 +653,7 @@ export default function PhotoFlow({ onClose }: Props) {
             >
               <CheckIcon />
               Lançar {isIn ? "receita" : "despesa"}
-              {amountValid ? ` · R$ ${amountDisplay}` : ""}
+              {amountValid ? ` · R$ ${amount}` : ""}
             </button>
             <button type="button" className="ix-btn-ghost" onClick={handleRetake}>
               Trocar foto
@@ -524,6 +671,26 @@ export default function PhotoFlow({ onClose }: Props) {
             {description.trim() || "Lançamento"} foi{" "}
             {status === "paid" ? "adicionado ao seu saldo" : "agendado para a data"}.
           </p>
+          <div className="ix-card" style={{ textAlign: "left", marginTop: 22 }}>
+            <div className="ix-txn" style={{ border: "none", background: "transparent", padding: 0 }}>
+              <div className={`ix-txn-ic ${isIn ? "in" : "out"}`}>
+                {isIn ? <ArrowUpIcon /> : <ArrowDownIcon />}
+              </div>
+              <div className="ix-txn-main">
+                <div className="ix-txn-title">{description.trim() || "Lançamento"}</div>
+                <div className="ix-txn-meta">
+                  <span className="ix-txn-date">{date}</span>
+                  <span className="ix-badge cat">{category || "Outros"}</span>
+                  <span className={`ix-badge status-${status}`}>
+                    {status === "paid" ? "No saldo" : "Na data"}
+                  </span>
+                </div>
+              </div>
+              <div className={`ix-txn-amount ${isIn ? "in" : "out"}`}>
+                {isIn ? "+" : "−"}R$ {amount || "0,00"}
+              </div>
+            </div>
+          </div>
           <button
             type="button"
             className="ix-btn-primary"
@@ -537,6 +704,15 @@ export default function PhotoFlow({ onClose }: Props) {
             Lançar outro
           </button>
         </div>
+      )}
+
+      {catOpen && (
+        <CategoryPicker
+          tree={categoryTree}
+          value={catPath}
+          onClose={() => setCatOpen(false)}
+          onSelect={(path) => { setCatPath(path); setCatOpen(false); }}
+        />
       )}
     </div>
   );

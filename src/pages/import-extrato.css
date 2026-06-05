@@ -1622,8 +1622,327 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ix-photo,
-  .ix-photo * {
+  .ix-photo *,
+  .ix-catsheet {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ── Status badge variants ── */
+.ix-badge.status-paid {
+  background: rgba(34, 197, 94, 0.16);
+  color: var(--success-lt);
+}
+
+.ix-badge.status-pending {
+  background: rgba(250, 204, 21, 0.16);
+  color: var(--warn-lt);
+}
+
+/* ── Category select field ── */
+.ix-cat-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid var(--stroke);
+  cursor: pointer;
+  transition: 0.16s var(--ease);
+}
+
+.ix-cat-field:hover {
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+.ix-cat-field .ix-cat-chosen {
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+}
+
+.ix-cat-field .crumb {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  display: block;
+}
+
+.ix-cat-field .leaf {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ix-cat-field .leaf.empty {
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.ix-cat-field .ix-cat-chev {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: rgba(96, 165, 250, 0.14);
+  flex-shrink: 0;
+}
+
+.ix-cat-field .ix-cat-chev svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--primary-lt);
+}
+
+/* ── Category picker sheet ── */
+.ix-catsheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 210;
+  background: rgba(5, 9, 20, 0.66);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.ix-catsheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(24, 33, 52, 0.99), rgba(13, 19, 33, 0.99));
+  border: 1px solid rgba(96, 165, 250, 0.16);
+  border-bottom: 0;
+  border-radius: 26px 26px 0 0;
+  box-shadow: 0 -28px 70px rgba(0, 0, 0, 0.55);
+  animation: ixSheetSlide 0.28s var(--ease) both;
+}
+
+@keyframes ixSheetSlide {
+  from { transform: translateY(40px); }
+  to   { transform: translateY(0); }
+}
+
+.ix-catsheet-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+  margin: 12px auto 6px;
+}
+
+.ix-catsheet-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px 14px;
+  border-bottom: 1px solid var(--stroke-soft);
+}
+
+.ix-catsheet-top .kick {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  display: block;
+}
+
+.ix-catsheet-top h3 {
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.ix-catsheet-top .info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ix-catsheet-top .ix-back {
+  width: 36px;
+  height: 36px;
+}
+
+.ix-catsheet-top .closex {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--stroke);
+  background: rgba(30, 41, 59, 0.6);
+  cursor: pointer;
+}
+
+.ix-catsheet-top .closex svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--text-2);
+}
+
+.ix-crumbbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 12px 18px 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ix-crumbbar .c { color: var(--primary-lt); }
+.ix-crumbbar .c.muted { color: var(--text-3); }
+.ix-crumbbar .sep { color: var(--text-3); }
+
+.ix-cat-use {
+  margin: 8px 18px 4px;
+  width: calc(100% - 36px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  border-radius: 13px;
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--primary-lt);
+  border: 1px solid rgba(96, 165, 250, 0.4);
+  background: rgba(96, 165, 250, 0.1);
+  cursor: pointer;
+}
+
+.ix-cat-use svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--primary-lt);
+}
+
+.ix-catlist {
+  overflow-y: auto;
+  padding: 8px 14px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ix-catrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 15px;
+  border-radius: 15px;
+  background: rgba(30, 41, 59, 0.55);
+  border: 1px solid var(--stroke-soft);
+  transition: 0.14s var(--ease);
+}
+
+.ix-catrow:hover {
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(30, 41, 59, 0.8);
+}
+
+.ix-catrow.is-selected {
+  border-color: rgba(96, 165, 250, 0.6);
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.ix-catrow .nm {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.ix-catrow .nm strong {
+  font-family: var(--display);
+  font-size: 15.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  display: block;
+}
+
+.ix-catrow .nm span {
+  font-size: 12px;
+  color: var(--text-3);
+  display: block;
+  margin-top: 2px;
+}
+
+.ix-catrow .lvl {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: var(--text-2);
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid var(--stroke-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ix-catrow .drill {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--grad-primary);
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+  cursor: pointer;
+}
+
+.ix-catrow .drill svg {
+  width: 16px;
+  height: 16px;
+  stroke: #fff;
+  stroke-width: 2.4;
+}
+
+.ix-catrow .pickdot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--stroke);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.ix-catrow.is-selected .pickdot {
+  border-color: var(--primary-lt);
+  background: var(--primary);
+}
+
+.ix-catrow .pickdot svg {
+  width: 12px;
+  height: 12px;
+  stroke: #fff;
+  stroke-width: 3;
+  opacity: 0;
+}
+
+.ix-catrow.is-selected .pickdot svg {
+  opacity: 1;
 }
