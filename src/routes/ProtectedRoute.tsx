@@ -10,6 +10,7 @@ import {
   subscribeToSubscriptionStatus,
   type SubscriptionStatus,
 } from "../lib/auth";
+import { hasCompletedOnboarding } from "../lib/onboarding";
 
 type Props = {
   children: ReactNode; // Conteúdo protegido que vai renderizar se estiver logado
@@ -112,7 +113,10 @@ export default function ProtectedRoute({ children, requireActiveSubscription = f
   }
 
   if (requireActiveSubscription && subscriptionStatus === "inactive") {
-    return <Navigate to="/onboarding" replace state={{ from: location }} />;
+    if (!hasCompletedOnboarding()) {
+      return <Navigate to="/onboarding" replace state={{ from: location }} />;
+    }
+    // Onboarding já concluído — renderiza o conteúdo; Layout exibe o aviso e botão "Ativar plano"
   }
 
   // ✅ Se estiver logado, renderiza o conteúdo protegido (Layout + Página)
