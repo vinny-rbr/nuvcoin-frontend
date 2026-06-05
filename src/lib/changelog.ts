@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.51": [
+    { emoji: "⚡", text: "Após pagar no Asaas, o app detecta automaticamente e libera o acesso — sem precisar fechar e reabrir." },
+    { emoji: "📅", text: "Dias restantes da assinatura aparecem na topbar para planos pagos e de teste." },
+  ],
   "1.0.50": [
     { emoji: "📋", text: "Checkout agora pede nome completo e CPF — dados salvos no seu perfil automaticamente." },
     { emoji: "🔄", text: "Corrigido loop infinito de onboarding para contas com assinatura expirada." },

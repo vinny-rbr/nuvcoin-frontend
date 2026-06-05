@@ -135,6 +135,8 @@ export default function Layout({ children }: Props) {
   const [isPhotoFlowOpen, setIsPhotoFlowOpen] = useState(false);
   const [isActivatePlanModalOpen, setIsActivatePlanModalOpen] = useState(false);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
+  const [isWaitingForPayment, setIsWaitingForPayment] = useState(false);
+  const paymentPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [cpfInput, setCpfInput] = useState("");
   const [fullNameInput, setFullNameInput] = useState("");
   const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
@@ -168,8 +170,10 @@ export default function Layout({ children }: Props) {
     const userId = window.localStorage.getItem("conciliaai_userId");
     return window.localStorage.getItem(getProfilePhotoStorageKey(userId));
   });
-  const endDateRaw = typeof window === "undefined" ? null : localStorage.getItem("subscriptionEndDateUtc");
-  const remainingDays = getRemainingDays(endDateRaw);
+  const [subscriptionEndDate, setSubscriptionEndDate] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : localStorage.getItem("subscriptionEndDateUtc")
+  );
+  const remainingDays = getRemainingDays(subscriptionEndDate);
   const profileDisplayName = profileName || profileEmail.split("@")[0] || "Usuário";
   const profileInitials = getInitials(profileDisplayName || profileEmail);
 
@@ -310,10 +314,10 @@ export default function Layout({ children }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!isCheckingSubscriptionStatus && subscriptionStatus === "inactive" && location.pathname !== "/onboarding") {
+    if (!isCheckingSubscriptionStatus && subscriptionStatus === "inactive" && location.pathname !== "/onboarding" && !isWaitingForPayment) {
       setShowTrialModal(true);
     }
-  }, [isCheckingSubscriptionStatus, location.pathname, subscriptionStatus]);
+  }, [isCheckingSubscriptionStatus, isWaitingForPayment, location.pathname, subscriptionStatus]);
 
   useEffect(() => {
     let isMounted = true;
@@ -361,6 +365,7 @@ export default function Layout({ children }: Props) {
           persistLifetimeState(nextIsLifetime);
           if (!nextIsLifetime && nextEndDate) {
             localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
+            setSubscriptionEndDate(nextEndDate);
           }
           setSubscriptionStatus("active");
           persistSubscriptionState("active");
@@ -373,6 +378,7 @@ export default function Layout({ children }: Props) {
           persistLifetimeState(false);
           if (nextEndDate) {
             localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
+            setSubscriptionEndDate(nextEndDate);
           }
           setSubscriptionStatus("trial");
           persistSubscriptionState("trial");
@@ -397,6 +403,14 @@ export default function Layout({ children }: Props) {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (paymentPollingRef.current) {
+        clearInterval(paymentPollingRef.current);
+      }
     };
   }, []);
 
@@ -435,6 +449,63 @@ export default function Layout({ children }: Props) {
       isMounted = false;
     };
   }, [isActivatePlanModalOpen]);
+
+  function stopPaymentPolling() {
+    if (paymentPollingRef.current) {
+      clearInterval(paymentPollingRef.current);
+      paymentPollingRef.current = null;
+    }
+    setIsWaitingForPayment(false);
+  }
+
+  function startPaymentPolling() {
+    stopPaymentPolling();
+    setIsWaitingForPayment(true);
+
+    paymentPollingRef.current = setInterval(() => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      void (async () => {
+        try {
+          const response = await fetch(apiUrl("/api/subscriptions/me"), {
+            method: "GET",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          });
+
+          if (!response.ok) return;
+
+          const data = (await response.json()) as Record<string, unknown>;
+          const nextStatus = deriveSubscriptionStatusFromAuthData(data);
+
+          if (nextStatus === "active") {
+            stopPaymentPolling();
+            const nextIsLifetime = readLifetimeStateFromApiResponse(data);
+            const nextEndDate =
+              typeof data.subscriptionEndDateUtc === "string"
+                ? data.subscriptionEndDateUtc
+                : typeof data.endDateUtc === "string"
+                  ? data.endDateUtc
+                  : null;
+
+            setIsLifetimeSubscription(nextIsLifetime);
+            persistLifetimeState(nextIsLifetime);
+            if (!nextIsLifetime && nextEndDate) {
+              localStorage.setItem("subscriptionEndDateUtc", nextEndDate);
+              setSubscriptionEndDate(nextEndDate);
+            }
+            setSubscriptionStatus("active");
+            persistSubscriptionState("active");
+            setShowTrialModal(false);
+            setIsActivatePlanModalOpen(false);
+            navigate("/dashboard", { replace: true });
+          }
+        } catch {
+          // ignore, continue polling
+        }
+      })();
+    }, 5000);
+  }
 
   function handleMobileMenuToggle(event: ReactMouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
@@ -608,7 +679,9 @@ export default function Layout({ children }: Props) {
         throw new Error("Erro ao iniciar pagamento");
       }
 
-      window.location.href = data.invoiceUrl;
+      window.open(data.invoiceUrl, "_blank", "noopener,noreferrer");
+      setLoadingPlanId(null);
+      startPaymentPolling();
     } catch (error: unknown) {
       setLoadingPlanId(null);
       const message = error instanceof Error ? error.message : "Erro ao iniciar pagamento. Tente novamente.";
@@ -677,6 +750,7 @@ export default function Layout({ children }: Props) {
 
       if (endDateUtc && !nextIsLifetime) {
         localStorage.setItem("subscriptionEndDateUtc", endDateUtc);
+        setSubscriptionEndDate(endDateUtc);
       }
 
       persistSubscriptionState("trial");
@@ -751,14 +825,16 @@ export default function Layout({ children }: Props) {
           : "Status do plano";
   const hasConfirmedPaidSubscription = !isCheckingSubscriptionStatus && subscriptionStatus === "active";
   const lifetimeBadgeLabel = subscriptionStatus === "active" && isLifetimeSubscription ? "Vitalício" : null;
-  const trialBadgeLabel =
-    subscriptionStatus !== "trial" || remainingDays === null
-      ? null
-      : remainingDays > 1
-        ? `Teste ativo - ${remainingDays} dias restantes`
+  const remainingDaysBadge =
+    (subscriptionStatus === "trial" || subscriptionStatus === "active") && !isLifetimeSubscription && remainingDays !== null
+      ? remainingDays > 1
+        ? subscriptionStatus === "trial"
+          ? `Teste ativo - ${remainingDays} dias restantes`
+          : `${remainingDays} dias restantes`
         : remainingDays === 1
-          ? "Termina amanha"
-          : "Trial expirado";
+          ? subscriptionStatus === "trial" ? "Termina amanha" : "Vence amanha"
+          : subscriptionStatus === "trial" ? "Trial expirado" : "Vence hoje"
+      : null;
 
   return (
     <div className="app-shell">
@@ -796,7 +872,7 @@ export default function Layout({ children }: Props) {
               </span>
             ) : null}
 
-            {trialBadgeLabel ? (
+            {remainingDaysBadge ? (
               <span
                 className="trial-badge"
                 style={{
@@ -812,7 +888,7 @@ export default function Layout({ children }: Props) {
                   whiteSpace: "nowrap",
                 }}
               >
-                {trialBadgeLabel}
+                {remainingDaysBadge}
               </span>
             ) : null}
 
@@ -1266,6 +1342,53 @@ export default function Layout({ children }: Props) {
               </p>
             </div>
 
+            {isWaitingForPayment ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "18px",
+                  padding: "32px 16px",
+                  borderRadius: "18px",
+                  border: "1px solid rgba(96, 165, 250, 0.25)",
+                  background: "rgba(15, 23, 42, 0.65)",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    border: "3px solid rgba(96, 165, 250, 0.3)",
+                    borderTopColor: "#60a5fa",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+                <div style={{ display: "grid", gap: "8px" }}>
+                  <strong style={{ fontSize: "18px", color: "#f1f5f9" }}>Aguardando pagamento...</strong>
+                  <p style={{ margin: 0, fontSize: "14px", color: "#94a3b8", lineHeight: 1.5 }}>
+                    A fatura foi aberta em uma nova aba. Após pagar, você será redirecionado automaticamente.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={stopPaymentPolling}
+                  style={{
+                    padding: "10px 20px",
+                    borderRadius: "10px",
+                    border: "1px solid rgba(148, 163, 184, 0.18)",
+                    background: "rgba(30, 41, 59, 0.7)",
+                    color: "#94a3b8",
+                    cursor: "pointer",
+                    fontSize: "14px",
+                  }}
+                >
+                  Cancelar
+                </button>
+              </div>
+            ) : (
             <div
               style={{
                 display: "grid",
@@ -1398,6 +1521,7 @@ export default function Layout({ children }: Props) {
                 </div>
               ) : null}
             </div>
+            )}
 
             <div
               style={{
@@ -1406,6 +1530,7 @@ export default function Layout({ children }: Props) {
                 gap: "12px",
               }}
             >
+              {!isWaitingForPayment ? (
               <button
                 type="button"
                 onClick={handleCloseActivatePlanModal}
@@ -1423,6 +1548,7 @@ export default function Layout({ children }: Props) {
               >
                 Agora nao
               </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -1633,6 +1759,10 @@ export default function Layout({ children }: Props) {
             to {
               opacity: 1;
             }
+          }
+
+          @keyframes spin {
+            to { transform: rotate(360deg); }
           }
 
           .quick-add-dot-photo {
