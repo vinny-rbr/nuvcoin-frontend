@@ -5,8 +5,18 @@ import { APP_VERSION } from "../lib/appVersion";
 import {
   deriveSubscriptionStatusFromAuthData,
   persistSubscriptionState,
-  persistLifetimeState,
+  type SubscriptionStatus,
 } from "../lib/auth";
+
+function persistLifetimeState(value: boolean) {
+  if (typeof window === "undefined") return;
+  if (value) {
+    window.localStorage.setItem("conciliaai_subscription_lifetime", "true");
+    window.localStorage.removeItem("subscriptionEndDateUtc");
+  } else {
+    window.localStorage.removeItem("conciliaai_subscription_lifetime");
+  }
+}
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -189,7 +199,7 @@ function ActionRow({
 // ─── main page ───────────────────────────────────────────────────────────────
 
 type SubData = {
-  status: "active" | "trial" | "inactive";
+  status: SubscriptionStatus;
   startDateUtc: string | null;
   endDateUtc: string | null;
   isLifetime: boolean;
@@ -232,7 +242,7 @@ export default function Perfil() {
       fetch(apiUrl("/api/subscriptions/me"), { headers: { Authorization: `Bearer ${token}` } })
         .then((r) => r.json())
         .then((d: Record<string, unknown>) => {
-          const status = deriveSubscriptionStatusFromAuthData(d);
+          const status: SubscriptionStatus = deriveSubscriptionStatusFromAuthData(d) ?? "inactive";
           const isLifetime = d.isLifetime === true || d.lifetime === true;
           const endDate =
             typeof d.subscriptionEndDateUtc === "string"
