@@ -1217,9 +1217,9 @@ export default function Layout({ children }: Props) {
 
               <button
                 type="button"
-                className="mobile-nav-btn"
-                aria-label="Abrir perfil"
-                onClick={() => setIsProfileMenuOpen((c) => !c)}
+                className={`mobile-nav-btn${location.pathname === "/perfil" ? " is-active" : ""}`}
+                aria-label="Perfil"
+                onClick={() => navigate("/perfil")}
               >
                 <span className="mobile-nav-avatar" aria-hidden="true">
                   {profilePhoto ? (
