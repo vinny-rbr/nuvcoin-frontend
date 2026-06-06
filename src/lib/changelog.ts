@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.55": [
+    { emoji: "🪄", text: "Checkout sem redigitar: se CPF e nome já estão no seu perfil, o pagamento abre direto no Asaas sem pedir dados de novo." },
+  ],
   "1.0.54": [
     { emoji: "👤", text: "Nova tela de Perfil — foto, nome, e-mail, CPF, assinatura e dias restantes. Acesse pelo botão Perfil na barra inferior." },
     { emoji: "✨", text: "Cabeçalho simplificado — menu lateral removido. A navegação fica toda na barra inferior." },
