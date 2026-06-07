@@ -460,10 +460,15 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
         const created = await activeProvider.add(tempItem); // POST e pega item criado (sem GET)
         pendingLocalItemIds.delete(tempId);
 
-        // âœ… Substitui o item temporÃ¡rio pelo item real do backend
+        // Substitui o item temporário pelo item real do backend
         const current = getCache(); // Cache atual
-        const withoutTemp = removeById(current, tempId); // Remove temporÃ¡rio
-        const next = upsertById(withoutTemp, created); // Insere o real
+        const withoutTemp = removeById(current, tempId); // Remove temporário
+        // O backend sempre gera um UUID próprio, então created.id !== tempId.
+        // upsertById adicionaria no final se não encontrar — colocamos na frente
+        // para manter a posição original (novo lançamento sempre aparece no topo).
+        const next = created.id === tempId
+          ? upsertById(withoutTemp, created)
+          : [created, ...withoutTemp];
 
         saveItemsStorage(next); // Sincroniza local (dispara evento interno)
         setCache(next); // Atualiza cache
