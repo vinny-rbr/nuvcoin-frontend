@@ -150,10 +150,9 @@ export default function Despesas() {
   }, []);
 
   useEffect(() => {
-    setAnimate(false);
     const timeoutId = window.setTimeout(() => { setAnimate(true); }, 40);
     return () => { window.clearTimeout(timeoutId); };
-  }, [items]);
+  }, []);
 
   const despesas = useMemo(() => items.filter((x) => x.type === "DESPESA"), [items]);
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
@@ -206,7 +205,6 @@ export default function Despesas() {
     savingRef.current = true;
     setSaving(true);
     setFeedback(isRecurring ? "Criando despesas mensais..." : "Salvando lancamento...");
-    let updated = financeList();
     const createdAtISO = new Date().toISOString();
     const firstDateISO = isRecurring ? nextRecurringStartISO(dateISO) : dateISO;
     for (let index = 0; index < totalMonths; index += 1) {
@@ -216,12 +214,9 @@ export default function Despesas() {
         dateISO: installmentDateISO, createdAtISO, paymentType,
         status: index === 0 && installmentDateISO <= todayISO() ? status : "pending",
       };
-      updated = financeAdd(newItem);
+      financeAdd(newItem);
     }
-    setItems(updated);
-    window.setTimeout(() => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined).finally(() => { savingRef.current = false; setSaving(false); });
-    }, isRecurring ? 1200 : 700);
+    window.setTimeout(() => { savingRef.current = false; setSaving(false); setFeedback(null); }, isRecurring ? 800 : 400);
     setTitle(""); setAmount(""); setDateISO(todayISO());
     setCategory(categoryOptions[0] ?? "Outros");
     setPaymentType("pix"); setStatus("paid"); setIsRecurring(false);
@@ -261,7 +256,7 @@ export default function Despesas() {
     for (const item of despesas) { updated = financeRemove(item.id); }
     setItems(updated);
     setFeedback(`${despesas.length} despesa(s) removida(s).`);
-    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 1500);
+    window.setTimeout(() => { setFeedback(null); }, 2000);
   }
 
   function toggleStatus(item: FinanceItem) {
@@ -273,7 +268,7 @@ export default function Despesas() {
   function handleEditSaved(updated: FinanceItem[]) {
     setItems(updated);
     setFeedback("Despesa atualizada.");
-    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 700);
+    window.setTimeout(() => { setFeedback(null); }, 2000);
   }
 
   return (

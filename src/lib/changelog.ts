@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.57": [
+    { emoji: "⚡", text: "Lançamentos mais rápidos — a tela não pisca mais ao salvar despesas ou receitas." },
+  ],
   "1.0.56": [
     { emoji: "📅", text: "Importar extrato agora tem filtro de período — escolha quais dias do arquivo você quer lançar antes de confirmar." },
   ],

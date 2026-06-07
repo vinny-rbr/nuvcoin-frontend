@@ -109,10 +109,9 @@ export default function Receitas() {
   }, []);
 
   useEffect(() => {
-    setAnimate(false);
     const timeoutId = window.setTimeout(() => { setAnimate(true); }, 40);
     return () => { window.clearTimeout(timeoutId); };
-  }, [items]);
+  }, []);
 
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
   const receitas = useMemo(() => items.filter((x) => x.type === "RECEITA"), [items]);
@@ -165,11 +164,8 @@ export default function Receitas() {
     };
     setSaving(true);
     setFeedback("Salvando lancamento...");
-    const updated = financeAdd(newItem);
-    setItems(updated);
-    window.setTimeout(() => {
-      void financeRefreshFromApi().then(setItems).catch(() => undefined).finally(() => setSaving(false));
-    }, 700);
+    financeAdd(newItem);
+    window.setTimeout(() => { setSaving(false); setFeedback(null); }, 400);
     setTitle(""); setAmount(""); setDateISO(todayISO());
     setCategory(categoryOptions[0] ?? "Outros"); setStatus("paid");
     setShowForm(false);
@@ -208,7 +204,7 @@ export default function Receitas() {
   function handleEditSaved(updated: FinanceItem[]) {
     setItems(updated);
     setFeedback("Receita atualizada.");
-    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 700);
+    window.setTimeout(() => { setFeedback(null); }, 2000);
   }
 
   function handleRemoveAll() {
@@ -219,7 +215,7 @@ export default function Receitas() {
     for (const item of receitas) { updated = financeRemove(item.id); }
     setItems(updated);
     setFeedback(`${receitas.length} receita(s) removida(s).`);
-    window.setTimeout(() => { void financeRefreshFromApi().then(setItems).catch(() => undefined); }, 1500);
+    window.setTimeout(() => { setFeedback(null); }, 2000);
   }
 
   return (
