@@ -1,10 +1,11 @@
-﻿import { useState } from "react"; // Hook para controlar estados (inputs)
-import { Link, useNavigate } from "react-router-dom"; // Link + navegaÃ§Ã£o
+﻿import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
 import { deriveSubscriptionStatusFromAuthData, persistSubscriptionState } from "../lib/auth";
 import { hasCompletedOnboarding } from "../lib/onboarding";
 import { logClientEvent } from "../lib/clientLogger";
+import LoginAnimatedBg from "./LoginAnimatedBg";
 import "./auth.css";
 
 export default function Login() {
@@ -142,6 +143,7 @@ export default function Login() {
 
   return (
     <div className="auth-page">
+      <LoginAnimatedBg />
       <div className="auth-v2-card stagger">
         <div className="auth-logo-icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">

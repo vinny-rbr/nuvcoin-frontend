@@ -57,6 +57,8 @@
    ===================================================================== */
 
 .auth-page {
+  position: relative;
+  overflow: hidden;
   min-height: 100dvh;
   display: flex;
   align-items: center;
@@ -70,6 +72,8 @@
 }
 
 .auth-v2-card {
+  position: relative;
+  z-index: 2;
   width: 100%;
   max-width: 430px;
   padding: 34px 30px;
@@ -628,6 +632,98 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ============================================================
+   Login animated backgrounds
+   ============================================================ */
+
+.scene-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.scene.is-active { opacity: 1; }
+
+.scene canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.m-field,
+.r-field {
+  position: absolute;
+  inset: 0;
+}
+
+.coin {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: var(--display);
+  font-weight: 700;
+  color: #fff;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.coin.blue {
+  background: radial-gradient(circle at 32% 28%, #93C5FD, #2563EB 70%);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.45), 0 6px 18px rgba(37,99,235,0.35);
+}
+
+.coin.green {
+  background: radial-gradient(circle at 32% 28%, #86EFAC, #16A34A 70%);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.45), 0 6px 18px rgba(22,163,74,0.35);
+}
+
+.coin.gold {
+  background: radial-gradient(circle at 32% 28%, #FDE68A, #D97706 70%);
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.5), 0 6px 18px rgba(217,119,6,0.32);
+}
+
+.coin .face { display: inline-block; }
+
+.is-active .m-field .coin { animation: mRise linear infinite; }
+.is-active .m-field .coin .face { animation: cFlip 3.4s ease-in-out infinite; }
+
+.is-active .r-field .coin { animation: rFall linear infinite; }
+.is-active .r-field .coin .face { animation: cFlip 2.6s ease-in-out infinite; }
+
+@keyframes cFlip {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(0.18); }
+}
+
+@keyframes mRise {
+  0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+  12% { opacity: var(--op); }
+  88% { opacity: var(--op); }
+  100% { transform: translateY(-118vh) translateX(var(--dx)) rotate(var(--rot)); opacity: 0; }
+}
+
+@keyframes rFall {
+  0% { transform: translateY(-16vh) rotate(0deg); opacity: 0; }
+  10% { opacity: var(--op); }
+  90% { opacity: var(--op); }
+  100% { transform: translateY(116vh) rotate(var(--rot)); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene * { animation: none !important; }
 }
 
 @media (max-width: 520px) {

@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.61": [
+    { emoji: "✨", text: "Tela de login ganha fundo animado — moedas, redes e órbitas financeiras que mudam a cada entrada." },
+  ],
   "1.0.60": [
     { emoji: "🔑", text: "Código de verificação preenchido automaticamente pelo iOS e Android — toque na sugestão do teclado e pronto." },
   ],
