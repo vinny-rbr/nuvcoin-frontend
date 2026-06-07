@@ -70,6 +70,8 @@ export default function Categorias() {
   const [animate, setAnimate] = useState(false);
   const [composerOpen, setComposerOpen] = useState(false);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
+  const [menuAnchorRect, setMenuAnchorRect] = useState<DOMRect | null>(null);
+  const [menuEntity, setMenuEntity] = useState<FinanceCategoryOption | null>(null);
   const [showAllColors, setShowAllColors] = useState(false);
   const [showAllIcons, setShowAllIcons] = useState(false);
   const [drillPath, setDrillPath] = useState<string[]>([]);
@@ -232,10 +234,11 @@ export default function Categorias() {
     setSelectedColor(parentId ? parentOptions.find((category) => category.id === parentId)?.color ?? "#60a5fa" : "#60a5fa");
     setFeedback(null);
     setActionMenuId(null);
+    setMenuEntity(null);
+    setMenuAnchorRect(null);
     setShowAllColors(false);
     setShowAllIcons(false);
     setComposerOpen(true);
-
   }
 
   function startEdit(category: FinanceCategoryOption) {
@@ -247,6 +250,8 @@ export default function Categorias() {
     setSelectedColor(category.color ?? "#60a5fa");
     setFeedback(null);
     setActionMenuId(null);
+    setMenuEntity(null);
+    setMenuAnchorRect(null);
     setShowAllColors(false);
     setShowAllIcons(false);
     setComposerOpen(true);
@@ -293,7 +298,29 @@ export default function Categorias() {
 
   function openMove(cat: FinanceCategoryOption) {
     setActionMenuId(null);
+    setMenuEntity(null);
+    setMenuAnchorRect(null);
     setMoveItem(cat);
+  }
+
+  function openMenu(e: React.MouseEvent, entity: FinanceCategoryOption) {
+    e.stopPropagation();
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    if (actionMenuId === entity.id) {
+      setActionMenuId(null);
+      setMenuEntity(null);
+      setMenuAnchorRect(null);
+    } else {
+      setActionMenuId(entity.id);
+      setMenuEntity(entity);
+      setMenuAnchorRect(rect);
+    }
+  }
+
+  function closeMenu() {
+    setActionMenuId(null);
+    setMenuEntity(null);
+    setMenuAnchorRect(null);
   }
 
   async function handleApplyMove({ targetType, targetParentId, mode }: MoveOpts) {
@@ -415,25 +442,10 @@ export default function Categorias() {
                   type="button"
                   className="categories-icon-button"
                   aria-label="Mais opções"
-                  onClick={() => setActionMenuId((c) => c === drillNode.id ? null : drillNode.id)}
+                  onClick={(e) => openMenu(e, drillNode)}
                 >
                   •••
                 </button>
-                {actionMenuId === drillNode.id ? (
-                  <div className="categories-menu">
-                    <button type="button" onClick={() => startEdit(drillNode)}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                      Editar
-                    </button>
-                    <button type="button" className="mv-menu-item" onClick={() => openMove(drillNode)}>
-                      <MoveIcon /> Mover
-                    </button>
-                    <button type="button" disabled={saving} onClick={() => void handleDeleteDrillNode(drillNode)}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                      Remover
-                    </button>
-                  </div>
-                ) : null}
               </div>
             </div>
 
@@ -482,25 +494,10 @@ export default function Categorias() {
                           type="button"
                           className="categories-icon-button"
                           aria-label="Mais opções"
-                          onClick={(e) => { e.stopPropagation(); setActionMenuId((c) => c === child.id ? null : child.id); }}
+                          onClick={(e) => openMenu(e, child)}
                         >
                           •••
                         </button>
-                        {actionMenuId === child.id ? (
-                          <div className="categories-menu">
-                            <button type="button" onClick={(e) => { e.stopPropagation(); startEdit(child); }}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                              Editar
-                            </button>
-                            <button type="button" className="mv-menu-item" onClick={(e) => { e.stopPropagation(); openMove(child); }}>
-                              <MoveIcon /> Mover
-                            </button>
-                            <button type="button" disabled={saving} onClick={(e) => { e.stopPropagation(); void handleDelete(child); }}>
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>
-                              Remover
-                            </button>
-                          </div>
-                        ) : null}
                       </div>
                     </div>
                   );
@@ -540,22 +537,10 @@ export default function Categorias() {
                           type="button"
                           className="categories-icon-button"
                           aria-label="Mais opções"
-                          onClick={(e) => { e.stopPropagation(); setActionMenuId((c) => c === category.id ? null : category.id); }}
+                          onClick={(e) => openMenu(e, category)}
                         >
                           •••
                         </button>
-                        {actionMenuId === category.id ? (
-                          <div className="categories-menu">
-                            <button type="button" onClick={() => startEdit(category)}>Editar</button>
-                            {(category.level ?? 1) < 3 ? (
-                              <button type="button" onClick={() => openCreate(category.id)}>+ Sub</button>
-                            ) : null}
-                            <button type="button" className="mv-menu-item" onClick={() => openMove(category)}>
-                              <MoveIcon /> Mover
-                            </button>
-                            <button type="button" disabled={saving} onClick={() => handleDelete(category)}>Remover</button>
-                          </div>
-                        ) : null}
                       </div>
                     </div>
 
@@ -685,6 +670,55 @@ export default function Categorias() {
             </button>
           </div>
         </div>,
+        document.body,
+      ) : null}
+
+      {menuEntity && menuAnchorRect && typeof document !== "undefined" ? createPortal(
+        <>
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 999 }}
+            onClick={closeMenu}
+            onContextMenu={closeMenu}
+          />
+          <div
+            className="categories-menu"
+            style={{
+              position: "fixed",
+              zIndex: 1000,
+              top: menuAnchorRect.bottom + 8 + window.scrollY > window.innerHeight - 160
+                ? menuAnchorRect.top - 8
+                : menuAnchorRect.bottom + 8,
+              right: window.innerWidth - menuAnchorRect.right,
+              transform: menuAnchorRect.bottom + 8 + window.scrollY > window.innerHeight - 160
+                ? "translateY(-100%)"
+                : "none",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button type="button" onClick={() => { closeMenu(); startEdit(menuEntity); }}>
+              Editar
+            </button>
+            {(menuEntity.level ?? 1) < 3 && !menuEntity.parentId ? (
+              <button type="button" onClick={() => { closeMenu(); openCreate(menuEntity.id); }}>+ Sub</button>
+            ) : null}
+            <button type="button" className="mv-menu-item" onClick={() => { closeMenu(); openMove(menuEntity); }}>
+              <MoveIcon /> Mover
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                const entity = menuEntity;
+                const isDrillHead = entity.id === drillNode?.id;
+                closeMenu();
+                if (isDrillHead) void handleDeleteDrillNode(entity);
+                else void handleDelete(entity);
+              }}
+            >
+              Remover
+            </button>
+          </div>
+        </>,
         document.body,
       ) : null}
 
