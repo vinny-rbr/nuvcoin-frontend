@@ -1,6 +1,7 @@
 ﻿import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom"; // Links sem recarregar a pÃ¡gina
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import PhotoFlow from "./PhotoFlow";
+import TutoriaisModal from "./TutoriaisModal";
 import {
   deriveSubscriptionStatusFromAuthData,
   INACTIVE_SUBSCRIPTION_MESSAGE,
@@ -140,6 +141,11 @@ export default function Layout({ children }: Props) {
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [, setIsLifetimeSubscription] = useState(readStoredLifetimeState);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isTutoriaisOpen, setIsTutoriaisOpen] = useState(false);
+  const [showTutorialBalloon, setShowTutorialBalloon] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("conciliaai_tutorial_balloon_seen") !== "true";
+  });
   const [profileName, setProfileName] = useState(() =>
     typeof window === "undefined" ? "" : window.localStorage.getItem("conciliaai_name") ?? "",
   );
@@ -511,6 +517,16 @@ export default function Layout({ children }: Props) {
     setIsActivatePlanModalOpen(false);
   }
 
+  function dismissTutorialBalloon() {
+    setShowTutorialBalloon(false);
+    try { localStorage.setItem("conciliaai_tutorial_balloon_seen", "true"); } catch { /* ignore */ }
+  }
+
+  function openTutoriais() {
+    dismissTutorialBalloon();
+    setIsTutoriaisOpen(true);
+  }
+
   function formatCpf(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 11);
     return digits
@@ -724,6 +740,42 @@ export default function Layout({ children }: Props) {
                 </Link>
               ))}
             </nav>
+
+            {/* Help / Tutoriais button */}
+            <button
+              type="button"
+              onClick={openTutoriais}
+              aria-label="Tutoriais em vídeo"
+              style={{
+                position: "relative",
+                width: 38,
+                height: 38,
+                borderRadius: "999px",
+                flexShrink: 0,
+                display: "grid",
+                placeItems: "center",
+                cursor: "pointer",
+                color: isTutoriaisOpen ? "#fff" : "#bfdbfe",
+                border: `1px solid ${isTutoriaisOpen ? "rgba(96,165,250,.5)" : "rgba(96,165,250,.26)"}`,
+                background: isTutoriaisOpen
+                  ? "linear-gradient(135deg,rgba(59,130,246,.5),rgba(37,99,235,.42))"
+                  : "linear-gradient(135deg,rgba(15,23,42,.72),rgba(30,41,59,.62))",
+                transition: "border-color .2s, background .2s",
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 18, height: 18 }} aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9.2 9.3a2.8 2.8 0 0 1 5.4 1c0 1.9-2.8 2.3-2.8 4" />
+                <circle cx="11.8" cy="17.4" r="0.5" fill="currentColor" stroke="none" />
+              </svg>
+              {/* pulse glow for new users */}
+              {showTutorialBalloon && !isTutoriaisOpen && (
+                <span style={{
+                  position: "absolute", inset: -3, borderRadius: "999px", pointerEvents: "none",
+                  animation: "tutHelpPulse 2s ease-in-out infinite",
+                }} />
+              )}
+            </button>
 
             {!isMobile ? (
               <button
@@ -1344,6 +1396,63 @@ export default function Layout({ children }: Props) {
         </div>
       ) : null}
 
+      {/* Onboarding balloon — shows once for new users */}
+      {showTutorialBalloon && !isTutoriaisOpen && (
+        <div style={{
+          position: "fixed",
+          top: isMobile ? 62 : 68,
+          right: isMobile ? 56 : 80,
+          width: 250,
+          zIndex: 9980,
+          animation: "tutBalloonIn .34s cubic-bezier(.16,1,.3,1) both",
+        }}>
+          {/* arrow pointing up */}
+          <div style={{
+            position: "absolute", top: -7, right: isMobile ? 4 : 168,
+            width: 14, height: 14, rotate: "45deg",
+            background: "linear-gradient(135deg,#1d6ff2,#2563eb)", borderRadius: 3,
+          }} />
+          <div style={{
+            borderRadius: 16, padding: "14px 15px 13px",
+            background: "linear-gradient(135deg,#2563eb,#1e40af)",
+            border: "1px solid rgba(147,197,253,.4)",
+            boxShadow: "0 22px 54px rgba(30,64,175,.5)", color: "#fff",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+              <span style={{ fontSize: 17 }}>👋</span>
+              <strong style={{ fontFamily: "var(--display)", fontSize: 14.5, whiteSpace: "nowrap" }}>Novo por aqui?</strong>
+            </div>
+            <p style={{ fontSize: 12.5, lineHeight: 1.4, color: "rgba(255,255,255,.9)", marginBottom: 11, margin: "0 0 11px" }}>
+              Toque no <b>?</b> pra ver tutoriais rápidos em vídeo e dominar o app em minutos.
+            </p>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                type="button"
+                onClick={openTutoriais}
+                style={{
+                  flex: 1, minHeight: 34, borderRadius: 10, border: 0, cursor: "pointer",
+                  background: "#fff", color: "#1e3a8a", fontWeight: 800, fontSize: 12.5,
+                }}
+              >Ver tutoriais</button>
+              <button
+                type="button"
+                onClick={dismissTutorialBalloon}
+                style={{
+                  minHeight: 34, padding: "0 11px", borderRadius: 10, cursor: "pointer",
+                  background: "rgba(255,255,255,.14)", color: "#fff",
+                  border: "1px solid rgba(255,255,255,.28)", fontWeight: 700, fontSize: 12.5,
+                }}
+              >Agora não</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tutoriais modal */}
+      {isTutoriaisOpen && (
+        <TutoriaisModal onClose={() => setIsTutoriaisOpen(false)} isMobile={isMobile} />
+      )}
+
       {/* ConteÃºdo da pÃ¡gina */}
       <main className="page">{children}</main>
 
@@ -1397,6 +1506,16 @@ export default function Layout({ children }: Props) {
           .quick-add-dot-photo {
             background: #60A5FA;
             box-shadow: 0 0 8px #60A5FA;
+          }
+
+          @keyframes tutHelpPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(96,165,250,.5); }
+            50% { box-shadow: 0 0 0 7px rgba(96,165,250,0); }
+          }
+
+          @keyframes tutBalloonIn {
+            from { transform: translateY(-8px) scale(.97); opacity: 0; }
+            to { transform: none; opacity: 1; }
           }
         `}
       </style>
