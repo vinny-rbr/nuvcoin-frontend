@@ -209,6 +209,15 @@ function LockIcon() {
   );
 }
 
+function CalendarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="17" rx="2.5" />
+      <path d="M3 9h18M8 2v4M16 2v4" />
+    </svg>
+  );
+}
+
 // ── Stepper ──────────────────────────────────────────────────────────
 
 function Stepper({ step }: { step: WizardStep }) {
@@ -496,6 +505,12 @@ function StepReview({
   applyAll,
   toggleStatus,
   dupAction,
+  filterFrom,
+  filterTo,
+  rangeFrom,
+  rangeTo,
+  setFilterFrom,
+  setFilterTo,
 }: {
   fileInfo: FileInfo;
   newItems: ReviewNewItem[];
@@ -504,9 +519,16 @@ function StepReview({
   applyAll: (status: FinanceStatus) => void;
   toggleStatus: (id: string) => void;
   dupAction: (id: string, action: "skip" | "keep" | "update") => void;
+  filterFrom: string;
+  filterTo: string;
+  rangeFrom: string;
+  rangeTo: string;
+  setFilterFrom: (v: string) => void;
+  setFilterTo: (v: string) => void;
 }) {
   const included = newItems.filter((i) => i.included).length;
   const toUpdate = dupItems.filter((d) => d.action === "update").length;
+  const isFiltered = filterFrom !== rangeFrom || filterTo !== rangeTo;
 
   return (
     <div className="ix-fade">
@@ -522,6 +544,45 @@ function StepReview({
           <span>{fileInfo.account}{fileInfo.period ? ` · ${fileInfo.period}` : ""}</span>
         </div>
         <span className="ix-bank-file">{fileInfo.fileName}</span>
+      </div>
+
+      <div className="ix-datefilter">
+        <div className="ix-datefilter-label">
+          <CalendarIcon />
+          Período a importar
+          {isFiltered && (
+            <button
+              type="button"
+              className="ix-datefilter-reset"
+              onClick={() => { setFilterFrom(rangeFrom); setFilterTo(rangeTo); }}
+            >
+              Todos os dias
+            </button>
+          )}
+        </div>
+        <div className="ix-datefilter-inputs">
+          <div className="ix-datefilter-field">
+            <label>De</label>
+            <input
+              type="date"
+              value={filterFrom}
+              min={rangeFrom}
+              max={filterTo || rangeTo}
+              onChange={(e) => setFilterFrom(e.target.value)}
+            />
+          </div>
+          <div className="ix-datefilter-arrow">→</div>
+          <div className="ix-datefilter-field">
+            <label>Até</label>
+            <input
+              type="date"
+              value={filterTo}
+              min={filterFrom || rangeFrom}
+              max={rangeTo}
+              onChange={(e) => setFilterTo(e.target.value)}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="ix-summary-chips">
@@ -639,6 +700,11 @@ export default function ImportOfx() {
   const [newItems, setNewItems] = useState<ReviewNewItem[]>([]);
   const [dupItems, setDupItems] = useState<ReviewDupItem[]>([]);
   const [importResult, setImportResult] = useState<ImportResult>({ added: 0, updated: 0, skipped: 0 });
+
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
 
   const [incomeCategories, setIncomeCategories] = useState<string[]>(DEFAULT_CATEGORIES.RECEITA);
   const [expenseCategories, setExpenseCategories] = useState<string[]>(DEFAULT_CATEGORIES.DESPESA);
@@ -777,6 +843,14 @@ export default function ImportOfx() {
         }
       }
 
+      const allDates = [...newList, ...dupList].map((i) => i.parsedItem.dateISO).sort();
+      const minDate = allDates[0] ?? "";
+      const maxDate = allDates[allDates.length - 1] ?? "";
+      setRangeFrom(minDate);
+      setRangeTo(maxDate);
+      setFilterFrom(minDate);
+      setFilterTo(maxDate);
+
       setFileInfo(info);
       setNewItems(newList);
       setDupItems(dupList);
@@ -829,9 +903,9 @@ export default function ImportOfx() {
 
   function confirmImport() {
     if (isDemo) {
-      const added = newItems.filter((i) => i.included).length;
-      const updated = dupItems.filter((d) => d.action === "update").length;
-      const skipped = dupItems.filter((d) => d.action === "skip").length;
+      const added = filteredNew.filter((i) => i.included).length;
+      const updated = filteredDup.filter((d) => d.action === "update").length;
+      const skipped = filteredDup.filter((d) => d.action === "skip").length;
       setImportResult({ added, updated, skipped });
       setStep("done");
       return;
@@ -842,13 +916,13 @@ export default function ImportOfx() {
       expense: expenseCategories.length > 0 ? expenseCategories : ["Outros"],
     };
 
-    for (const item of newItems) {
+    for (const item of filteredNew) {
       if (!item.included) continue;
       const fi = { ...toFinanceItem(item.parsedItem, categories), status: item.status };
       financeAdd(fi);
     }
 
-    for (const dup of dupItems) {
+    for (const dup of filteredDup) {
       if (dup.action !== "update") continue;
       const fi = toFinanceItem(dup.parsedItem, categories);
       financeUpdate(dup.existingId, {
@@ -858,9 +932,9 @@ export default function ImportOfx() {
       });
     }
 
-    const added = newItems.filter((i) => i.included).length;
-    const updated = dupItems.filter((d) => d.action === "update").length;
-    const skipped = dupItems.filter((d) => d.action === "skip").length;
+    const added = filteredNew.filter((i) => i.included).length;
+    const updated = filteredDup.filter((d) => d.action === "update").length;
+    const skipped = filteredDup.filter((d) => d.action === "skip").length;
     setImportResult({ added, updated, skipped });
     setStep("done");
 
@@ -875,11 +949,26 @@ export default function ImportOfx() {
     setFileInfo(null);
     setNewItems([]);
     setDupItems([]);
+    setFilterFrom("");
+    setFilterTo("");
+    setRangeFrom("");
+    setRangeTo("");
     setStep("select");
   }
 
-  const addedCount = newItems.filter((i) => i.included).length;
-  const updCount = dupItems.filter((d) => d.action === "update").length;
+  const filteredNew = newItems.filter(
+    (i) =>
+      (!filterFrom || i.parsedItem.dateISO >= filterFrom) &&
+      (!filterTo || i.parsedItem.dateISO <= filterTo),
+  );
+  const filteredDup = dupItems.filter(
+    (d) =>
+      (!filterFrom || d.parsedItem.dateISO >= filterFrom) &&
+      (!filterTo || d.parsedItem.dateISO <= filterTo),
+  );
+
+  const addedCount = filteredNew.filter((i) => i.included).length;
+  const updCount = filteredDup.filter((d) => d.action === "update").length;
 
   return (
     <div className="ix-wrap">
@@ -905,12 +994,18 @@ export default function ImportOfx() {
       {step === "review" && fileInfo && (
         <StepReview
           fileInfo={fileInfo}
-          newItems={newItems}
-          dupItems={dupItems}
+          newItems={filteredNew}
+          dupItems={filteredDup}
           defaultStatus={defaultStatus}
           applyAll={applyAll}
           toggleStatus={toggleStatus}
           dupAction={setDupAction}
+          filterFrom={filterFrom}
+          filterTo={filterTo}
+          rangeFrom={rangeFrom}
+          rangeTo={rangeTo}
+          setFilterFrom={setFilterFrom}
+          setFilterTo={setFilterTo}
         />
       )}
 
