@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState } from "react";
-import { financeAdd } from "../lib/financeService";
+import { financeAdd, financeFlushRecent } from "../lib/financeService";
 import { listFinanceCategories } from "../lib/financeCategoriesService";
 import type { FinanceStatus, PaymentType } from "../types/finance";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -835,12 +835,12 @@ export default function PhotoFlow({ onClose }: Props) {
             type="button"
             className="ix-btn-primary"
             style={{ marginTop: 18 }}
-            onClick={onClose}
+            onClick={() => { financeFlushRecent(); onClose(); }}
           >
             <CheckIcon />
             Concluir
           </button>
-          <button type="button" className="ix-btn-ghost" onClick={handleRetake}>
+          <button type="button" className="ix-btn-ghost" onClick={() => { financeFlushRecent(); handleRetake(); }}>
             Lançar outro
           </button>
         </div>

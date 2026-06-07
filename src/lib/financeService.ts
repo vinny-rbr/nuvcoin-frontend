@@ -248,6 +248,12 @@ const apiProvider: FinanceProvider = {
 // Provider ativo
 const activeProvider: FinanceProvider = USE_API ? apiProvider : localStorageProvider;
 const pendingLocalItemIds = new Set<string>();
+// IDs que devem ficar pinados no topo até o usuário confirmar (ex: após lançar por foto/OFX)
+const recentlyAddedIds = new Set<string>();
+
+export function financeFlushRecent(): void {
+  recentlyAddedIds.clear();
+}
 
 export function financeDebugLog(message: string, data?: unknown): void {
   if (typeof window === "undefined") return;
@@ -341,13 +347,23 @@ function removeById(list: FinanceItem[], id: string): FinanceItem[] {
 }
 
 function mergePendingLocalItems(fromApi: FinanceItem[]): FinanceItem[] {
-  if (pendingLocalItemIds.size === 0) return fromApi;
+  const hasPending = pendingLocalItemIds.size > 0;
+  const hasRecent = recentlyAddedIds.size > 0;
+  if (!hasPending && !hasRecent) return fromApi;
 
   const current = getCache();
   const apiIds = new Set(fromApi.map((item) => item.id));
-  const pending = current.filter((item) => pendingLocalItemIds.has(item.id) && !apiIds.has(item.id));
 
-  return [...pending, ...fromApi];
+  // Itens pendentes que ainda não chegaram na API — mantém no topo
+  const stillPending = current.filter((item) => pendingLocalItemIds.has(item.id) && !apiIds.has(item.id));
+
+  // Itens recém-adicionados que JÁ estão na API — pina no topo em vez de deixar na posição por data
+  const pinnedFromApi = fromApi.filter((item) => recentlyAddedIds.has(item.id));
+  const restFromApi = fromApi.filter(
+    (item) => !recentlyAddedIds.has(item.id) && !stillPending.some((p) => p.id === item.id)
+  );
+
+  return [...stillPending, ...pinnedFromApi, ...restFromApi];
 }
 
 // =============================
@@ -450,6 +466,7 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
   const updatedLocal = [tempItem, ...getCache()]; // Atualiza primeiro em memoria
   setCache(updatedLocal); // Garante que o evento abaixo ja leia a lista nova
   saveItemsStorage(updatedLocal); // Salva no local e notifica telas
+  recentlyAddedIds.add(tempItem.id); // Pina imediatamente no topo até flush explícito
 
   if (USE_API) {
     const tempId = tempItem.id; // Guarda id temporÃ¡rio (pra substituir depois)
@@ -459,6 +476,8 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
       async () => {
         const created = await activeProvider.add(tempItem); // POST e pega item criado (sem GET)
         pendingLocalItemIds.delete(tempId);
+        recentlyAddedIds.delete(tempId);
+        recentlyAddedIds.add(created.id); // troca tempId pelo id real
 
         // Substitui o item temporário pelo item real do backend
         const current = getCache(); // Cache atual

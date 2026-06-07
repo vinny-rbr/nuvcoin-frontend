@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-import { financeAdd, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate } from "../lib/financeService";
+import { financeAdd, financeFlushRecent, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate } from "../lib/financeService";
 import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { parseBankFile, toFinanceItem, type OfxParsedItem } from "../lib/ofxImport";
 import type { FinanceItem, FinanceStatus } from "../types/finance";
@@ -937,11 +937,10 @@ export default function ImportOfx() {
     const skipped = filteredDup.filter((d) => d.action === "skip").length;
     setImportResult({ added, updated, skipped });
     setStep("done");
-
-    void financeRefreshFromApi().catch(() => undefined);
   }
 
   function restart() {
+    financeFlushRecent();
     setPendingFile(null);
     setIsDemo(false);
     setReadProgress(0);

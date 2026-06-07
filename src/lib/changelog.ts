@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.67": [
+    { emoji: "🔝", text: "Lançamento por foto e importação de arquivo ficam no topo da lista até você clicar em Concluir ou Lançar outro." },
+  ],
   "1.0.66": [
     { emoji: "🎓", text: "Tutorial de Importação de extrato (OFX) agora disponível na central de ajuda." },
   ],
