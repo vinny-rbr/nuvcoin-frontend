@@ -406,7 +406,7 @@ export default function Categorias() {
                   <span className="cat-drill-dot" style={{ background: drillNode.color ?? "#60a5fa" }} />
                   <span className="cat-drill-name">{drillNode.name}</span>
                   <span className="cat-drill-pill">
-                    {(drillNode.level ?? 2) <= 2 ? "subcategoria" : "sub-subcategoria"}
+                    {(drillNode.level ?? 2) <= 1 ? "categoria" : (drillNode.level ?? 2) <= 2 ? "subcategoria" : "sub-subcategoria"}
                   </span>
                 </div>
               </div>
@@ -585,7 +585,15 @@ export default function Categorias() {
                           </span>
                         ))}
                         {children.length > 5 ? (
-                          <span className="subcat">{`+${children.length - 5}`}</span>
+                          <span
+                            className="subcat subcat-more"
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => { e.stopPropagation(); drillInto(category.id); }}
+                            onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); drillInto(category.id); } }}
+                          >
+                            +{children.length - 5} ver todas
+                          </span>
                         ) : null}
                       </div>
                     ) : null}

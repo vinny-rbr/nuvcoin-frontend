@@ -1764,6 +1764,20 @@
   color: #dbeafe;
 }
 
+.subcat-more {
+  color: #bfdbfe;
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.32);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.subcat-more:hover {
+  background: rgba(59, 130, 246, 0.24);
+  border-color: rgba(96, 165, 250, 0.5);
+  color: #dbeafe;
+}
+
 /* ============================= */
 /* Drill-in animations           */
 /* ============================= */
