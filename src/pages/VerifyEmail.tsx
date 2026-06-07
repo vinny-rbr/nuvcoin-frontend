@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { apiUrl } from "../lib/api";
 import { readApiErrorMessage } from "../lib/apiError";
@@ -10,53 +10,15 @@ export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const initialEmail = useMemo(() => searchParams.get("email") ?? "", [searchParams]);
   const [email, setEmail] = useState(initialEmail);
-  const [digits, setDigits] = useState(["", "", "", "", "", ""]);
+  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
-  const code = digits.join("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const fillDigits = useCallback((value: string, fromIndex = 0) => {
-    const cleaned = value.replace(/\D/g, "").slice(0, 6 - fromIndex);
-    if (!cleaned) return;
-    setDigits((prev) => {
-      const next = [...prev];
-      for (let i = 0; i < cleaned.length; i++) {
-        next[fromIndex + i] = cleaned[i];
-      }
-      return next;
-    });
-    const lastFilled = Math.min(fromIndex + cleaned.length - 1, 5);
-    inputRefs.current[lastFilled]?.focus();
-  }, []);
-
-  const handleDigit = useCallback((index: number, value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length > 1) {
-      // iOS auto-fill ou paste via onChange: espalha a partir deste campo
-      fillDigits(cleaned, index);
-      return;
-    }
-    setDigits((prev) => {
-      const next = [...prev];
-      next[index] = cleaned;
-      return next;
-    });
-    if (cleaned && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  }, [fillDigits]);
-
-  const handlePaste = useCallback((e: React.ClipboardEvent, index: number) => {
-    e.preventDefault();
-    fillDigits(e.clipboardData.getData("text"), index);
-  }, [fillDigits]);
-
-  const handleKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !digits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  }, [digits]);
+  function handleChange(value: string) {
+    const cleaned = value.replace(/\D/g, "").slice(0, 6);
+    setCode(cleaned);
+  }
 
   async function handleVerify() {
     if (!email || code.length < 6) {
@@ -110,8 +72,6 @@ export default function VerifyEmail() {
     }
   }
 
-  const allFilled = code.length === 6;
-
   return (
     <div className="auth-page">
       <div className="auth-v2-card stagger">
@@ -140,30 +100,51 @@ export default function VerifyEmail() {
           </div>
         ) : null}
 
-        <div className="otp-row" aria-label="Código de verificação">
-          {digits.map((d, i) => (
-            <input
+        {/* Container relativo — input invisível cobre tudo, spans são só visuais */}
+        <div
+          className="otp-row"
+          style={{ position: "relative", cursor: "text" }}
+          onClick={() => inputRef.current?.focus()}
+          aria-label="Código de verificação"
+        >
+          {Array.from({ length: 6 }, (_, i) => (
+            <span
               key={i}
-              ref={(el) => { inputRefs.current[i] = el; }}
-              className={`otp-digit${d ? " is-filled" : ""}`}
-              type="text"
-              inputMode="numeric"
-              maxLength={6}
-              autoComplete={i === 0 ? "one-time-code" : "off"}
-              value={d}
-              onChange={(e) => handleDigit(i, e.target.value)}
-              onKeyDown={(e) => handleKeyDown(i, e)}
-              onPaste={(e) => handlePaste(e, i)}
-              aria-label={`Dígito ${i + 1}`}
-            />
+              className={`otp-digit${code[i] ? " is-filled" : ""}${i === code.length ? " is-active" : ""}`}
+            >
+              {code[i] ?? ""}
+            </span>
           ))}
+
+          {/* Input real — invisível mas interativo; captura teclado e autocomplete do OS */}
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={code}
+            onChange={(e) => handleChange(e.target.value)}
+            aria-label="Código de verificação"
+            style={{
+              position: "absolute",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              opacity: 0,
+              fontSize: "16px",   // evita zoom automático no iOS
+              caretColor: "transparent",
+              border: "none",
+              background: "transparent",
+              cursor: "text",
+            }}
+          />
         </div>
 
         <button
           className="auth-btn-primary"
           type="button"
           onClick={handleVerify}
-          disabled={loading || !allFilled}
+          disabled={loading || code.length < 6}
           style={{ marginTop: 8 }}
         >
           {loading ? "Confirmando..." : "Confirmar"}

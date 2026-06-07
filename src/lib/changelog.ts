@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.60": [
+    { emoji: "🔑", text: "Código de verificação preenchido automaticamente pelo iOS e Android — toque na sugestão do teclado e pronto." },
+  ],
   "1.0.59": [
     { emoji: "🔑", text: "Confirmação de e-mail agora sugere o código automaticamente no iOS e Android — sem precisar digitar." },
   ],

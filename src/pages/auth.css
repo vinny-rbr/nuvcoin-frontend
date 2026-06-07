@@ -243,7 +243,9 @@
 .otp-digit {
   width: 58px;
   height: 66px;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--display);
   font-size: 28px;
   font-weight: 700;
@@ -253,14 +255,28 @@
   color: var(--text-main);
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  -webkit-appearance: none;
-  appearance: none;
+  user-select: none;
 }
 
-.otp-digit:focus {
+.otp-digit.is-active {
   border-color: rgba(96, 165, 250, 0.6);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
   background: rgba(11, 17, 32, 0.95);
+}
+
+.otp-digit.is-active::after {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 28px;
+  background: rgba(96, 165, 250, 0.85);
+  border-radius: 2px;
+  animation: otp-blink 1s step-end infinite;
+}
+
+@keyframes otp-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .otp-digit.is-filled {
