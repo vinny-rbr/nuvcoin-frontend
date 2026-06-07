@@ -16,8 +16,27 @@ export default function VerifyEmail() {
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const code = digits.join("");
 
+  const fillDigits = useCallback((value: string, fromIndex = 0) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 6 - fromIndex);
+    if (!cleaned) return;
+    setDigits((prev) => {
+      const next = [...prev];
+      for (let i = 0; i < cleaned.length; i++) {
+        next[fromIndex + i] = cleaned[i];
+      }
+      return next;
+    });
+    const lastFilled = Math.min(fromIndex + cleaned.length - 1, 5);
+    inputRefs.current[lastFilled]?.focus();
+  }, []);
+
   const handleDigit = useCallback((index: number, value: string) => {
-    const cleaned = value.replace(/\D/g, "").slice(-1);
+    const cleaned = value.replace(/\D/g, "");
+    if (cleaned.length > 1) {
+      // iOS auto-fill ou paste via onChange: espalha a partir deste campo
+      fillDigits(cleaned, index);
+      return;
+    }
     setDigits((prev) => {
       const next = [...prev];
       next[index] = cleaned;
@@ -26,7 +45,12 @@ export default function VerifyEmail() {
     if (cleaned && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
-  }, []);
+  }, [fillDigits]);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent, index: number) => {
+    e.preventDefault();
+    fillDigits(e.clipboardData.getData("text"), index);
+  }, [fillDigits]);
 
   const handleKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && !digits[index] && index > 0) {
@@ -124,10 +148,12 @@ export default function VerifyEmail() {
               className={`otp-digit${d ? " is-filled" : ""}`}
               type="text"
               inputMode="numeric"
-              maxLength={1}
+              maxLength={6}
+              autoComplete={i === 0 ? "one-time-code" : "off"}
               value={d}
               onChange={(e) => handleDigit(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
+              onPaste={(e) => handlePaste(e, i)}
               aria-label={`Dígito ${i + 1}`}
             />
           ))}

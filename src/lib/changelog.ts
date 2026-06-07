@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.59": [
+    { emoji: "🔑", text: "Confirmação de e-mail agora sugere o código automaticamente no iOS e Android — sem precisar digitar." },
+  ],
   "1.0.58": [
     { emoji: "🔝", text: "Novo lançamento agora aparece no topo da lista imediatamente, sem desaparecer e reaparecer embaixo." },
   ],
