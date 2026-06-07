@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.69": [
+    { emoji: "🗂️", text: "Menu de ações das categorias não fica mais cortado — abre corretamente sobre o conteúdo." },
+  ],
   "1.0.68": [
     { emoji: "🗂️", text: "+N ver todas nas subcategorias agora é clicável — abre a lista completa da categoria." },
   ],
