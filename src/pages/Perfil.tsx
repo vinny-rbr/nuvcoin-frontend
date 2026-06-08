@@ -104,6 +104,11 @@ const ICON_LOGOUT = (
     <path d="M10 12h10m0 0-3-3m3 3-3 3"/>
   </svg>
 );
+const ICON_PRIVACY = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+);
 const ICON_CHEV = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="m9 6 6 6-6 6"/>
@@ -613,6 +618,24 @@ export default function Perfil() {
         <div style={{ borderTop: "1px solid rgba(148,163,184,0.09)" }}>
           <ActionRow icon={ICON_LOGOUT} label="Sair da conta" danger onClick={handleLogout} showChev={false} />
         </div>
+      </div>
+
+      {/* ── Jurídico ── */}
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "1.4px", textTransform: "uppercase", color: "#64748b", margin: "24px 4px 11px" }}>
+        Jurídico
+      </div>
+      <div
+        style={{
+          borderRadius: 20, overflow: "hidden",
+          background: "rgba(30,41,59,0.45)",
+          border: "1px solid rgba(148,163,184,0.13)",
+        }}
+      >
+        <ActionRow
+          icon={ICON_PRIVACY}
+          label="Política de Privacidade"
+          onClick={() => window.open("https://conciliaai.com.br/politica-de-privacidade.html", "_blank", "noopener")}
+        />
       </div>
 
       {/* footer */}

@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.73": [
+    { emoji: "🛡️", text: "Política de Privacidade disponível no Perfil — seção Jurídico." },
+  ],
   "1.0.72": [
     { emoji: "✨", text: "Animação de entrada ao abrir o app — logo, nome e carregamento antes de tudo aparecer." },
   ],
