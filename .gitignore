@@ -29,3 +29,5 @@ Thumbs.db
 *.png
 !public/icons/
 !public/icons/*.png
+!public/favicon.png
+!public/favicon-16.png
