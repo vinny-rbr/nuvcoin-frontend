@@ -634,7 +634,7 @@ export default function Perfil() {
         <ActionRow
           icon={ICON_PRIVACY}
           label="Política de Privacidade"
-          onClick={() => window.open("https://conciliaai.com.br/politica-de-privacidade.html", "_blank", "noopener")}
+          onClick={() => window.open("https://site-conciliaai.vercel.app/politica-de-privacidade.html", "_blank", "noopener")}
         />
       </div>
 
