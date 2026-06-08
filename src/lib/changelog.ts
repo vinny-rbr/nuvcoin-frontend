@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.71": [
+    { emoji: "✨", text: "Nova logo do Conciliaai — ícone atualizado na tela inicial e ao instalar no celular." },
+  ],
   "1.0.70": [
     { emoji: "🗂️", text: "Menu de ações das categorias agora abre acima de tudo — sem ser cortado por nenhum elemento." },
   ],
