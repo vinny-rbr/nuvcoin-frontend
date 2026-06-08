@@ -1,5 +1,5 @@
-﻿<!doctype html>
-<html lang="pt-BR">
+<!doctype html>
+<html lang="pt-BR" class="cai-js">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -21,10 +21,191 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
     <link rel="apple-touch-icon" href="/icons/icon-512.png" />
     <title>Conciliaaí</title>
+    <style>
+      #cai-preloader { display: none; }
+
+      html.cai-js #cai-preloader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background:
+          radial-gradient(900px 580px at 12% -8%, rgba(37,99,235,.22), transparent 55%),
+          radial-gradient(760px 520px at 100% 2%, rgba(34,197,94,.10), transparent 50%),
+          #071426;
+      }
+
+      #cai-preloader .cai-bar {
+        position: absolute;
+        top: 0; left: 0;
+        height: 3px; width: 0;
+        background: linear-gradient(90deg, #60A5FA, #22C55E, #A78BFA);
+      }
+
+      #cai-preloader .cai-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+      }
+
+      #cai-preloader .cai-lockup {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      #cai-preloader .cai-mark {
+        width: 54px; height: 54px;
+        border-radius: 16px;
+        flex: none;
+        background: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 0 1px rgba(96,165,250,.22), 0 18px 50px rgba(37,99,235,.4);
+      }
+
+      #cai-preloader .cai-mark svg { width: 32px; height: 32px; }
+
+      #cai-preloader .cai-name {
+        font-family: "Space Grotesk", system-ui, sans-serif;
+        font-weight: 700;
+        font-size: 34px;
+        letter-spacing: -1px;
+        color: #F1F5F9;
+        line-height: 1;
+      }
+
+      #cai-preloader .cai-name i {
+        font-style: normal;
+        color: #4ADE80;
+      }
+
+      #cai-preloader .cai-tag {
+        font-family: "Manrope", system-ui, sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        letter-spacing: .2px;
+        color: #94A3B8;
+        text-align: center;
+        margin-top: -8px;
+      }
+
+      #cai-preloader .cai-spin {
+        width: 46px; height: 46px;
+        position: relative;
+      }
+
+      #cai-preloader .cai-spin svg {
+        position: absolute;
+        inset: 0;
+        width: 100%; height: 100%;
+      }
+
+      html.cai-js #cai-preloader.cai-go .cai-bar {
+        animation: caiBar 1.8s ease-out .1s forwards;
+      }
+      @keyframes caiBar {
+        0%   { width: 0 }
+        72%  { width: 84% }
+        100% { width: 100% }
+      }
+
+      html.cai-js #cai-preloader.cai-go .cai-stack {
+        animation:
+          caiIn .85s cubic-bezier(.16,1,.3,1) .15s both,
+          caiUp .7s cubic-bezier(.7,0,.25,1) 1.95s forwards;
+      }
+      @keyframes caiIn {
+        from { opacity: 0; transform: translateY(70px) }
+        to   { opacity: 1; transform: translateY(0) }
+      }
+      @keyframes caiUp {
+        from { opacity: 1; transform: translateY(0) }
+        to   { opacity: 0; transform: translateY(-86px) }
+      }
+
+      html.cai-js #cai-preloader.cai-go .cai-spin {
+        animation: caiFade .4s ease .85s both, caiFadeOut .3s ease 1.95s forwards;
+      }
+      @keyframes caiFade    { from { opacity: 0 } to { opacity: 1 } }
+      @keyframes caiFadeOut { from { opacity: 1 } to { opacity: 0 } }
+
+      html.cai-js #cai-preloader.cai-go .cai-spin .a1 {
+        transform-origin: 50% 50%;
+        animation: caiSpin 1s linear infinite;
+      }
+      html.cai-js #cai-preloader.cai-go .cai-spin .a2 {
+        transform-origin: 50% 50%;
+        animation: caiSpinR 1.5s linear infinite;
+      }
+      @keyframes caiSpin  { to { transform: rotate(360deg)  } }
+      @keyframes caiSpinR { to { transform: rotate(-360deg) } }
+
+      html.cai-js #cai-preloader.cai-out {
+        animation: caiOut .75s cubic-bezier(.7,0,.2,1) forwards;
+        pointer-events: none;
+      }
+      @keyframes caiOut {
+        from { opacity: 1; transform: translateY(0) }
+        to   { opacity: 0; transform: translateY(-46px) }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #cai-preloader { display: none !important; }
+      }
+    </style>
   </head>
   <body>
+    <div id="cai-preloader">
+      <div class="cai-bar"></div>
+      <div class="cai-stack">
+        <div class="cai-lockup">
+          <span class="cai-mark">
+            <svg viewBox="0 0 100 100">
+              <path d="M50 50 L53.66 15.19 A35 35 0 0 1 78.32 70.57 Z" fill="#fff"/>
+              <path d="M50 50 L75.18 74.31 A35 35 0 0 1 21.68 70.57 Z" fill="#fff"/>
+              <path d="M45.63 47.58 L14.72 64.01 A35 35 0 0 1 43.19 12.66 Z" fill="#22C55E"/>
+            </svg>
+          </span>
+          <span class="cai-name">Concilia<i>aí</i></span>
+        </div>
+        <div class="cai-tag">Suas finanças, conciliadas. 💙💚</div>
+        <div class="cai-spin">
+          <svg class="a1" viewBox="0 0 50 50" fill="none">
+            <path d="M25 4 a21 21 0 0 1 18 11" stroke="#60A5FA" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+          <svg class="a2" viewBox="0 0 50 50" fill="none">
+            <path d="M25 46 a21 21 0 0 1 -18 -11" stroke="#22C55E" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
     <div id="root"></div>
+
+    <script>
+      (function () {
+        var pre = document.getElementById('cai-preloader');
+        if (!pre) return;
+
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(function () { pre.classList.add('cai-go'); });
+
+        setTimeout(function () {
+          pre.classList.add('cai-out');
+          document.body.style.overflow = '';
+        }, 2000);
+
+        setTimeout(function () {
+          if (pre.parentNode) pre.parentNode.removeChild(pre);
+        }, 2800);
+      })();
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
