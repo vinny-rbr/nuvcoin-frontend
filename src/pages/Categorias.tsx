@@ -66,7 +66,9 @@ interface DragState extends DragInfo {
 interface GestureData {
   info: DragInfo; rect: DOMRect;
   x0: number; y0: number;
+  lastY: number;
   started: boolean;
+  scrolling: boolean;
   timer: ReturnType<typeof setTimeout> | null;
 }
 
@@ -252,16 +254,38 @@ export default function Categorias() {
       const g = dragGestRef.current;
       if (!g) return;
       const x = e.clientX, y = e.clientY;
-      if (!g.started) {
-        if (Math.hypot(x - g.x0, y - g.y0) > MOVE_CANCEL) clearGest();
+
+      // Already in manual-scroll mode: scroll the page and track position
+      if (g.scrolling) {
+        const dy = y - g.lastY;
+        g.lastY = y;
+        window.scrollBy(0, -dy);
         return;
       }
+
+      if (!g.started) {
+        const dx = x - g.x0, dy = y - g.y0;
+        const adx = Math.abs(dx), ady = Math.abs(dy);
+        // Vertical movement before longpress → treat as scroll
+        if (ady > adx && ady > 6) {
+          if (g.timer) { clearTimeout(g.timer); g.timer = null; }
+          g.scrolling = true;
+          g.lastY = y;
+          window.scrollBy(0, -dy); // apply initial delta immediately
+          return;
+        }
+        if (Math.hypot(dx, dy) > MOVE_CANCEL) clearGest();
+        return;
+      }
+
       e.preventDefault();
       setDragState(d => d ? { ...d, x, y, target: computeTarget(x, y) } : d);
     }
 
     function onUp(e: PointerEvent) {
       const g = dragGestRef.current;
+      // Ended in scroll mode — nothing to commit
+      if (g?.scrolling) { clearGest(); return; }
       const wasDragging = g?.started ?? false;
       const info = g?.info;
       clearGest();
@@ -333,7 +357,7 @@ export default function Categorias() {
     const x = e.clientX, y = e.clientY;
     if (dragGestRef.current?.timer) clearTimeout(dragGestRef.current.timer);
     dragGestRef.current = {
-      info, rect, x0: x, y0: y, started: false,
+      info, rect, x0: x, y0: y, lastY: y, started: false, scrolling: false,
       timer: setTimeout(() => {
         if (dragGestRef.current) {
           dragGestRef.current.started = true;
