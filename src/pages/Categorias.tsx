@@ -328,6 +328,7 @@ export default function Categorias() {
   function onCatPointerDown(e: React.PointerEvent, info: DragInfo) {
     if (e.button !== 0) return;
     if ((e.target as HTMLElement).closest("[data-menu]")) return;
+    e.preventDefault(); // block browser scroll before any movement
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const x = e.clientX, y = e.clientY;
     if (dragGestRef.current?.timer) clearTimeout(dragGestRef.current.timer);
