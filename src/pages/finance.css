@@ -1623,8 +1623,11 @@
   padding: 15px;
   border-radius: var(--r-md) !important;
   overflow: visible;
-  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease);
-  cursor: default;
+  transition: transform 0.2s var(--ease), border-color 0.2s var(--ease), opacity 0.16s;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
   animation: catCardIn 0.5s var(--ease) both;
   display: flex;
   flex-direction: column;
@@ -1640,6 +1643,147 @@
 .cat-card:hover {
   transform: translateY(-3px);
   border-color: rgba(96, 165, 250, 0.3) !important;
+}
+
+.cat-card.is-drag-source {
+  opacity: 0.22;
+  transform: none !important;
+}
+.cat-card.is-drag-source * { visibility: hidden; }
+
+/* ===== Nova categoria — wide draggable button ===== */
+.cat-nova-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border: 1.5px dashed rgba(96, 165, 250, 0.45);
+  border-radius: var(--r-md);
+  background: rgba(59, 130, 246, 0.08);
+  color: #dbeafe;
+  cursor: grab;
+  text-align: left;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.16s, border-color 0.16s, opacity 0.16s;
+}
+.cat-nova-btn:hover {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(96, 165, 250, 0.7);
+}
+.cat-nova-btn.is-source { opacity: 0.35; }
+
+.cat-nova-ic {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.cat-nova-tx {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cat-nova-tx strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+.cat-nova-tx span {
+  font-size: 12px;
+  color: #93c5fd;
+  margin-top: 2px;
+}
+.cat-nova-grip {
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 4px);
+  gap: 4px;
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+.cat-nova-grip i {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 99px;
+  background: #93c5fd;
+}
+
+/* ===== Drag hint banner ===== */
+.cat-drag-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.92);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+  animation: catHintIn 0.2s ease both;
+  pointer-events: none;
+}
+.cat-drag-hint svg { flex-shrink: 0; }
+@keyframes catHintIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Drag placeholder slot ===== */
+.cat-drag-placeholder {
+  border: 1.5px dashed rgba(96, 165, 250, 0.6);
+  border-radius: var(--r-md);
+  background: rgba(59, 130, 246, 0.1);
+  min-height: 120px;
+  animation: catSlotPulse 1.1s ease-in-out infinite;
+}
+.cat-drag-placeholder.is-nova {
+  display: grid;
+  place-items: center;
+  color: #93c5fd;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  padding: 10px;
+}
+@keyframes catSlotPulse {
+  0%,100% { border-color: rgba(96,165,250,0.45); }
+  50%     { border-color: rgba(96,165,250,0.9); }
+}
+
+/* ===== Floating drag clone ===== */
+.cat-drag-clone {
+  position: fixed;
+  z-index: 9000;
+  pointer-events: none;
+  transform-origin: center;
+  filter: drop-shadow(0 20px 36px rgba(2, 6, 23, 0.6));
+  animation: catCloneLift 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes catCloneLift {
+  from { transform: scale(1) rotate(0deg); }
+  to   { transform: scale(1.05) rotate(-1.5deg); }
+}
+.cat-drag-clone .cat-card,
+.cat-drag-clone .cat-nova-btn {
+  margin: 0 !important;
+  cursor: grabbing;
+  border-color: rgba(96, 165, 250, 0.6) !important;
+  animation: none !important;
+  opacity: 1 !important;
 }
 
 .cat-card-top {

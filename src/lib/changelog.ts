@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.74": [
+    { emoji: "🗂️", text: "Categorias reorganizáveis — segure e arraste para ordenar do seu jeito. Botão Nova categoria largo no topo; arraste-o para a posição desejada e solte para criar ali." },
+  ],
   "1.0.73": [
     { emoji: "🛡️", text: "Política de Privacidade disponível no Perfil — seção Jurídico." },
   ],
