@@ -24,6 +24,9 @@ type Plan = {
   id: string;
   name: string;
   priceCents: number;
+  monthlyTransactionLimit: number | null;
+  subcategoryLimit: number | null;
+  groupLimit: number | null;
 };
 
 function readStoredLifetimeState(): boolean {
@@ -1158,9 +1161,26 @@ export default function Layout({ children }: Props) {
                           lineHeight: 1.6,
                         }}
                       >
-                        <li>Acesso completo ao dashboard e aos modulos financeiros</li>
-                        <li>Recursos premium liberados para controle e organizacao</li>
-                        <li>Continuidade do historico e suporte ao crescimento da conta</li>
+                        <li>
+                          {plan.monthlyTransactionLimit === null
+                            ? "Lancamentos ilimitados por mes"
+                            : `Ate ${plan.monthlyTransactionLimit} lancamentos por mes`}
+                        </li>
+                        <li>
+                          {plan.subcategoryLimit === null
+                            ? "Subcategorias ilimitadas"
+                            : plan.subcategoryLimit === 0
+                            ? "Sem subcategorias"
+                            : `Ate ${plan.subcategoryLimit} subcategoria${plan.subcategoryLimit > 1 ? "s" : ""}`}
+                        </li>
+                        <li>
+                          {plan.groupLimit === null
+                            ? "Grupos ilimitados"
+                            : plan.groupLimit === 0
+                            ? "Pode participar de grupos (sem criar)"
+                            : `Ate ${plan.groupLimit} grupo${plan.groupLimit > 1 ? "s" : ""} criados`}
+                        </li>
+                        <li>Acesso completo ao dashboard e modulos financeiros</li>
                       </ul>
                     </div>
 

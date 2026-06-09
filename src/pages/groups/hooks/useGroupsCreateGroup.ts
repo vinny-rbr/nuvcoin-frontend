@@ -86,8 +86,8 @@ export function useGroupsCreateGroup({
         setIsOpen(false);
         resetForm();
       }, 600);
-    } catch {
-      setError("Erro ao criar grupo");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Erro ao criar grupo");
     } finally {
       setLoading(false);
     }

@@ -2,6 +2,13 @@
 import { apiUrl } from "./api";
 import { persistSubscriptionState } from "./auth";
 
+export class PlanLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlanLimitError";
+  }
+}
+
 import {
   loadFinanceItems, // LÃª itens do localStorage
   getFinanceStorageKey,
@@ -179,6 +186,10 @@ const apiProvider: FinanceProvider = {
 
     if (res.status === 403) {
       financeDebugLog("API POST /finance 403");
+      const body = await res.json().catch(() => ({})) as { code?: string; message?: string };
+      if (body.code === "PLAN_TRANSACTION_LIMIT_REACHED") {
+        throw new PlanLimitError(body.message ?? "Limite de lancamentos do plano atingido.");
+      }
       persistSubscriptionState(false); // Marca conta como inativa
       throw new Error("Finance access forbidden: 403");
     }
@@ -294,7 +305,8 @@ export function financeDebugLog(message: string, data?: unknown): void {
 async function safe<T>(fn: () => Promise<T>, fallback: () => Promise<T>): Promise<T> {
   try {
     return await fn(); // Tenta
-  } catch {
+  } catch (error) {
+    if (error instanceof PlanLimitError) throw error; // Limite de plano: não faz fallback
     return await fallback(); // Fallback
   }
 }
@@ -472,7 +484,7 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
     const tempId = tempItem.id; // Guarda id temporÃ¡rio (pra substituir depois)
     pendingLocalItemIds.add(tempId);
 
-    void safe(
+    safe(
       async () => {
         const created = await activeProvider.add(tempItem); // POST e pega item criado (sem GET)
         pendingLocalItemIds.delete(tempId);
@@ -506,7 +518,18 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
         financeDebugLog("financeAdd fallback local", tempItem);
         return tempItem; // Fallback: mantÃ©m o otimista
       }
-    );
+    ).catch((error) => {
+      if (error instanceof PlanLimitError) {
+        pendingLocalItemIds.delete(tempId);
+        recentlyAddedIds.delete(tempId);
+        const without = removeById(getCache(), tempId);
+        setCache(without);
+        saveItemsStorage(without);
+        window.dispatchEvent(
+          new CustomEvent("conciliaai_finance_error", { detail: error.message })
+        );
+      }
+    });
   }
 
   return updatedLocal; // Retorna local
