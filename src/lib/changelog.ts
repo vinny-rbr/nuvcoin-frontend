@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.79": [
+    { emoji: "📱", text: "Correção: app Android agora abre em tela cheia sem barra de URL." },
+  ],
   "1.0.78": [
     { emoji: "🗑️", text: "Exclusão de conta disponível no Perfil — seus dados são apagados permanentemente." },
   ],

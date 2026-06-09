@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "br.app.conciliaai.www.twa",
       "sha256_cert_fingerprints": [
-        "3D:22:BF:8D:63:15:0D:40:01:3E:1F:FC:9C:CC:93:4A:0D:3A:33:44:2F:ED:82:C3:F0:5A:61:AF:5A:5F:58:1D"
+        "3D:22:BF:8D:63:15:0D:40:01:3E:1F:FC:9C:CC:93:4A:0D:3A:33:44:2F:ED:82:C3:F0:5A:61:AF:5A:5F:58:1D",
+        "06:90:FC:F4:DB:08:2A:C5:30:06:EC:22:8B:A1:DE:39:A9:DD:61:A1:1F:B9:06:52:AB:D6:0F:11:96:1C:60:A9"
       ]
     }
   }
