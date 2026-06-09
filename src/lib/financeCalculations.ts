@@ -30,6 +30,7 @@ export function calculateSummary(items: FinanceItem[]): FinanceSummary {
   return {
     totalReceitasCents,
     totalDespesasCents,
+    totalPendingDespesasCents: 0,
     totalCreditoCents,
     saldoCents,
   };

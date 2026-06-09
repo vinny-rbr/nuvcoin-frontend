@@ -34,12 +34,16 @@ export interface FinanceItem {
   createdAtISO: string;
   paymentType: PaymentType;
   status: FinanceStatus;
+  recurringGroupId?: string;
+  recurringKind?: "fixo" | "parcelado";
+  recurringTotal?: number;
 }
 
 // Resumo para o Dashboard.
 export interface FinanceSummary {
   totalReceitasCents: number;
   totalDespesasCents: number;
+  totalPendingDespesasCents: number;
   totalCreditoCents: number;
   saldoCents: number;
 }

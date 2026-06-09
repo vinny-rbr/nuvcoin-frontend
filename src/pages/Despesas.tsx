@@ -69,6 +69,130 @@ function nextRecurringStartISO(dateISO: string): string {
   ).padStart(2, "0")}`;
 }
 
+interface RecurringGroup {
+  groupId: string;
+  kind: "fixo" | "parcelado";
+  title: string;
+  category: string;
+  paymentType: PaymentType;
+  amountCents: number;
+  total: number;
+  items: FinanceItem[];
+}
+
+function buildRecurringGroups(despesas: FinanceItem[]): { groups: RecurringGroup[]; singles: FinanceItem[] } {
+  const groupMap = new Map<string, FinanceItem[]>();
+  const singles: FinanceItem[] = [];
+  for (const item of despesas) {
+    if (item.recurringGroupId) {
+      const existing = groupMap.get(item.recurringGroupId) ?? [];
+      existing.push(item);
+      groupMap.set(item.recurringGroupId, existing);
+    } else {
+      singles.push(item);
+    }
+  }
+  const groups: RecurringGroup[] = [];
+  for (const [groupId, items] of groupMap) {
+    const first = items[0];
+    const sorted = [...items].sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+    groups.push({
+      groupId,
+      kind: first.recurringKind ?? "fixo",
+      title: first.title,
+      category: first.category,
+      paymentType: first.paymentType,
+      amountCents: first.amountCents,
+      total: first.recurringTotal ?? items.length,
+      items: sorted,
+    });
+  }
+  groups.sort((a, b) => (a.items[0]?.dateISO ?? "").localeCompare(b.items[0]?.dateISO ?? ""));
+  return { groups, singles };
+}
+
+function RecurringGroupRow({
+  group, open, onToggle, onTogglePaid, onDelete,
+}: {
+  group: RecurringGroup;
+  open: boolean;
+  onToggle: () => void;
+  onTogglePaid: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  const paid = group.items.filter((m) => m.status === "paid").length;
+  const total = group.items.length;
+  const paidCents = paid * group.amountCents;
+  const pendCents = (total - paid) * group.amountCents;
+  const isParc = group.kind === "parcelado";
+  const color = isParc ? "#8b5cf6" : "#ef4444";
+
+  return (
+    <div className={`fin-group${open ? " open" : ""}`}>
+      <div className="fin-group-head" onClick={onToggle} role="button" tabIndex={0} onKeyDown={(e) => e.key === "Enter" && onToggle()}>
+        <span className="fin-group-ic" style={{ background: `${color}26`, border: `1px solid ${color}40` }}>
+          <span className="stack" />
+          <span style={{ position: "relative", zIndex: 1 }}>💸</span>
+        </span>
+        <div className="fin-group-mid">
+          <strong>{group.title}</strong>
+          <div className="fin-group-path">{group.category}</div>
+          <div className="fin-group-tags">
+            <span className={isParc ? "tag-parc" : "tag-fixo"}>{isParc ? "Parcelado" : "Fixo mensal"}</span>
+            <span className="tag-count">{isParc ? `${paid}/${total} pagas` : `${paid}/${total} pagos`}</span>
+            <span className="fin-tx-tag">{getPaymentLabel(group.paymentType)}</span>
+          </div>
+        </div>
+        <div className="fin-group-right">
+          <span className="fin-group-amt">
+            – {formatCentsBRL(group.amountCents)}
+            <small>{isParc ? `${total}x` : "por mês"}</small>
+          </span>
+          <span className="fin-group-chev">▾</span>
+        </div>
+      </div>
+
+      {open ? (
+        <div className="fin-group-body">
+          <div className="fin-bd-summary">
+            <div className="fin-bd-cell pago">
+              <div className="lbl">Já pago ({paid})</div>
+              <div className="val">{formatCentsBRL(paidCents)}</div>
+            </div>
+            <div className="fin-bd-cell prev">
+              <div className="lbl">Previsto ({total - paid})</div>
+              <div className="val">{formatCentsBRL(pendCents)}</div>
+            </div>
+          </div>
+          <div className="fin-mon-list">
+            {group.items.map((item) => {
+              const isPaid = item.status === "paid";
+              return (
+                <div key={item.id} className={`fin-mon${isPaid ? " is-paid" : ""}`}>
+                  <span className="fin-mon-dot" />
+                  <div className="fin-mon-info">
+                    <strong>{new Date(`${item.dateISO}T00:00:00`).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}</strong>
+                    <span>{formatDateBR(item.dateISO)} · {isPaid ? "Pago" : "Pendente"}</span>
+                  </div>
+                  <div className="fin-mon-right">
+                    <span className="fin-mon-amt">– {formatCentsBRL(item.amountCents)}</span>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <button type="button" className={`fin-mon-btn${isPaid ? " undo" : ""}`} onClick={(e) => { e.stopPropagation(); onTogglePaid(item.id); }}>
+                        {isPaid ? "Desfazer" : "Marcar pago"}
+                      </button>
+                      <button type="button" className="fin-mon-btn undo" onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}>✕</button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function DonutRing({ recCents, desCents }: { recCents: number; desCents: number }) {
   const r = 51;
   const circ = 2 * Math.PI * r;
@@ -110,6 +234,7 @@ export default function Despesas() {
   const [editingItem, setEditingItem] = useState<FinanceItem | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const [openGroupId, setOpenGroupId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeChip, setActiveChip] = useState("Tudo");
   const savingRef = useRef(false);
@@ -156,6 +281,7 @@ export default function Despesas() {
 
   const despesas = useMemo(() => items.filter((x) => x.type === "DESPESA"), [items]);
   const summary = useMemo(() => calcFinanceSummary(items), [items]);
+  const recurringData = useMemo(() => buildRecurringGroups(despesas), [despesas]);
 
   const chipOptions = useMemo(() => {
     const parents = new Set<string>();
@@ -207,12 +333,15 @@ export default function Despesas() {
     setFeedback(isRecurring ? "Criando despesas mensais..." : "Salvando lancamento...");
     const createdAtISO = new Date().toISOString();
     const firstDateISO = isRecurring ? nextRecurringStartISO(dateISO) : dateISO;
+    const groupId = isRecurring && totalMonths > 1 ? makeId() : undefined;
+    const recurringKind = paymentType === "credit" ? "parcelado" as const : "fixo" as const;
     for (let index = 0; index < totalMonths; index += 1) {
       const installmentDateISO = addMonthsISO(firstDateISO, index);
       const newItem: FinanceItem = {
         id: makeId(), type: "DESPESA", title: title.trim(), category, amountCents,
         dateISO: installmentDateISO, createdAtISO, paymentType,
         status: index === 0 && installmentDateISO <= todayISO() ? status : "pending",
+        ...(groupId ? { recurringGroupId: groupId, recurringKind, recurringTotal: totalMonths } : {}),
       };
       financeAdd(newItem);
     }
@@ -299,7 +428,7 @@ export default function Despesas() {
           <div>
             <div className="ov-stat-row">
               <span className="ov-stat-dot" style={{ background: "#ef4444" }} />
-              <span className="ov-stat-label">Despesas</span>
+              <span className="ov-stat-label">Despesas (pagas)</span>
             </div>
             <div className="ov-stat-val" style={{ color: "#fca5a5" }}>{formatCentsBRL(summary.totalDespesasCents)}</div>
           </div>
@@ -307,11 +436,21 @@ export default function Despesas() {
       </div>
 
       <div className="ov-saldo">
-        <span className="ov-saldo-label">Saldo</span>
+        <span className="ov-saldo-label">Saldo real</span>
         <span className="ov-saldo-val" style={{ color: summary.saldoCents >= 0 ? "#86efac" : "#fca5a5" }}>
           {formatCentsBRL(summary.saldoCents)}
         </span>
       </div>
+
+      {summary.totalPendingDespesasCents > 0 ? (
+        <div className="ov-prev">
+          <span className="ov-prev-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="M12 8v4l3 2"/><circle cx="12" cy="12" r="9"/></svg>
+            Previsto (pendente)
+          </span>
+          <span className="ov-prev-val">{formatCentsBRL(summary.totalPendingDespesasCents)}</span>
+        </div>
+      ) : null}
 
       <button
         type="button"
@@ -427,7 +566,7 @@ export default function Despesas() {
             <h3>Lançamentos</h3>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="fin-hist-cnt">{despesas.length} no mês</span>
+            <span className="fin-hist-cnt">{recurringData.groups.length + recurringData.singles.length} lançamentos</span>
             {despesas.length > 0 ? (
               <button className="finance-danger-button finance-bulk-delete-button" type="button" onClick={onDeleteAll}>
                 Apagar todas
@@ -465,7 +604,7 @@ export default function Despesas() {
             <strong>Nenhuma despesa cadastrada ainda.</strong>
             <span>Toque em "Adicionar despesa" para registrar sua primeira saída.</span>
           </div>
-        ) : filteredDespesas.length === 0 ? (
+        ) : recurringData.groups.length === 0 && filteredDespesas.length === 0 ? (
           <div className="finance-empty-state">
             <div className="finance-empty-icon">🔍</div>
             <strong>Nenhum resultado encontrado.</strong>
@@ -473,7 +612,17 @@ export default function Despesas() {
           </div>
         ) : (
           <div className="finance-list">
-            {filteredDespesas.map((d) => (
+            {recurringData.groups.map((group) => (
+              <RecurringGroupRow
+                key={group.groupId}
+                group={group}
+                open={openGroupId === group.groupId}
+                onToggle={() => setOpenGroupId((prev) => (prev === group.groupId ? null : group.groupId))}
+                onTogglePaid={(id) => { toggleStatus(group.items.find((i) => i.id === id)!); }}
+                onDelete={onDelete}
+              />
+            ))}
+            {filteredDespesas.filter((d) => !d.recurringGroupId).map((d) => (
               <div
                 key={d.id}
                 className={`fin-tx${openRowId === d.id ? " open" : ""}`}

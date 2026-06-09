@@ -65,17 +65,14 @@ function normalizeItem(raw: any): FinanceItem {
   const paymentType = raw?.paymentType ?? "pix"; // Default pix
   const status = raw?.status ?? "paid"; // Default paid
 
+  const recurringGroupId: string | undefined = raw?.recurringGroupId ?? undefined;
+  const recurringKind: "fixo" | "parcelado" | undefined = raw?.recurringKind ?? undefined;
+  const recurringTotal: number | undefined = raw?.recurringTotal !== undefined ? Number(raw.recurringTotal) : undefined;
+
   return {
-    id, // id normalizado
-    type, // type normalizado
-    title, // tÃ­tulo normalizado
-    category, // categoria normalizada
-    amountCents, // valor normalizado
-    dateISO, // data principal normalizada
-    createdAtISO, // data criaÃ§Ã£o normalizada
-    paymentType, // forma pagamento normalizada
-    status, // status normalizado
-  } as FinanceItem; // ForÃ§a o tipo final
+    id, type, title, category, amountCents, dateISO, createdAtISO, paymentType, status,
+    ...(recurringGroupId ? { recurringGroupId, recurringKind, recurringTotal } : {}),
+  } as FinanceItem;
 }
 
 function normalizeList(parsed: any): FinanceItem[] {
@@ -154,32 +151,32 @@ export function deleteFinanceItem(id: string): FinanceItem[] {
    ===================================================== */
 
 export function calcFinanceSummary(items: FinanceItem[]): FinanceSummary {
-  let receitas = 0; // Acumulador receitas
-  let despesas = 0; // Acumulador despesas
-  let credito = 0; // Acumulador crÃ©dito (DESPESA + paymentType=credit)
+  let receitas = 0;
+  let despesasPagas = 0;
+  let despesasPendentes = 0;
+  let credito = 0;
 
   for (const item of items) {
-    // Soma receitas
-    if (item.type === "RECEITA") {
-      receitas += item.amountCents; // Soma em centavos
+    if (item.type === "RECEITA" && item.status === "paid") {
+      receitas += item.amountCents;
     }
 
-    // Soma despesas e crÃ©dito
     if (item.type === "DESPESA") {
-      despesas += item.amountCents; // Soma despesas
-
-      // CrÃ©dito = DESPESA com paymentType = credit
-      if (item.paymentType === "credit") {
-        credito += item.amountCents; // Soma crÃ©dito
+      if (item.status === "paid") {
+        despesasPagas += item.amountCents;
+        if (item.paymentType === "credit") credito += item.amountCents;
+      } else {
+        despesasPendentes += item.amountCents;
       }
     }
   }
 
   return {
-    totalReceitasCents: receitas, // Total receitas
-    totalDespesasCents: despesas, // Total despesas
-    totalCreditoCents: credito, // Total crÃ©dito
-    saldoCents: receitas - despesas, // Saldo
+    totalReceitasCents: receitas,
+    totalDespesasCents: despesasPagas,
+    totalPendingDespesasCents: despesasPendentes,
+    totalCreditoCents: credito,
+    saldoCents: receitas - despesasPagas,
   };
 }
 

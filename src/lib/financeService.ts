@@ -90,15 +90,20 @@ function normalizeApiItem(raw: any): FinanceItem {
     new Date().toISOString(); // Fallback
 
   return {
-    id: raw?.id ?? makeId(), // Id
-    type: raw?.type, // Tipo
-    title: raw?.title ?? "", // TÃ­tulo
-    category: raw?.category ?? "Outros", // Categoria
-    amountCents: Number(raw?.amountCents ?? 0), // Valor
-    dateISO: dateISO, // Data ISO
-    createdAtISO: createdAtISO, // Criado ISO
-    paymentType: raw?.paymentType ?? "pix", // Forma
-    status: raw?.status ?? "paid", // Status
+    id: raw?.id ?? makeId(),
+    type: raw?.type,
+    title: raw?.title ?? "",
+    category: raw?.category ?? "Outros",
+    amountCents: Number(raw?.amountCents ?? 0),
+    dateISO: dateISO,
+    createdAtISO: createdAtISO,
+    paymentType: raw?.paymentType ?? "pix",
+    status: raw?.status ?? "paid",
+    ...(raw?.recurringGroupId ? {
+      recurringGroupId: raw.recurringGroupId,
+      recurringKind: raw.recurringKind ?? undefined,
+      recurringTotal: raw.recurringTotal ? Number(raw.recurringTotal) : undefined,
+    } : {}),
   } as FinanceItem;
 }
 
@@ -169,13 +174,16 @@ const apiProvider: FinanceProvider = {
     });
 
     const payload = {
-      type: item.type, // Tipo
-      title: item.title, // TÃ­tulo
-      category: item.category ?? "Outros", // Categoria
-      amountCents: item.amountCents, // Valor
-      date: item.dateISO, // âœ… Backend espera "date"
-      paymentType: item.paymentType ?? "pix", // Forma
-      status: item.status ?? "paid", // Status
+      type: item.type,
+      title: item.title,
+      category: item.category ?? "Outros",
+      amountCents: item.amountCents,
+      date: item.dateISO,
+      paymentType: item.paymentType ?? "pix",
+      status: item.status ?? "paid",
+      recurringGroupId: item.recurringGroupId ?? null,
+      recurringKind: item.recurringKind ?? null,
+      recurringTotal: item.recurringTotal ?? null,
     };
 
     const res = await fetch(`${API_BASE_URL}`, {
