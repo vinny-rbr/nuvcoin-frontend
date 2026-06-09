@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "br.app.conciliaai.twa",
+      "package_name": "br.app.conciliaai.www.twa",
       "sha256_cert_fingerprints": [
-        "12:99:9D:1E:F4:E1:2A:E6:8E:43:41:69:BD:3B:10:9E:7D:8F:77:67:38:6C:E1:2C:F1:DC:10:4C:3C:5B:D5:13"
+        "3D:22:BF:8D:63:15:0D:40:01:3E:1F:FC:9C:CC:93:4A:0D:3A:33:44:2F:ED:82:C3:F0:5A:61:AF:5A:5F:58:1D"
       ]
     }
   }
