@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.78": [
+    { emoji: "🗑️", text: "Exclusão de conta disponível no Perfil — seus dados são apagados permanentemente." },
+  ],
   "1.0.77": [
     { emoji: "📱", text: "Conciliaaí chegou na Play Store — instale pelo Android como app nativo." },
   ],

@@ -109,6 +109,12 @@ const ICON_PRIVACY = (
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
   </svg>
 );
+const ICON_TRASH = (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+    <path d="M10 11v6M14 11v6"/>
+  </svg>
+);
 const ICON_CHEV = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
     <path d="m9 6 6 6-6 6"/>
@@ -227,6 +233,10 @@ export default function Perfil() {
   );
   const [cpf, setCpf] = useState<string | null>(null);
   const [sub, setSub] = useState<SubData | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -279,6 +289,24 @@ export default function Perfil() {
     };
     reader.readAsDataURL(file);
     e.target.value = "";
+  }
+
+  async function handleDeleteAccount() {
+    const token = localStorage.getItem("token");
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(apiUrl("/api/users/me"), {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Falha ao excluir conta");
+      handleLogout();
+    } catch {
+      setDeleteError("Não foi possível excluir a conta. Tente novamente ou entre em contato pelo e-mail suporte@conciliaai.app.br");
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function handleLogout() {
@@ -618,6 +646,9 @@ export default function Perfil() {
         <div style={{ borderTop: "1px solid rgba(148,163,184,0.09)" }}>
           <ActionRow icon={ICON_LOGOUT} label="Sair da conta" danger onClick={handleLogout} showChev={false} />
         </div>
+        <div style={{ borderTop: "1px solid rgba(148,163,184,0.09)" }}>
+          <ActionRow icon={ICON_TRASH} label="Excluir conta" danger onClick={() => setShowDeleteModal(true)} showChev={false} />
+        </div>
       </div>
 
       {/* ── Jurídico ── */}
@@ -644,6 +675,89 @@ export default function Perfil() {
       </div>
 
       <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handlePhotoChange} />
+
+      {/* ── Modal exclusão de conta ── */}
+      {showDeleteModal && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            background: "rgba(2,6,23,0.85)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 20,
+          }}
+          onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(""); setDeleteError(null); }}
+        >
+          <div
+            style={{
+              background: "linear-gradient(160deg, #1e293b, #0f172a)",
+              border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: 20, padding: 28, width: "100%", maxWidth: 400,
+              boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+              <span style={{ width: 48, height: 48, borderRadius: 16, background: "rgba(239,68,68,0.15)", display: "grid", placeItems: "center", color: "#f87171" }}>
+                <span style={{ width: 24, height: 24, display: "block" }}>{ICON_TRASH}</span>
+              </span>
+            </div>
+            <div style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", fontWeight: 700, fontSize: 20, textAlign: "center", marginBottom: 10 }}>
+              Excluir conta
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 13.5, textAlign: "center", marginBottom: 20, lineHeight: 1.6 }}>
+              Esta ação é <strong style={{ color: "#f87171" }}>irreversível</strong>. Todos os seus dados, lançamentos e categorias serão permanentemente excluídos.
+            </div>
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#64748b", marginBottom: 8 }}>
+                Digite <strong style={{ color: "#f1f5f9" }}>EXCLUIR</strong> para confirmar
+              </div>
+              <input
+                type="text"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="EXCLUIR"
+                style={{
+                  width: "100%", padding: "12px 14px", borderRadius: 12,
+                  background: "rgba(15,23,42,0.8)",
+                  border: "1px solid rgba(239,68,68,0.3)",
+                  color: "#f1f5f9", fontSize: 14, fontWeight: 700,
+                  outline: "none", boxSizing: "border-box",
+                }}
+              />
+            </div>
+            {deleteError && (
+              <div style={{ color: "#f87171", fontSize: 12.5, marginBottom: 14, textAlign: "center" }}>
+                {deleteError}
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={deleteConfirmText !== "EXCLUIR" || deleting}
+              onClick={handleDeleteAccount}
+              style={{
+                width: "100%", padding: "14px", borderRadius: 14,
+                background: deleteConfirmText === "EXCLUIR" ? "linear-gradient(135deg, #ef4444, #dc2626)" : "rgba(239,68,68,0.15)",
+                color: deleteConfirmText === "EXCLUIR" ? "#fff" : "#64748b",
+                border: 0, fontSize: 14, fontWeight: 800, cursor: deleteConfirmText === "EXCLUIR" ? "pointer" : "not-allowed",
+                marginBottom: 10,
+              }}
+            >
+              {deleting ? "Excluindo..." : "Excluir minha conta"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(""); setDeleteError(null); }}
+              style={{
+                width: "100%", padding: "12px", borderRadius: 14,
+                background: "transparent", border: "1px solid rgba(148,163,184,0.15)",
+                color: "#94a3b8", fontSize: 14, fontWeight: 700, cursor: "pointer",
+              }}
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&display=swap");
