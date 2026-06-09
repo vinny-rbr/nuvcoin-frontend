@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.81": [
+    { emoji: "🚫", text: "Correção: textos e valores não ficam mais selecionáveis ao tocar na tela." },
+  ],
   "1.0.80": [
     { emoji: "🔁", text: "Gastos fixos e parcelados agrupados em accordion — 1 card por grupo, expanda para ver cada mês e marcar como pago." },
     { emoji: "💰", text: "Saldo real conta só o que foi pago; pendentes aparecem como Previsto em âmbar." },
