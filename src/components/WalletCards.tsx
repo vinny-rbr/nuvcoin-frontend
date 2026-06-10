@@ -230,18 +230,15 @@ export function CardDeck({ accounts, onSelect, onAdd, w = 290 }: {
   const collapsedH = ch + peek * maxBehind;
   const expandedH = (ch + gap) * n - gap;
 
-  function onDown(e: React.PointerEvent | React.TouchEvent) {
-    const x = "touches" in e ? e.touches[0].clientX : (e as React.PointerEvent).clientX;
-    drag.current = { x, moved: false };
+  function onDown(e: React.PointerEvent) {
+    drag.current = { x: e.clientX, moved: false };
   }
-  function onMove(e: React.PointerEvent | React.TouchEvent) {
-    const x = "touches" in e ? e.touches[0].clientX : (e as React.PointerEvent).clientX;
-    if (Math.abs(x - drag.current.x) > 8) drag.current.moved = true;
+  function onMove(e: React.PointerEvent) {
+    if (Math.abs(e.clientX - drag.current.x) > 8) drag.current.moved = true;
   }
-  function onUp(e: React.PointerEvent | React.TouchEvent) {
+  function onUp(e: React.PointerEvent) {
     if (expanded) return;
-    const x = "changedTouches" in e ? e.changedTouches[0].clientX : (e as React.PointerEvent).clientX;
-    const dx = x - drag.current.x;
+    const dx = e.clientX - drag.current.x;
     if (dx < -42) next(); else if (dx > 42) prev();
   }
 
@@ -258,7 +255,6 @@ export function CardDeck({ accounts, onSelect, onAdd, w = 290 }: {
     <div className="wc-deck-wrap">
       <div
         onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
-        onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
         style={{
           position: "relative", width: w, margin: "0 auto",
           height: expanded ? expandedH : collapsedH,
