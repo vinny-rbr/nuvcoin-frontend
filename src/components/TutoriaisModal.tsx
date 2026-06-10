@@ -25,7 +25,6 @@ const TUTORIALS: Tutorial[] = [
     duration: "0:42",
     cat: "Primeiros passos",
     accent: "#22c55e",
-    thumb: "https://i.ytimg.com/vi/qCLuQI1JLMs/mqdefault.jpg",
     url: "https://www.youtube.com/shorts/qCLuQI1JLMs",
     ready: true,
     isShort: true,
@@ -39,7 +38,6 @@ const TUTORIALS: Tutorial[] = [
     duration: "0:42",
     cat: "Primeiros passos",
     accent: "#ef4444",
-    thumb: "https://i.ytimg.com/vi/0L4gHwImYn0/mqdefault.jpg",
     url: "https://www.youtube.com/shorts/0L4gHwImYn0",
     ready: true,
     isShort: true,
@@ -120,6 +118,26 @@ function VideoThumb({
             (e.currentTarget as HTMLImageElement).style.display = "none";
           }}
         />
+      ) : t.ready ? (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: `linear-gradient(135deg, ${t.accent}30 0%, ${t.accent}10 60%, rgba(15,23,42,.6) 100%)`,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+          }}
+        >
+          <span style={{ fontSize: 28, lineHeight: 1 }}>
+            {t.accent === "#22c55e" ? "💰" : t.accent === "#ef4444" ? "💸" : t.accent === "#a78bfa" ? "📄" : "🎬"}
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 800, color: t.accent, letterSpacing: ".04em", opacity: 0.9 }}>
+            {t.cat.toUpperCase()}
+          </span>
+        </div>
       ) : (
         <div
           style={{
