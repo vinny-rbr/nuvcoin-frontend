@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { financeAdd, financeFlushRecent, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate, makeId } from "../lib/financeService";
 import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
@@ -14,6 +15,8 @@ type WizardStep = "select" | "reading" | "review" | "adjust" | "done";
 type ReviewNewItem = {
   parsedItem: OfxParsedItem;
   cat: string;
+  catSource: "auto" | "learned" | "none";
+  merchantKey: string;
   dateLabel: string;
   status: FinanceStatus;
   included: boolean;
@@ -121,6 +124,42 @@ function statusLabel(s: FinanceStatus | string): string {
   return s === "paid" ? "No saldo" : "Na data";
 }
 
+// ── Category memory ──────────────────────────────────────────────────
+
+const CAT_MEM_KEY = "nuv_ofx_cat_memory_v1";
+
+function loadCatMemory(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(CAT_MEM_KEY) || "null") || {}; }
+  catch { return {}; }
+}
+
+function saveCatMemory(m: Record<string, string>): void {
+  try { localStorage.setItem(CAT_MEM_KEY, JSON.stringify(m)); } catch {}
+}
+
+function extractMerchantKey(title: string): string {
+  return title
+    .toUpperCase()
+    .replace(/COMPRA NO (D[ÉE]BITO|CR[ÉE]DITO)\s*[-–—]\s*/i, "")
+    .replace(/TRANSFER[ÊE]NCIA (ENVIADA|RECEBIDA) PELO PIX\s*[-–—]\s*/i, "")
+    .replace(/PAGAMENTO\s+DE\s+/i, "")
+    .replace(/MP \*/i, "")
+    .replace(/\d{2}\/\d{2}/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
+}
+
+const CAT_PALETTE = [
+  "#FB7185","#38BDF8","#FBBF24","#A78BFA","#34D399",
+  "#C084FC","#F472B6","#94A3B8","#60A5FA","#F97316","#2DD4BF",
+];
+function catDotColor(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return CAT_PALETTE[h % CAT_PALETTE.length]!;
+}
+
 // ── SVG Icons ────────────────────────────────────────────────────────
 
 function CheckIcon() {
@@ -215,6 +254,64 @@ function CalendarIcon() {
       <rect x="3" y="4" width="18" height="17" rx="2.5" />
       <path d="M3 9h18M8 2v4M16 2v4" />
     </svg>
+  );
+}
+
+function TagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 11.5V5a2 2 0 012-2h6.5a2 2 0 011.4.6l7.5 7.5a2 2 0 010 2.8l-6.5 6.5a2 2 0 01-2.8 0L3.6 12.9A2 2 0 013 11.5z" />
+      <circle cx="7.5" cy="7.5" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function SparkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3l1.8 4.8L18.5 9l-4.7 1.2L12 15l-1.8-4.8L5.5 9l4.7-1.2L12 3z" />
+    </svg>
+  );
+}
+
+function PencilSmIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+    </svg>
+  );
+}
+
+function DocIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" />
+      <path d="M14 3v5h5" />
+    </svg>
+  );
+}
+
+// ── CatChip ───────────────────────────────────────────────────────────
+
+function CatChip({ item }: { item: ReviewNewItem }) {
+  if (item.catSource === "none") {
+    return <span className="cat-chip none"><TagIcon />Escolher categoria</span>;
+  }
+  if (item.catSource === "learned") {
+    return (
+      <span className="cat-chip learned">
+        <span className="cdot" style={{ background: catDotColor(item.cat) }} />
+        {item.cat}
+        <SparkIcon />
+      </span>
+    );
+  }
+  return (
+    <span className="cat-chip auto">
+      <span className="cdot" style={{ background: catDotColor(item.cat) }} />
+      {item.cat}
+      <PencilSmIcon />
+    </span>
   );
 }
 
@@ -372,14 +469,18 @@ function StepReading({ progress, stepIdx, fileName }: { progress: number; stepId
 
 function TxnRow({
   item,
-  onToggleStatus,
+  onOpen,
 }: {
   item: ReviewNewItem;
-  onToggleStatus: (id: string) => void;
+  onOpen: (item: ReviewNewItem) => void;
 }) {
   const isIn = item.parsedItem.type === "RECEITA";
   return (
-    <div className={`ix-txn${item.included ? "" : " is-excluded"}`}>
+    <button
+      type="button"
+      className={`ix-txn${item.included ? "" : " is-excluded"}`}
+      onClick={() => onOpen(item)}
+    >
       <div className={`ix-txn-ic ${isIn ? "in" : "out"}`}>
         {isIn ? <ArrowUpIcon /> : <ArrowDownIcon />}
       </div>
@@ -387,24 +488,173 @@ function TxnRow({
         <div className="ix-txn-title">{item.parsedItem.title}</div>
         <div className="ix-txn-meta">
           <span className="ix-txn-date">{item.dateLabel}</span>
-          <span className="ix-badge cat">{item.cat}</span>
+          <CatChip item={item} />
         </div>
       </div>
       <div className="ix-txn-right">
         <div className={`ix-txn-amount ${isIn ? "in" : "out"}`}>
           {isIn ? "+" : "−"}{brl(item.parsedItem.amountCents)}
         </div>
-        <button
-          type="button"
-          className={`ix-status-pill ${item.status}`}
-          onClick={() => onToggleStatus(item.parsedItem.id)}
-          title="Tocar para alternar"
-        >
+        <span className={`ix-status-pill ${item.status}`}>
           <span className="pdot" />
           {item.status === "paid" ? "no saldo" : "na data"}
-        </button>
+        </span>
       </div>
-    </div>
+    </button>
+  );
+}
+
+// ── CategorySheet ─────────────────────────────────────────────────────
+
+function CategorySheet({
+  item,
+  categories,
+  memory,
+  onClose,
+  onSave,
+}: {
+  item: ReviewNewItem;
+  categories: string[];
+  memory: Record<string, string>;
+  onClose: () => void;
+  onSave: (cat: string, remember: boolean) => void;
+}) {
+  const [sel, setSel] = useState<string>(item.cat || "");
+  const [remember, setRemember] = useState(true);
+  const [prefix, setPrefix] = useState<string[]>([]);
+  const isIn = item.parsedItem.type === "RECEITA";
+  const mKey = item.merchantKey;
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  function splitPath(v: string) {
+    return v.split(">").map((p) => p.trim()).filter(Boolean);
+  }
+
+  const normalizedOptions = useMemo(
+    () =>
+      Array.from(new Set(categories))
+        .map((v) => ({ value: v, parts: splitPath(v) }))
+        .filter((o) => o.parts.length > 0)
+        .sort((a, b) => a.value.localeCompare(b.value)),
+    [categories],
+  );
+
+  const visibleOptions = useMemo(() => {
+    const nextLevel = prefix.length + 1;
+    return normalizedOptions.filter((o) => {
+      if (o.parts.length !== nextLevel) return false;
+      return prefix.every((p, i) => o.parts[i] === p);
+    });
+  }, [normalizedOptions, prefix]);
+
+  function hasChildren(parts: string[]): boolean {
+    return normalizedOptions.some((o) => {
+      if (o.parts.length <= parts.length) return false;
+      return parts.every((p, i) => o.parts[i] === p);
+    });
+  }
+
+  const selLeaf = sel ? splitPath(sel).at(-1) ?? sel : "";
+
+  return createPortal(
+    <div className="import-sheet-scrim" onClick={onClose}>
+      <div className="import-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="import-sheet-handle" />
+
+        <div className="import-sheet-head">
+          <div className={`h-ic ${isIn ? "in" : "out"}`}>
+            {isIn ? <ArrowUpIcon /> : <ArrowDownIcon />}
+          </div>
+          <div className="h-info">
+            <span className="kick">{item.dateLabel}</span>
+            <strong>{item.parsedItem.title}</strong>
+          </div>
+          <span className={`h-amt ${isIn ? "in" : "out"}`}>
+            {isIn ? "+" : "−"}{brl(item.parsedItem.amountCents)}
+          </span>
+        </div>
+
+        <div className="import-sheet-section-label" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingRight: 18 }}>
+          <span>{prefix.length > 0 ? `Dentro de ${prefix.at(-1)}` : "Categoria deste lançamento"}</span>
+          {prefix.length > 0 && (
+            <button
+              type="button"
+              className="import-sheet-back"
+              onClick={() => setPrefix((p) => p.slice(0, -1))}
+            >
+              ← Voltar
+            </button>
+          )}
+        </div>
+
+        <div className="import-catlist">
+          {visibleOptions.map((opt) => {
+            const leaf = !hasChildren(opt.parts);
+            const name = opt.parts.at(-1) ?? opt.value;
+            const selected = sel === opt.value;
+            const isLearned = memory[mKey] === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                className={`import-catrow${selected ? " is-selected" : ""}`}
+                onClick={() => {
+                  if (!leaf) { setPrefix(opt.parts); return; }
+                  setSel(opt.value);
+                }}
+              >
+                <div className="cr-dot" style={{ background: catDotColor(name) + "22" }}>
+                  <i style={{ background: catDotColor(name) }} />
+                </div>
+                <div className="cr-name">
+                  <strong>{name}</strong>
+                  {!leaf && <span style={{ fontSize: 11, color: "var(--text-3)", marginTop: 1 }}>Toque para ver subcategorias</span>}
+                </div>
+                {isLearned && leaf && <span className="cr-badge">memorizado</span>}
+                {leaf
+                  ? <div className="cr-pick"><CheckIcon /></div>
+                  : <span className="cr-chevron">›</span>
+                }
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          className="import-remember"
+          onClick={() => setRemember((r) => !r)}
+        >
+          <div className="rm-ic"><SparkIcon /></div>
+          <div className="rm-txt">
+            <strong>Lembrar dessa escolha</strong>
+            <span>
+              Toda compra em <b>{mKey || item.parsedItem.title.slice(0, 20)}</b> vira{" "}
+              <b>{selLeaf || "…"}</b> automaticamente nos próximos meses.
+            </span>
+          </div>
+          <div className={`import-switch${remember ? " on" : ""}`}><i /></div>
+        </div>
+
+        <div className="import-sheet-foot">
+          <button
+            type="button"
+            className="ix-btn-primary"
+            disabled={!sel}
+            style={{ opacity: sel ? 1 : 0.5 }}
+            onClick={() => onSave(sel, remember)}
+          >
+            <CheckIcon />
+            Salvar categoria
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -503,7 +753,6 @@ function StepReview({
   dupItems,
   defaultStatus,
   applyAll,
-  toggleStatus,
   dupAction,
   filterFrom,
   filterTo,
@@ -511,13 +760,16 @@ function StepReview({
   rangeTo,
   setFilterFrom,
   setFilterTo,
+  incomeCategories,
+  expenseCategories,
+  memory,
+  onSetCat,
 }: {
   fileInfo: FileInfo;
   newItems: ReviewNewItem[];
   dupItems: ReviewDupItem[];
   defaultStatus: FinanceStatus;
   applyAll: (status: FinanceStatus) => void;
-  toggleStatus: (id: string) => void;
   dupAction: (id: string, action: "skip" | "keep" | "update") => void;
   filterFrom: string;
   filterTo: string;
@@ -525,7 +777,33 @@ function StepReview({
   rangeTo: string;
   setFilterFrom: (v: string) => void;
   setFilterTo: (v: string) => void;
+  incomeCategories: string[];
+  expenseCategories: string[];
+  memory: Record<string, string>;
+  onSetCat: (id: string, cat: string, mKey: string, remember: boolean) => void;
 }) {
+  const [editing, setEditing] = useState<ReviewNewItem | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function flash(msg: string) {
+    setToast(msg);
+    if (toastRef.current) clearTimeout(toastRef.current);
+    toastRef.current = setTimeout(() => setToast(null), 3200);
+  }
+
+  function handleSave(cat: string, remember: boolean) {
+    if (!editing) return;
+    onSetCat(editing.parsedItem.id, cat, editing.merchantKey, remember);
+    setEditing(null);
+    if (remember) {
+      const n = newItems.filter((i) => i.merchantKey === editing.merchantKey).length;
+      flash(`${cat} aplicada${n > 1 ? ` a ${n} lançamentos de "${editing.merchantKey}"` : ""} — memorizada p/ os próximos meses.`);
+    } else {
+      flash(`Categoria ${cat} definida neste lançamento.`);
+    }
+  }
+
   const included = newItems.filter((i) => i.included).length;
   const toUpdate = dupItems.filter((d) => d.action === "update").length;
   const isFiltered = filterFrom !== rangeFrom || filterTo !== rangeTo;
@@ -538,12 +816,18 @@ function StepReview({
       </div>
 
       <div className="ix-bankbar">
-        <div className="ix-bank-ic">{fileInfo.bankInitial}</div>
-        <div className="ix-bank-info">
-          <strong>{fileInfo.bank}</strong>
-          <span>{fileInfo.account}{fileInfo.period ? ` · ${fileInfo.period}` : ""}</span>
+        <div className="ix-bankbar-top">
+          <div className="ix-bank-ic">{fileInfo.bankInitial}</div>
+          <div className="ix-bank-info">
+            <strong>{fileInfo.bank}</strong>
+            <span>{fileInfo.account}</span>
+          </div>
+          {fileInfo.period && <span className="ix-bank-period">{fileInfo.period}</span>}
         </div>
-        <span className="ix-bank-file">{fileInfo.fileName}</span>
+        <div className="ix-bank-file-row">
+          <DocIcon />
+          <span>{fileInfo.fileName}</span>
+        </div>
       </div>
 
       <div className="ix-datefilter">
@@ -592,11 +876,9 @@ function StepReview({
         <span className="ix-chip new">
           <span className="dot" />{newItems.length} novos
         </span>
-        {dupItems.length > 0 && (
-          <span className="ix-chip dup">
-            <span className="dot" />{dupItems.length} já existem
-          </span>
-        )}
+        <span className="ix-chip learned">
+          <span className="dot" />{newItems.filter(i => i.catSource === "learned").length} memorizados
+        </span>
       </div>
 
       {newItems.length > 0 && (
@@ -630,7 +912,11 @@ function StepReview({
           </div>
           <div className="ix-stagger">
             {newItems.map((i) => (
-              <TxnRow key={i.parsedItem.id} item={i} onToggleStatus={toggleStatus} />
+              <TxnRow
+                key={i.parsedItem.id}
+                item={i}
+                onOpen={setEditing}
+              />
             ))}
           </div>
         </>
@@ -652,6 +938,24 @@ function StepReview({
             ))}
           </div>
         </>
+      )}
+
+      {editing && (
+        <CategorySheet
+          item={editing}
+          categories={editing.parsedItem.type === "RECEITA" ? incomeCategories : expenseCategories}
+          memory={memory}
+          onClose={() => setEditing(null)}
+          onSave={handleSave}
+        />
+      )}
+
+      {toast && createPortal(
+        <div className="import-toast">
+          <div className="t-ic"><CheckIcon /></div>
+          <div className="t-txt">{toast}</div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -765,6 +1069,7 @@ export default function ImportOfx() {
   const [importResult, setImportResult] = useState<ImportResult>({ added: 0, updated: 0, skipped: 0 });
   const [ledgerBal, setLedgerBal] = useState<LedgerBal | null>(null);
   const [adjustInfo, setAdjustInfo] = useState<{ bankCents: number; appCents: number; dateISO: string } | null>(null);
+  const [catMemory, setCatMemory] = useState<Record<string, string>>(loadCatMemory);
 
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
@@ -899,9 +1204,20 @@ export default function ImportOfx() {
           });
         } else {
           const fi = toFinanceItem(p, categories);
+          const mKey = extractMerchantKey(p.title);
+          const mem = loadCatMemory();
+          const memorized = mem[mKey];
+          const catSource: "auto" | "learned" | "none" = memorized
+            ? "learned"
+            : fi.category && fi.category !== "Outros"
+              ? "auto"
+              : "none";
+          const cat = memorized ?? (catSource === "auto" ? fi.category : "");
           newList.push({
             parsedItem: p,
-            cat: fi.category,
+            cat,
+            catSource,
+            merchantKey: mKey,
             dateLabel: fmtDate(p.dateISO),
             status: defaultStatus,
             included: true,
@@ -948,15 +1264,7 @@ export default function ImportOfx() {
     setStep("reading");
   }
 
-  function toggleStatus(id: string) {
-    setNewItems((arr) =>
-      arr.map((i) =>
-        i.parsedItem.id === id
-          ? { ...i, status: i.status === "paid" ? "pending" : "paid" }
-          : i,
-      ),
-    );
-  }
+
 
   function applyAll(status: FinanceStatus) {
     setDefaultStatus(status);
@@ -965,6 +1273,21 @@ export default function ImportOfx() {
 
   function setDupAction(id: string, action: "skip" | "keep" | "update") {
     setDupItems((arr) => arr.map((d) => (d.parsedItem.id === id ? { ...d, action } : d)));
+  }
+
+  function handleSetCat(id: string, cat: string, mKey: string, remember: boolean) {
+    setNewItems((arr) =>
+      arr.map((i) => {
+        if (i.parsedItem.id === id) return { ...i, cat, catSource: remember ? "learned" as const : "auto" as const };
+        if (remember && i.merchantKey === mKey) return { ...i, cat, catSource: "learned" as const };
+        return i;
+      }),
+    );
+    if (remember) {
+      const next = { ...catMemory, [mKey]: cat };
+      setCatMemory(next);
+      saveCatMemory(next);
+    }
   }
 
   function confirmImport() {
@@ -984,8 +1307,9 @@ export default function ImportOfx() {
 
     for (const item of filteredNew) {
       if (!item.included) continue;
-      const fi = { ...toFinanceItem(item.parsedItem, categories), status: item.status };
-      financeAdd(fi);
+      const fi = toFinanceItem(item.parsedItem, categories);
+      const finalCat = item.cat || fi.category;
+      financeAdd({ ...fi, category: finalCat, status: item.status });
     }
 
     for (const dup of filteredDup) {
@@ -1104,7 +1428,6 @@ export default function ImportOfx() {
           dupItems={filteredDup}
           defaultStatus={defaultStatus}
           applyAll={applyAll}
-          toggleStatus={toggleStatus}
           dupAction={setDupAction}
           filterFrom={filterFrom}
           filterTo={filterTo}
@@ -1112,6 +1435,10 @@ export default function ImportOfx() {
           rangeTo={rangeTo}
           setFilterFrom={setFilterFrom}
           setFilterTo={setFilterTo}
+          incomeCategories={incomeCategories}
+          expenseCategories={expenseCategories}
+          memory={catMemory}
+          onSetCat={handleSetCat}
         />
       )}
 
