@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
-import type { BankAccount } from "../types/finance";
+import type { BankAccount, FinanceItem } from "../types/finance";
+import { financeList, financeRefreshFromApi, financeSubscribe } from "../lib/financeService";
 import {
   listBankAccounts,
   createBankAccount,
@@ -32,8 +33,57 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
 }) {
   const b = brandOf(account.bank);
   const face = brandFace(account.bank, account.face);
-  const [reconciled, setReconciled] = useState(false);
   const [catFilter, setCatFilter] = useState("Tudo");
+  const [allItems, setAllItems] = useState<FinanceItem[]>(() => financeList());
+
+  useEffect(() => {
+    void financeRefreshFromApi().then(setAllItems).catch(() => undefined);
+    return financeSubscribe(() => setAllItems(financeList()));
+  }, []);
+
+  const items = useMemo(
+    () => allItems.filter(i => i.accountId === account.id),
+    [allItems, account.id],
+  );
+
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthItems = useMemo(() => items.filter(i => i.dateISO.startsWith(monthKey)), [items, monthKey]);
+
+  const receitasCents = useMemo(() => monthItems.filter(i => i.type === "RECEITA").reduce((s, i) => s + i.amountCents, 0), [monthItems]);
+  const despesasCents = useMemo(() => monthItems.filter(i => i.type === "DESPESA").reduce((s, i) => s + i.amountCents, 0), [monthItems]);
+
+  // Weekly bars: 4 semanas do mês atual
+  const weeks = useMemo(() => {
+    const ws = [0, 1, 2, 3].map(() => ({ rec: 0, des: 0 }));
+    for (const item of monthItems) {
+      const day = Number(item.dateISO.slice(8, 10));
+      const wk = Math.min(3, Math.floor((day - 1) / 7));
+      if (item.type === "RECEITA") ws[wk].rec += item.amountCents;
+      else ws[wk].des += item.amountCents;
+    }
+    return ws;
+  }, [monthItems]);
+
+  const maxW = useMemo(() => Math.max(1, ...weeks.flatMap(w => [w.rec, w.des])), [weeks]);
+
+  const categories = useMemo(() => {
+    const cats = new Set(items.map(i => i.category.split(">")[0].trim()));
+    return ["Tudo", ...Array.from(cats)];
+  }, [items]);
+
+  const filtered = useMemo(() => {
+    const base = catFilter === "Tudo" ? items : items.filter(i => i.category.split(">")[0].trim() === catFilter);
+    return [...base].sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+  }, [items, catFilter]);
+
+  const monthNames = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  const monthLabel = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+
+  function fmtDate(iso: string) {
+    const [, m, d] = iso.split("-");
+    return `${Number(d)} ${monthNames[Number(m) - 1]}`;
+  }
 
   return (
     <div className="cc-detail">
@@ -62,14 +112,14 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
               <svg viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>
               <div style={{ display: "grid", gap: 1 }}>
                 <small style={{ color: "#86efac", fontSize: 11, fontWeight: 700 }}>Receitas</small>
-                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
+                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>{fmtBRL(receitasCents)}</strong>
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
               <svg viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true"><path d="M12 5v14M12 19l6-6M12 19l-6-6"/></svg>
               <div style={{ display: "grid", gap: 1 }}>
                 <small style={{ color: "#fca5a5", fontSize: 11, fontWeight: 700 }}>Despesas</small>
-                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
+                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>{fmtBRL(despesasCents)}</strong>
               </div>
             </div>
           </div>
@@ -95,7 +145,7 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
         <div style={{ padding: "14px 20px 0" }}>
           <div style={{ borderRadius: 18, border: "1px solid rgba(148,163,184,0.1)", background: "rgba(30,41,59,0.5)", padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <span style={{ color: "#F1F5F9", fontWeight: 800, fontSize: 14, fontFamily: "Manrope, system-ui" }}>Movimento de junho</span>
+              <span style={{ color: "#F1F5F9", fontWeight: 800, fontSize: 14, fontFamily: "Manrope, system-ui" }}>Movimento de {monthLabel}</span>
               <div style={{ display: "flex", gap: 12 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#94A3B8", fontSize: 11, fontWeight: 700 }}>
                   <span style={{ width: 9, height: 9, borderRadius: 3, background: "#22C55E", display: "inline-block" }} />Entr.
@@ -106,15 +156,19 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-around", height: 96, gap: 14 }}>
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} style={{ display: "grid", justifyItems: "center", gap: 6, flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 76 }}>
-                    <div style={{ width: 13, height: 4, borderRadius: "4px 4px 0 0", background: "linear-gradient(180deg,#4ADE80,#16A34A)", opacity: 0.35 }} />
-                    <div style={{ width: 13, height: 4, borderRadius: "4px 4px 0 0", background: "linear-gradient(180deg,#F87171,#DC2626)", opacity: 0.35 }} />
+              {weeks.map((w, i) => {
+                const rh = Math.max(4, Math.round((w.rec / maxW) * 76));
+                const dh = Math.max(4, Math.round((w.des / maxW) * 76));
+                return (
+                  <div key={i} style={{ display: "grid", justifyItems: "center", gap: 6, flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 76 }}>
+                      <div style={{ width: 13, height: rh, borderRadius: "4px 4px 0 0", background: "linear-gradient(180deg,#4ADE80,#16A34A)", opacity: w.rec > 0 ? 1 : 0.2 }} />
+                      <div style={{ width: 13, height: dh, borderRadius: "4px 4px 0 0", background: "linear-gradient(180deg,#F87171,#DC2626)", opacity: w.des > 0 ? 1 : 0.2 }} />
+                    </div>
+                    <span style={{ color: "#64748B", fontSize: 10.5, fontWeight: 700 }}>S{i + 1}</span>
                   </div>
-                  <span style={{ color: "#64748B", fontSize: 10.5, fontWeight: 700 }}>S{i + 1}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -122,51 +176,65 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
         {/* Movimentações section */}
         <div style={{ padding: "14px 20px 24px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 2px 10px" }}>
-            <h3 style={{ fontFamily: "Space Grotesk, system-ui", fontWeight: 700, fontSize: 17, color: "#F1F5F9", margin: 0 }}>Movimentações</h3>
-            <button
-              type="button"
-              onClick={() => setReconciled(r => !r)}
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 5,
-                border: reconciled ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(96,165,250,0.3)",
-                background: reconciled ? "rgba(34,197,94,0.14)" : "rgba(59,130,246,0.14)",
-                color: reconciled ? "#4ADE80" : "#bfdbfe",
-                fontWeight: 800, fontSize: 12, cursor: "pointer",
-                padding: "6px 11px", borderRadius: 999, fontFamily: "Manrope, system-ui",
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" width={13} height={13} aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
-              {reconciled ? "Conciliado" : "Conciliar"}
-            </button>
+            <h3 style={{ fontFamily: "Space Grotesk, system-ui", fontWeight: 700, fontSize: 17, color: "#F1F5F9", margin: 0 }}>
+              Movimentações <span style={{ color: "#64748B", fontSize: 13, fontWeight: 600 }}>({items.length})</span>
+            </h3>
           </div>
 
           {/* Category filter chips */}
-          <div style={{ display: "flex", gap: 7, overflowX: "auto", margin: "0 -2px 8px", padding: "0 2px 6px", scrollbarWidth: "none" }}>
-            {["Tudo"].map(c => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCatFilter(c)}
-                style={{
+          {categories.length > 1 && (
+            <div style={{ display: "flex", gap: 7, overflowX: "auto", margin: "0 -2px 10px", padding: "0 2px 6px", scrollbarWidth: "none" }}>
+              {categories.map(c => (
+                <button key={c} type="button" onClick={() => setCatFilter(c)} style={{
                   flexShrink: 0, padding: "7px 13px", borderRadius: 999, cursor: "pointer",
                   fontFamily: "Manrope, system-ui", fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap",
                   border: catFilter === c ? "1px solid rgba(96,165,250,0.4)" : "1px solid rgba(148,163,184,0.16)",
                   background: catFilter === c ? "rgba(59,130,246,0.16)" : "rgba(15,23,42,0.5)",
                   color: catFilter === c ? "#bfdbfe" : "#94A3B8",
-                }}
-              >{c}</button>
-            ))}
-          </div>
+                }}>{c}</button>
+              ))}
+            </div>
+          )}
 
-          {/* Empty state */}
-          <div style={{ display: "grid", placeItems: "center", textAlign: "center", padding: "32px 0 8px", gap: 12 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={32} height={32} aria-hidden="true">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
-            </svg>
-            <p style={{ color: "#64748B", fontSize: 13, fontWeight: 600, maxWidth: 260, lineHeight: 1.5, margin: 0 }}>
-              Importe um extrato OFX para ver as movimentações desta conta.
-            </p>
-          </div>
+          {filtered.length === 0 ? (
+            <div style={{ display: "grid", placeItems: "center", textAlign: "center", padding: "32px 0 8px", gap: 12 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={32} height={32} aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              <p style={{ color: "#64748B", fontSize: 13, fontWeight: 600, maxWidth: 260, lineHeight: 1.5, margin: 0 }}>
+                Nenhuma movimentação vinculada a esta conta ainda.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 1 }}>
+              {filtered.map(item => {
+                const isIn = item.type === "RECEITA";
+                return (
+                  <div key={item.id} style={{
+                    display: "flex", alignItems: "center", gap: 12, padding: "12px 4px",
+                    borderBottom: "1px solid rgba(148,163,184,0.07)",
+                  }}>
+                    <span style={{
+                      width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                      background: isIn ? "rgba(34,197,94,0.14)" : "rgba(239,68,68,0.13)",
+                      display: "grid", placeItems: "center",
+                    }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke={isIn ? "#4ADE80" : "#F87171"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={15} height={15} aria-hidden="true">
+                        {isIn ? <><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></> : <><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></>}
+                      </svg>
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ color: "#F1F5F9", fontWeight: 700, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.title}</div>
+                      <div style={{ color: "#64748B", fontSize: 11.5, fontWeight: 600 }}>{item.category} · {fmtDate(item.dateISO)}</div>
+                    </div>
+                    <strong style={{ color: isIn ? "#4ADE80" : "#F87171", fontWeight: 800, fontSize: 14.5, fontFamily: "Space Grotesk, system-ui", flexShrink: 0 }}>
+                      {isIn ? "+" : "−"}{fmtBRL(item.amountCents)}
+                    </strong>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>
