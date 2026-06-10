@@ -3,8 +3,16 @@ import { apiUrl } from "./api";
 
 const BASE = apiUrl("/api/bank-accounts");
 
+function getToken(): string | null {
+  return (
+    localStorage.getItem("conciliaai_token") ??
+    localStorage.getItem("auth_token") ??
+    localStorage.getItem("token")
+  );
+}
+
 function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem("auth_token");
+  const token = getToken();
   return token ? { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } : { "Content-Type": "application/json" };
 }
 
