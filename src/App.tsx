@@ -21,6 +21,7 @@ import ImportOfx from "./pages/ImportOfx";
 import Groups from "./pages/Groups"; // Página de grupos (Splitwise)
 import Relatorios from "./pages/Relatorios";
 import Perfil from "./pages/Perfil";
+import AdminSugestoes from "./pages/AdminSugestoes";
 
 type AnimatedPageProps = {
   children: ReactNode; // Conteúdo da página
@@ -199,6 +200,16 @@ export default function App() {
                 <Perfil />
               </AnimatedPage>
             </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Admin */}
+      <Route
+        path="/admin/sugestoes"
+        element={
+          <ProtectedRoute>
+            <AdminSugestoes />
           </ProtectedRoute>
         }
       />

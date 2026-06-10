@@ -238,6 +238,11 @@ export default function Perfil() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  const [suggestionText, setSuggestionText] = useState("");
+  const [suggestionSending, setSuggestionSending] = useState(false);
+  const [suggestionSent, setSuggestionSent] = useState(false);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -667,6 +672,87 @@ export default function Perfil() {
           label="Política de Privacidade"
           onClick={() => window.open("https://site-conciliaai.vercel.app/politica-de-privacidade.html", "_blank", "noopener")}
         />
+      </div>
+
+      {/* ── Sugestões ── */}
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "1.4px", textTransform: "uppercase", color: "#64748b", margin: "24px 4px 11px" }}>
+        Sugestões
+      </div>
+      <div
+        style={{
+          borderRadius: 20, padding: 18,
+          background: "rgba(30,41,59,0.45)",
+          border: "1px solid rgba(148,163,184,0.13)",
+        }}
+      >
+        <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.5, margin: "0 0 14px" }}>
+          Tem uma ideia ou melhoria? Conta pra gente — toda sugestão é lida com atenção.
+        </p>
+        {suggestionSent ? (
+          <div style={{
+            padding: "14px 16px", borderRadius: 14,
+            background: "rgba(34,197,94,0.1)", border: "1px solid rgba(74,222,128,0.25)",
+            color: "#4ade80", fontSize: 13.5, fontWeight: 700, textAlign: "center",
+          }}>
+            Sugestão enviada! Obrigado 🙏
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={suggestionText}
+              onChange={(e) => setSuggestionText(e.target.value)}
+              placeholder="Escreva sua sugestão aqui..."
+              rows={4}
+              style={{
+                width: "100%", padding: "12px 14px", borderRadius: 14,
+                background: "rgba(15,23,42,0.7)",
+                border: "1px solid rgba(148,163,184,0.18)",
+                color: "#f1f5f9", fontSize: 13.5, lineHeight: 1.5,
+                resize: "none", outline: "none", boxSizing: "border-box",
+                fontFamily: "inherit",
+              }}
+            />
+            {suggestionError && (
+              <div style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>{suggestionError}</div>
+            )}
+            <button
+              type="button"
+              disabled={suggestionSending || suggestionText.trim().length < 5}
+              onClick={async () => {
+                const token = localStorage.getItem("token");
+                if (!token) return;
+                setSuggestionSending(true);
+                setSuggestionError(null);
+                try {
+                  const res = await fetch(apiUrl("/api/suggestions"), {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ text: suggestionText.trim() }),
+                  });
+                  if (!res.ok) throw new Error("Erro ao enviar");
+                  setSuggestionSent(true);
+                  setSuggestionText("");
+                } catch {
+                  setSuggestionError("Não foi possível enviar. Tente novamente.");
+                } finally {
+                  setSuggestionSending(false);
+                }
+              }}
+              style={{
+                marginTop: 12, width: "100%", padding: "13px", borderRadius: 14, border: 0,
+                background: suggestionText.trim().length >= 5
+                  ? "linear-gradient(135deg, #60a5fa, #2563eb)"
+                  : "rgba(148,163,184,0.1)",
+                color: suggestionText.trim().length >= 5 ? "#fff" : "#64748b",
+                fontSize: 14, fontWeight: 800,
+                cursor: suggestionText.trim().length >= 5 ? "pointer" : "not-allowed",
+                transition: "background .2s",
+              }}
+            >
+              {suggestionSending ? "Enviando..." : "Enviar sugestão"}
+            </button>
+          </>
+        )}
       </div>
 
       {/* footer */}
