@@ -4,7 +4,9 @@ import { createPortal } from "react-dom";
 import { financeAdd, financeFlushRecent, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate, makeId } from "../lib/financeService";
 import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { parseBankFile, toFinanceItem, type OfxParsedItem, type LedgerBal } from "../lib/ofxImport";
-import type { FinanceItem, FinanceStatus } from "../types/finance";
+import { adjustBankAccountBalance } from "../lib/bankAccountsService";
+import BankAccountChips from "../components/BankAccountChips";
+import type { BankAccount, FinanceItem, FinanceStatus } from "../types/finance";
 
 import "./import-extrato.css";
 
@@ -377,11 +379,15 @@ function StatusChoice({ value, onChange }: { value: FinanceStatus; onChange: (v:
 function StepSelect({
   defaultStatus,
   setDefaultStatus,
+  selectedAccount,
+  onAccountChange,
   onPick,
   onDemo,
 }: {
   defaultStatus: FinanceStatus;
   setDefaultStatus: (v: FinanceStatus) => void;
+  selectedAccount: BankAccount | null;
+  onAccountChange: (a: BankAccount | null) => void;
   onPick: (file: File) => void;
   onDemo: () => void;
 }) {
@@ -437,6 +443,14 @@ function StepSelect({
       </button>
 
       <div className="ix-card" style={{ marginTop: 22 }}>
+        <div className="ix-field-label" style={{ marginBottom: 8 }}>
+          Jogar os lançamentos em qual conta?
+          <span className="ix-hint">opcional — vincula ao saldo do banco</span>
+        </div>
+        <BankAccountChips selectedId={selectedAccount?.id ?? null} onChange={onAccountChange} />
+      </div>
+
+      <div className="ix-card" style={{ marginTop: 14 }}>
         <div className="ix-field-label">
           Como lançar este extrato?
           <span className="ix-hint">padrão — dá pra ajustar item a item depois</span>
@@ -1058,6 +1072,7 @@ function StepDone({ result, onRestart }: { result: ImportResult; onRestart: () =
 
 export default function ImportOfx() {
   const [step, setStep] = useState<WizardStep>("select");
+  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<FinanceStatus>("paid");
@@ -1305,11 +1320,20 @@ export default function ImportOfx() {
       expense: expenseCategories.length > 0 ? expenseCategories : ["Outros"],
     };
 
+    let balanceDelta = 0;
     for (const item of filteredNew) {
       if (!item.included) continue;
       const fi = toFinanceItem(item.parsedItem, categories);
       const finalCat = item.cat || fi.category;
-      financeAdd({ ...fi, category: finalCat, status: item.status });
+      financeAdd({
+        ...fi,
+        category: finalCat,
+        status: item.status,
+        ...(selectedAccount ? { accountId: selectedAccount.id } : {}),
+      });
+      if (selectedAccount) {
+        balanceDelta += fi.type === "RECEITA" ? fi.amountCents : -fi.amountCents;
+      }
     }
 
     for (const dup of filteredDup) {
@@ -1326,6 +1350,10 @@ export default function ImportOfx() {
     const updated = filteredDup.filter((d) => d.action === "update").length;
     const skipped = filteredDup.filter((d) => d.action === "skip").length;
     setImportResult({ added, updated, skipped });
+
+    if (selectedAccount && balanceDelta !== 0) {
+      void adjustBankAccountBalance(selectedAccount, balanceDelta).catch(() => undefined);
+    }
 
     // Check if OFX had a LEDGERBAL to offer balance adjustment
     if (ledgerBal) {
@@ -1408,6 +1436,8 @@ export default function ImportOfx() {
         <StepSelect
           defaultStatus={defaultStatus}
           setDefaultStatus={setDefaultStatus}
+          selectedAccount={selectedAccount}
+          onAccountChange={setSelectedAccount}
           onPick={pickFile}
           onDemo={startDemo}
         />
