@@ -99,6 +99,7 @@ function normalizeApiItem(raw: any): FinanceItem {
     createdAtISO: createdAtISO,
     paymentType: raw?.paymentType ?? "pix",
     status: raw?.status ?? "paid",
+    ...(raw?.accountId ? { accountId: raw.accountId } : {}),
     ...(raw?.recurringGroupId ? {
       recurringGroupId: raw.recurringGroupId,
       recurringKind: raw.recurringKind ?? undefined,
@@ -366,6 +367,12 @@ function removeById(list: FinanceItem[], id: string): FinanceItem[] {
   return list.filter((x) => x.id !== id); // Remove id
 }
 
+function mergeAccountIds(fromApi: FinanceItem[], local: FinanceItem[]): FinanceItem[] {
+  const map = new Map(local.filter(i => i.accountId).map(i => [i.id, i.accountId!]));
+  if (map.size === 0) return fromApi;
+  return fromApi.map(i => map.has(i.id) ? { ...i, accountId: map.get(i.id) } : i);
+}
+
 function mergePendingLocalItems(fromApi: FinanceItem[]): FinanceItem[] {
   const hasPending = pendingLocalItemIds.size > 0;
   const hasRecent = recentlyAddedIds.size > 0;
@@ -414,7 +421,7 @@ export function financeList(): FinanceItem[] {
   // âœ… Faz 1 sync em background (sem travar UI)
   void safe(
     async () => {
-      const fromApi = mergePendingLocalItems(await activeProvider.list()); // Busca na API
+      const fromApi = mergeAccountIds(mergePendingLocalItems(await activeProvider.list()), getCache()); // Busca na API, preserva accountId local
 
       // âœ… SÃ³ grava se mudou (evita evento Ã  toa)
       const a = JSON.stringify(fromApi); // API
@@ -505,9 +512,12 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
         // O backend sempre gera um UUID próprio, então created.id !== tempId.
         // upsertById adicionaria no final se não encontrar — colocamos na frente
         // para manter a posição original (novo lançamento sempre aparece no topo).
-        const next = created.id === tempId
-          ? upsertById(withoutTemp, created)
-          : [created, ...withoutTemp];
+        const createdWithAccount = tempItem.accountId
+          ? { ...created, accountId: tempItem.accountId }
+          : created;
+        const next = createdWithAccount.id === tempId
+          ? upsertById(withoutTemp, createdWithAccount)
+          : [createdWithAccount, ...withoutTemp];
 
         saveItemsStorage(next); // Sincroniza local (dispara evento interno)
         setCache(next); // Atualiza cache
