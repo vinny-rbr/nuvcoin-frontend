@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { BankAccount, FinanceItem } from "../types/finance";
-import { financeList, financeRefreshFromApi, financeSubscribe, acctMapClearByAccountId } from "../lib/financeService";
+import { financeList, financeRefreshFromApi, financeSubscribe, acctMapClearByAccountId, loadAcctMapPublic } from "../lib/financeService";
 import {
   listBankAccounts,
   createBankAccount,
@@ -35,18 +35,24 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
   const face = brandFace(account.bank, account.face);
   const [catFilter, setCatFilter] = useState("Tudo");
   const [allItems, setAllItems] = useState<FinanceItem[]>(() => financeList());
+  const [acctMap, setAcctMap] = useState<Record<string, string>>(() => loadAcctMapPublic());
 
   useEffect(() => {
-    setAllItems(financeList());
-    // financeRefreshFromApi não seta lastWriteFromApiAt, então o subscribe
-    // não é bloqueado pelo anti-rebote e chama setAllItems com dados frescos da API
-    void financeRefreshFromApi().then(setAllItems).catch(() => undefined);
-    return financeSubscribe(() => setAllItems(financeList()));
+    let mounted = true;
+    void financeRefreshFromApi()
+      .then(items => { if (mounted) { setAllItems(items); setAcctMap(loadAcctMapPublic()); } })
+      .catch(() => undefined);
+    const unsub = financeSubscribe(() => {
+      if (mounted) { setAllItems(financeList()); setAcctMap(loadAcctMapPublic()); }
+    });
+    return () => { mounted = false; unsub(); };
   }, []);
 
+  // Filtra usando o campo accountId OU o mapa persistente (acctMap[item.id])
+  // Isso garante que itens apareçam mesmo que o campo tenha sido perdido em um sync
   const items = useMemo(
-    () => allItems.filter(i => i.accountId === account.id),
-    [allItems, account.id],
+    () => allItems.filter(i => i.accountId === account.id || acctMap[i.id] === account.id),
+    [allItems, account.id, acctMap],
   );
 
   const now = new Date();

@@ -358,6 +358,10 @@ function acctMapRemove(itemId: string): void {
 }
 
 // Remove all mappings pointing to a given bankAccountId and strips accountId from those finance items
+export function loadAcctMapPublic(): Record<string, string> {
+  return loadAcctMap();
+}
+
 export function acctMapClearByAccountId(bankAccountId: string): void {
   const m = loadAcctMap();
   const idsToRemove = Object.keys(m).filter(k => m[k] === bankAccountId);
