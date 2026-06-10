@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { BankAccount, FinanceItem } from "../types/finance";
-import { financeList, financeRefreshFromApi, financeSubscribe } from "../lib/financeService";
+import { financeList, financeSubscribe } from "../lib/financeService";
 import {
   listBankAccounts,
   createBankAccount,
@@ -37,7 +37,8 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
   const [allItems, setAllItems] = useState<FinanceItem[]>(() => financeList());
 
   useEffect(() => {
-    void financeRefreshFromApi().then(setAllItems).catch(() => undefined);
+    // Lê do cache local (que tem accountId) e subscreve a mudanças
+    setAllItems(financeList());
     return financeSubscribe(() => setAllItems(financeList()));
   }, []);
 

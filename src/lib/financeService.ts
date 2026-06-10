@@ -1,4 +1,4 @@
-﻿import type { FinanceItem } from "../types/finance"; // Tipos do app
+import type { FinanceItem } from "../types/finance"; // Tipos do app
 import { apiUrl } from "./api";
 import { persistSubscriptionState } from "./auth";
 
@@ -326,6 +326,37 @@ async function safe<T>(fn: () => Promise<T>, fallback: () => Promise<T>): Promis
 
 let inMemoryCache: FinanceItem[] | null = null; // Cache em memÃ³ria
 let activeCacheStorageKey = getFinanceStorageKey();
+// =============================
+// PERSISTENT ACCOUNT-ID MAP
+// Maps financeItem.id -> bankAccount.id, survives API refreshes and sessions
+// =============================
+
+function getAcctMapKey(): string {
+  return `conciliaai_acct_ids_v1:${getFinanceStorageKey()}`;
+}
+
+function loadAcctMap(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(getAcctMapKey()) ?? "{}") as Record<string, string>; }
+  catch { return {}; }
+}
+
+function saveAcctMap(map: Record<string, string>): void {
+  localStorage.setItem(getAcctMapKey(), JSON.stringify(map));
+}
+
+function acctMapSet(itemId: string, accountId: string): void {
+  const m = loadAcctMap(); m[itemId] = accountId; saveAcctMap(m);
+}
+
+function acctMapReplace(oldId: string, newId: string): void {
+  const m = loadAcctMap();
+  if (m[oldId]) { m[newId] = m[oldId]; delete m[oldId]; saveAcctMap(m); }
+}
+
+function acctMapRemove(itemId: string): void {
+  const m = loadAcctMap(); delete m[itemId]; saveAcctMap(m);
+}
+
 
 function ensureUserScopedCache(): void {
   const currentStorageKey = getFinanceStorageKey();
@@ -493,6 +524,7 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
   const updatedLocal = [tempItem, ...getCache()]; // Atualiza primeiro em memoria
   setCache(updatedLocal); // Garante que o evento abaixo ja leia a lista nova
   saveItemsStorage(updatedLocal); // Salva no local e notifica telas
+  if (tempItem.accountId) acctMapSet(tempItem.id, tempItem.accountId);
   recentlyAddedIds.add(tempItem.id); // Pina imediatamente no topo até flush explícito
 
   if (USE_API) {
@@ -505,6 +537,7 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
         pendingLocalItemIds.delete(tempId);
         recentlyAddedIds.delete(tempId);
         recentlyAddedIds.add(created.id); // troca tempId pelo id real
+        acctMapReplace(tempId, created.id);
 
         // Substitui o item temporário pelo item real do backend
         const current = getCache(); // Cache atual
@@ -558,6 +591,7 @@ export function financeRemove(id: string): FinanceItem[] {
   const updatedLocal = removeById(getCache(), id); // Remove primeiro em memoria
   setCache(updatedLocal); // Garante que o evento abaixo ja leia a lista nova
   saveItemsStorage(updatedLocal); // Salva no local e notifica telas
+  acctMapRemove(id);
 
   if (USE_API) {
     void safe(
