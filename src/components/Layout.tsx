@@ -941,11 +941,11 @@ export default function Layout({ children }: Props) {
 
               <button
                 type="button"
-                className={`mobile-nav-btn${location.pathname === "/contas" ? " is-active" : ""}`}
-                onClick={() => handleMobileRoute("/contas")}
+                className={`mobile-nav-btn${location.pathname === "/groups" ? " is-active" : ""}`}
+                onClick={() => handleMobileRoute("/groups", false)}
               >
-                {NAV_ICONS.contas}
-                <span>Carteiras</span>
+                {NAV_ICONS.groups}
+                <span>Grupos</span>
               </button>
 
               <button

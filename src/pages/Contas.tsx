@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import type { BankAccount } from "../types/finance";
 import {
@@ -8,182 +8,17 @@ import {
   deleteBankAccount,
   transferBetweenAccounts,
 } from "../lib/bankAccountsService";
+import {
+  CARD_COLORS,
+  BankCard,
+  CardDeck,
+  brandOf,
+  brandFace,
+  fmtBRL,
+} from "../components/WalletCards";
 import "./contas.css";
 
-// ── bank brand definitions ────────────────────────────────────────────────────
-
-const BRANDS: Record<string, { name: string; face: string; glow: string; tier: string }> = {
-  nubank:    { name: "Nubank",         face: "linear-gradient(135deg,#9F37E8 0%,#820AD1 58%,#6A02B0 100%)", glow: "rgba(130,10,209,.55)", tier: "Conta" },
-  picpay:    { name: "PicPay",         face: "linear-gradient(135deg,#20242B 0%,#0C0E12 70%)",               glow: "rgba(33,194,94,.30)",  tier: "Conta" },
-  bb:        { name: "Banco do Brasil",face: "linear-gradient(135deg,#0A47B8 0%,#0533A0 55%,#04246E 100%)", glow: "rgba(10,71,184,.5)",   tier: "Ourocard" },
-  itau:      { name: "Itaú",           face: "linear-gradient(135deg,#FF8A1E 0%,#EC7000 50%,#C85400 100%)", glow: "rgba(236,112,0,.5)",   tier: "Personnalité" },
-  inter:     { name: "Inter",          face: "linear-gradient(135deg,#FF9D4D 0%,#FF7A00 55%,#E86A00 100%)", glow: "rgba(255,122,0,.5)",   tier: "Conta" },
-  c6:        { name: "C6 Bank",        face: "linear-gradient(135deg,#2C2C2E 0%,#161618 60%,#0A0A0B 100%)", glow: "rgba(40,40,42,.6)",    tier: "Carbon" },
-  caixa:     { name: "Caixa",          face: "linear-gradient(135deg,#2A7FD4 0%,#1565B0 55%,#0E4A85 100%)", glow: "rgba(21,101,176,.5)",  tier: "Conta" },
-  santander: { name: "Santander",      face: "linear-gradient(135deg,#F33 0%,#EC0000 50%,#B30000 100%)",    glow: "rgba(236,0,0,.5)",     tier: "Unique" },
-  outro:     { name: "Outro",          face: "linear-gradient(135deg,#334155 0%,#0F172A 100%)",              glow: "rgba(51,65,85,.5)",    tier: "Conta" },
-};
-
 const BANK_LIST = ["nubank", "bb", "itau", "picpay", "inter", "c6", "caixa", "santander", "outro"];
-
-const CARD_COLORS = [
-  { id: "auto",     label: "Da marca",  face: null },
-  { id: "violet",   label: "Violeta",   face: "linear-gradient(135deg,#9F37E8,#6A02B0)" },
-  { id: "blue",     label: "Azul",      face: "linear-gradient(135deg,#3B82F6,#1b3fa0)" },
-  { id: "green",    label: "Verde",     face: "linear-gradient(135deg,#22C55E,#15803D)" },
-  { id: "graphite", label: "Grafite",   face: "linear-gradient(135deg,#334155,#0F172A)" },
-];
-
-function brandOf(bank: string) { return BRANDS[bank] ?? BRANDS.outro; }
-function brandFace(bank: string, face?: string | null) { return face ?? brandOf(bank).face; }
-
-function fmtBRL(cents: number) {
-  return "R$ " + (Math.abs(cents) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-}
-
-// ── BankCard ──────────────────────────────────────────────────────────────────
-
-function BankCard({ account, w = 290, faded = false, onClick }: { account: BankAccount; w?: number; faded?: boolean; onClick?: () => void }) {
-  const b = brandOf(account.bank);
-  const face = brandFace(account.bank, account.face);
-  const glow = b.glow;
-  const h = w * 0.625;
-  return (
-    <div
-      onClick={onClick}
-      className="cc-card"
-      style={{
-        width: w, height: h, borderRadius: w * 0.07,
-        background: face,
-        boxShadow: `0 ${w * 0.06}px ${w * 0.12}px -${w * 0.04}px ${glow}, inset 0 1px 0 rgba(255,255,255,.18)`,
-        filter: faded ? "saturate(0.8)" : "none",
-        cursor: onClick ? "pointer" : "default",
-        flexShrink: 0,
-      }}
-    >
-      <div className="cc-card-shine" />
-      <div className="cc-card-body" style={{ padding: w * 0.07 }}>
-        <div className="cc-card-top">
-          <span className="cc-card-bankname" style={{ fontSize: w * 0.07 }}>{b.name}</span>
-          <span className="cc-card-tier" style={{ fontSize: w * 0.036 }}>{b.tier}</span>
-        </div>
-        <div className="cc-card-bottom">
-          <div>
-            <div className="cc-chip" style={{ width: w * 0.11, height: w * 0.082, marginBottom: w * 0.03, borderRadius: 5 }} />
-            <div className="cc-card-last4" style={{ fontSize: w * 0.05 }}>•••• {account.last4}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── CardDeck (stacked, swipe to rotate) ──────────────────────────────────────
-
-function CardDeck({ accounts, onSelect, onAdd, w = 290 }: { accounts: BankAccount[]; onSelect: (a: BankAccount) => void; onAdd: () => void; w?: number }) {
-  const n = accounts.length;
-  const [active, setActive] = useState(0);
-  const [expanded, setExpanded] = useState(false);
-  const ch = w * 0.625;
-  const peek = 14;
-  const maxBehind = Math.min(n - 1, 3);
-  const gap = 16;
-  const drag = useRef({ x: 0, moved: false });
-
-  const buzz = () => { try { navigator.vibrate?.(12); } catch { /* noop */ } };
-  const next = () => { buzz(); setActive(a => (a + 1) % n); };
-  const prev = () => { buzz(); setActive(a => (a - 1 + n) % n); };
-  const goTo = (i: number) => { if (i !== active) buzz(); setActive(i); };
-
-  const collapsedH = ch + peek * maxBehind;
-  const expandedH = (ch + gap) * n - gap;
-
-  function onDown(e: React.PointerEvent | React.TouchEvent) {
-    const x = "touches" in e ? e.touches[0].clientX : (e as React.PointerEvent).clientX;
-    drag.current = { x, moved: false };
-  }
-  function onMove(e: React.PointerEvent | React.TouchEvent) {
-    const x = "touches" in e ? e.touches[0].clientX : (e as React.PointerEvent).clientX;
-    if (Math.abs(x - drag.current.x) > 8) drag.current.moved = true;
-  }
-  function onUp(e: React.PointerEvent | React.TouchEvent) {
-    if (expanded) return;
-    const x = "changedTouches" in e ? e.changedTouches[0].clientX : (e as React.PointerEvent).clientX;
-    const dx = x - drag.current.x;
-    if (dx < -42) next(); else if (dx > 42) prev();
-  }
-
-  if (n === 0) {
-    return (
-      <div className="cc-deck-empty">
-        <button type="button" className="cc-add-cta" style={{ width: w, height: Math.round(w * 0.625) }} onClick={onAdd}>
-          <span className="cc-add-icon">+</span>
-          Adicionar banco
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="cc-deck-wrap">
-      <div
-        onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp}
-        onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
-        style={{
-          position: "relative", width: w, margin: "0 auto",
-          height: expanded ? expandedH : collapsedH,
-          transition: "height .45s cubic-bezier(.16,1,.3,1)",
-          touchAction: "pan-y", userSelect: "none",
-        }}
-      >
-        {accounts.map((acc, i) => {
-          const d = (i - active + n) % n;
-          let y = 0, scale = 1, op = 1, z = 0;
-          if (expanded) {
-            y = d * (ch + gap); scale = 1; op = 1; z = n - d;
-          } else {
-            const dd = Math.min(d, maxBehind);
-            y = (maxBehind - dd) * peek;
-            scale = 1 - dd * 0.05;
-            op = d > maxBehind ? 0 : 1 - dd * 0.14;
-            z = n - d;
-          }
-          return (
-            <div key={acc.id} style={{
-              position: "absolute", top: 0, left: 0, width: "100%",
-              transform: `translateY(${y}px) scale(${scale})`,
-              transformOrigin: "top center",
-              opacity: op, zIndex: z,
-              pointerEvents: d <= maxBehind || expanded ? "auto" : "none",
-              transition: "transform .5s cubic-bezier(.16,1,.3,1), opacity .4s ease",
-            }}>
-              <BankCard account={acc} w={w} onClick={() => {
-                if (drag.current.moved) return;
-                if (expanded || d === 0) onSelect(acc);
-                else goTo(i);
-              }} />
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="cc-deck-dots">
-        {accounts.map((_, i) => (
-          <button key={i} type="button" onClick={() => goTo(i)} className={`cc-dot${i === active ? " is-active" : ""}`} />
-        ))}
-      </div>
-      <div className="cc-deck-actions">
-        <button type="button" className="cc-pill-btn" onClick={() => setExpanded(e => !e)}>
-          {expanded ? "Recolher" : "Expandir cartões"}
-        </button>
-        <button type="button" className="cc-pill-btn cc-pill-btn-blue" onClick={onAdd}>
-          + Novo banco
-        </button>
-      </div>
-      <p className="cc-deck-hint">Deslize pra trocar · toque pra abrir a conta</p>
-    </div>
-  );
-}
 
 // ── AccountDetail slide-in ────────────────────────────────────────────────────
 
@@ -223,7 +58,7 @@ function AccountDetail({ account, onBack, onEdit, onTransfer }: {
               </svg>
               Transferir
             </button>
-            <button type="button" className="cc-detail-action-btn" onClick={() => onBack()}>
+            <button type="button" className="cc-detail-action-btn" onClick={onBack}>
               <svg viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={16} height={16} aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
@@ -292,7 +127,7 @@ function CadastroSheet({ onClose, onDone }: { onClose: () => void; onDone: (data
   const [color, setColor] = useState("auto");
 
   const previewFace = color === "auto" ? brandOf(bank).face : (CARD_COLORS.find(c => c.id === color)?.face ?? brandOf(bank).face);
-  const previewAcc = { id: "", userId: "", nick: nick || brandOf(bank).name, bank, accountType, last4: "0000", balanceCents: 0, face: previewFace, createdAtUtc: "" };
+  const previewAcc: BankAccount = { id: "", userId: "", nick: nick || brandOf(bank).name, bank, accountType, last4: "0000", balanceCents: 0, face: previewFace, createdAtUtc: "" };
 
   function finish() {
     const face = color === "auto" ? null : CARD_COLORS.find(c => c.id === color)?.face ?? null;
@@ -389,13 +224,13 @@ function EditSheet({ account, onClose, onSave, onDelete }: {
   const [color, setColor] = useState("keep");
   const [confirmDel, setConfirmDel] = useState(false);
 
-  const colors = [{ id: "keep", label: "Atual", face: brandFace(account.bank, account.face) }, ...CARD_COLORS];
+  const colors = [{ id: "keep", face: brandFace(account.bank, account.face) }, ...CARD_COLORS];
   const previewFace =
     color === "keep" ? brandFace(account.bank, account.face)
     : color === "auto" ? brandOf(account.bank).face
     : CARD_COLORS.find(c => c.id === color)?.face ?? brandOf(account.bank).face;
 
-  const previewAcc = { ...account, face: previewFace, nick };
+  const previewAcc: BankAccount = { ...account, face: previewFace, nick };
 
   function save() {
     const face = color === "keep" ? account.face : color === "auto" ? null : CARD_COLORS.find(c => c.id === color)?.face ?? null;
@@ -407,7 +242,6 @@ function EditSheet({ account, onClose, onSave, onDelete }: {
     <Sheet onClose={onClose}>
       <div className="cc-sheet-content">
         <div className="cc-sheet-title">Editar conta</div>
-
         <div className="cc-preview-wrap">
           <BankCard account={previewAcc} w={224} />
         </div>
@@ -561,14 +395,14 @@ function TransferSheet({ accounts, defaultFrom, onClose, onConfirm }: {
 
 // ── Main Contas page ──────────────────────────────────────────────────────────
 
-type Sheet = "add" | "edit" | "transfer" | null;
+type ActiveSheet = "add" | "edit" | "transfer" | null;
 
 export default function Contas() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<BankAccount | null>(null);
-  const [sheet, setSheet] = useState<Sheet>(null);
+  const [sheet, setSheet] = useState<ActiveSheet>(null);
   const [editing, setEditing] = useState<BankAccount | null>(null);
   const [transferFrom, setTransferFrom] = useState<string | undefined>();
 
@@ -654,9 +488,7 @@ export default function Contas() {
           </div>
 
           {loading ? (
-            <div className="cc-loading">
-              <div className="cc-spinner" />
-            </div>
+            <div className="cc-loading"><div className="cc-spinner" /></div>
           ) : error ? (
             <div className="cc-error">
               {error}

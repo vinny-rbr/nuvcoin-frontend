@@ -24,6 +24,9 @@ import {
   financeList,
   financeSubscribe,
 } from "../lib/financeService";
+import { listBankAccounts } from "../lib/bankAccountsService";
+import type { BankAccount } from "../types/finance";
+import { DashboardWalletSection } from "../components/WalletCards";
 
 import {
   calculateMonthComparison,
@@ -503,6 +506,8 @@ function SparkLine({ values, color }: { values: number[]; color: string }) {
 
 export default function Dashboard() {
   const [items, setItems] = useState<FinanceItem[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [bankAccountsLoading, setBankAccountsLoading] = useState(true);
   const [registeredCategories, setRegisteredCategories] = useState<FinanceCategoryOption[]>([]);
   const [period, setPeriod] = useState<PeriodKey>("LAST_3");
   const [viewMode, setViewMode] = useState<DashboardViewMode>("CONFRONTO");
@@ -561,6 +566,17 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+    setBankAccountsLoading(true);
+    void listBankAccounts().then(data => {
+      if (isMounted) { setBankAccounts(data); setBankAccountsLoading(false); }
+    }).catch(() => {
+      if (isMounted) setBankAccountsLoading(false);
+    });
+    return () => { isMounted = false; };
   }, []);
 
   useEffect(() => {
@@ -935,15 +951,22 @@ export default function Dashboard() {
           </div>
 
           <div className="dash-hero-bal-row">
-            <span
-              className="dash-hero-bal"
-              style={{
-                fontSize: heroBalSize(heroData.saldoCents, balanceHidden),
-                color: heroData.saldoCents < 0 ? "#FFCBC6" : "#ffffff",
-              }}
-            >
-              {balanceHidden ? "R$ •••••" : formatBRLFromCents(heroData.saldoCents)}
-            </span>
+            <div>
+              <span
+                className="dash-hero-bal"
+                style={{
+                  fontSize: heroBalSize(heroData.saldoCents, balanceHidden),
+                  color: heroData.saldoCents < 0 ? "#FFCBC6" : "#ffffff",
+                }}
+              >
+                {balanceHidden ? "R$ •••••" : formatBRLFromCents(heroData.saldoCents)}
+              </span>
+              {bankAccounts.length > 0 && (
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginTop: 2, fontWeight: 500 }}>
+                  somando {bankAccounts.length} {bankAccounts.length === 1 ? "conta" : "contas"}
+                </div>
+              )}
+            </div>
             <button
               type="button"
               className="dash-hero-eye"
@@ -1008,6 +1031,8 @@ export default function Dashboard() {
           </label>
         </div>
       </div>
+
+      <DashboardWalletSection accounts={bankAccounts} loading={bankAccountsLoading} />
 
       <div className="dashboard-grid">
         <div className="stat-card">

@@ -1,0 +1,167 @@
+/* ── Shared wallet card components ───────────────────────────── */
+
+/* ── BankCard ──────────────────────────────────────────────── */
+.wc-card {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  flex-shrink: 0;
+}
+.wc-card-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, rgba(255,255,255,.14) 0%, transparent 32%, transparent 70%, rgba(0,0,0,.18) 100%);
+  pointer-events: none;
+}
+.wc-card-body {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.wc-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.wc-card-bankname {
+  font-weight: 900;
+  letter-spacing: -.04em;
+  line-height: 1;
+}
+.wc-card-tier {
+  font-weight: 700;
+  opacity: .85;
+  letter-spacing: .02em;
+}
+.wc-card-bottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.wc-chip {
+  background: linear-gradient(135deg,#f4d58a,#c9a24b);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,.15);
+}
+.wc-card-last4 {
+  font-family: "Space Grotesk", system-ui;
+  font-weight: 500;
+  letter-spacing: .12em;
+  opacity: .92;
+}
+
+/* ── CardDeck ──────────────────────────────────────────────── */
+.wc-deck-wrap { /* outer wrapper */ }
+
+.wc-add-cta {
+  border: 1.5px dashed rgba(148,163,184,.4);
+  background: rgba(15,23,42,.4);
+  border-radius: 20px;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 15px;
+  font-family: inherit;
+}
+.wc-add-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(59,130,246,.16);
+  border: 1px solid rgba(96,165,250,.4);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  color: #60a5fa;
+  line-height: 1;
+}
+
+.wc-deck-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 14px;
+}
+.wc-dot {
+  height: 7px;
+  border-radius: 999px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  width: 7px;
+  background: rgba(148,163,184,.3);
+  transition: all .3s ease;
+}
+.wc-dot.is-active {
+  width: 22px;
+  background: linear-gradient(90deg,#60a5fa,#2563eb);
+}
+
+.wc-deck-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  justify-content: center;
+}
+.wc-pill-btn {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.22);
+  background: rgba(15,23,42,.55);
+  color: #e2e8f0;
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.wc-pill-btn-blue {
+  background: rgba(59,130,246,.16);
+  border-color: rgba(96,165,250,.35);
+  color: #bfdbfe;
+}
+.wc-deck-hint {
+  text-align: center;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+  margin: 8px 0 0;
+}
+
+/* ── Dashboard wallet section ──────────────────────────────── */
+.wc-dash-section {
+  padding: 0 0 4px;
+}
+.wc-dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 2px 12px;
+}
+.wc-dash-title {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-size: 18px;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: -.01em;
+  margin: 0;
+}
+.wc-dash-manage {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  color: #60a5fa;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+}
