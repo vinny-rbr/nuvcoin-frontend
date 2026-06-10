@@ -14,8 +14,11 @@ import {
 } from "../lib/financeService";
 import CategoryPicker from "../components/CategoryPicker";
 import FinanceItemEditModal from "../components/FinanceItemEditModal";
+import BankAccountChips from "../components/BankAccountChips";
 import { categoriesForType, createFinanceCategory, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
+import { adjustBankAccountBalance } from "../lib/bankAccountsService";
+import type { BankAccount } from "../types/finance";
 import "./dashboard.css";
 import "./finance.css";
 
@@ -216,6 +219,7 @@ function DonutRing({ recCents, desCents }: { recCents: number; desCents: number 
 
 export default function Despesas() {
   const navigate = useNavigate();
+  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState<FinanceCategory>(DEFAULT_CATEGORIES.DESPESA[0]);
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORIES.DESPESA);
@@ -342,8 +346,12 @@ export default function Despesas() {
         dateISO: installmentDateISO, createdAtISO, paymentType,
         status: index === 0 && installmentDateISO <= todayISO() ? status : "pending",
         ...(groupId ? { recurringGroupId: groupId, recurringKind, recurringTotal: totalMonths } : {}),
+        ...(selectedAccount ? { accountId: selectedAccount.id } : {}),
       };
       financeAdd(newItem);
+    }
+    if (selectedAccount && !isRecurring) {
+      void adjustBankAccountBalance(selectedAccount, -amountCents).catch(() => undefined);
     }
     window.setTimeout(() => { savingRef.current = false; setSaving(false); setFeedback(null); }, isRecurring ? 800 : 400);
     setTitle(""); setAmount(""); setDateISO(todayISO());
@@ -351,7 +359,7 @@ export default function Despesas() {
     setPaymentType("pix"); setStatus("paid"); setIsRecurring(false);
     setRecurrenceMode("forever"); setRecurrenceMonths("6");
     setShowForm(false);
-  }, [amount, category, categoryOptions, dateISO, isRecurring, paymentType, recurrenceMode, recurrenceMonths, saving, status, title]);
+  }, [amount, category, categoryOptions, dateISO, isRecurring, paymentType, recurrenceMode, recurrenceMonths, saving, selectedAccount, status, title]);
 
   useEffect(() => {
     function handleNativeAdd(event: Event) {
@@ -476,6 +484,8 @@ export default function Despesas() {
           {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
           <div className="finance-form-grid">
+            <BankAccountChips selectedId={selectedAccount?.id ?? null} onChange={setSelectedAccount} />
+
             <label className="finance-field finance-field-title">
               <span>Título</span>
               <input className="finance-control" placeholder="Ex: Mercado" value={title} onChange={(e) => setTitle(e.target.value)} />

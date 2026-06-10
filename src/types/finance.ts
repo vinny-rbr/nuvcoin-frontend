@@ -37,6 +37,7 @@ export interface FinanceItem {
   recurringGroupId?: string;
   recurringKind?: "fixo" | "parcelado";
   recurringTotal?: number;
+  accountId?: string;
 }
 
 // Conta bancária

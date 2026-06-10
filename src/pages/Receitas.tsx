@@ -14,8 +14,11 @@ import {
 } from "../lib/financeService";
 import CategoryPicker from "../components/CategoryPicker";
 import FinanceItemEditModal from "../components/FinanceItemEditModal";
+import BankAccountChips from "../components/BankAccountChips";
 import { categoriesForType, createFinanceCategory, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { calcFinanceSummary } from "../lib/financeStorage";
+import { adjustBankAccountBalance } from "../lib/bankAccountsService";
+import type { BankAccount } from "../types/finance";
 import "./dashboard.css";
 import "./finance.css";
 
@@ -56,6 +59,7 @@ function DonutRing({ recCents, desCents }: { recCents: number; desCents: number 
 
 export default function Receitas() {
   const navigate = useNavigate();
+  const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -161,15 +165,19 @@ export default function Receitas() {
     const newItem: FinanceItem = {
       id: makeId(), type: "RECEITA", title: title.trim(), category, amountCents,
       dateISO, createdAtISO: new Date().toISOString(), paymentType: "pix", status,
+      ...(selectedAccount ? { accountId: selectedAccount.id } : {}),
     };
     setSaving(true);
     setFeedback("Salvando lancamento...");
     financeAdd(newItem);
+    if (selectedAccount) {
+      void adjustBankAccountBalance(selectedAccount, amountCents).catch(() => undefined);
+    }
     window.setTimeout(() => { setSaving(false); setFeedback(null); }, 400);
     setTitle(""); setAmount(""); setDateISO(todayISO());
     setCategory(categoryOptions[0] ?? "Outros"); setStatus("paid");
     setShowForm(false);
-  }, [amount, category, categoryOptions, dateISO, saving, status, title]);
+  }, [amount, category, categoryOptions, dateISO, saving, selectedAccount, status, title]);
 
   useEffect(() => {
     function handleNativeAdd(event: Event) {
@@ -284,6 +292,8 @@ export default function Receitas() {
           {feedback ? <div className="finance-feedback">{feedback}</div> : null}
 
           <div className="finance-form-grid">
+            <BankAccountChips selectedId={selectedAccount?.id ?? null} onChange={setSelectedAccount} />
+
             <label className="finance-field finance-field-title">
               <span>Título</span>
               <input className="finance-control" placeholder="Ex: Salário" value={title} onChange={(e) => setTitle(e.target.value)} />

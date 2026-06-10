@@ -39,6 +39,10 @@ export async function deleteBankAccount(id: string): Promise<void> {
   if (!res.ok) throw new Error("Erro ao excluir conta.");
 }
 
+export async function adjustBankAccountBalance(account: BankAccount, deltaCents: number): Promise<BankAccount> {
+  return updateBankAccount(account.id, { balanceCents: account.balanceCents + deltaCents });
+}
+
 export async function transferBetweenAccounts(fromId: string, toId: string, amountCents: number): Promise<{ fromBalance: number; toBalance: number }> {
   const res = await fetch(`${BASE}/transfer`, {
     method: "POST",
