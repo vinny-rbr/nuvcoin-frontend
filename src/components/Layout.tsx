@@ -82,6 +82,11 @@ const NAV_ICONS = {
       <circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.4A5.5 5.5 0 0 1 20.5 19.5"/>
     </svg>
   ),
+  contas: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/>
+    </svg>
+  ),
 };
 
 const navItems = [
@@ -90,6 +95,7 @@ const navItems = [
   { to: "/despesas", label: "Despesas", icon: NAV_ICONS.despesas, requiresActiveSubscription: true },
   { to: "/categorias", label: "Categorias", icon: NAV_ICONS.categorias, requiresActiveSubscription: true },
   { to: "/importar-ofx", label: "Importar extrato", icon: NAV_ICONS.importar, requiresActiveSubscription: true },
+  { to: "/contas", label: "Carteiras", icon: NAV_ICONS.contas, requiresActiveSubscription: true },
   { to: "/groups", label: "Grupos", icon: NAV_ICONS.groups, requiresActiveSubscription: false },
 ];
 
@@ -860,6 +866,10 @@ export default function Layout({ children }: Props) {
                   Relatórios
                   <span className="quick-add-new-badge" aria-label="Novo">NOVO</span>
                 </button>
+                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/groups", false)}>
+                  <span className="quick-add-dot" style={{ background: "#94a3b8" }} aria-hidden="true" />
+                  Grupos
+                </button>
               </>
             )}
           </div>
@@ -931,11 +941,11 @@ export default function Layout({ children }: Props) {
 
               <button
                 type="button"
-                className={`mobile-nav-btn${location.pathname === "/groups" ? " is-active" : ""}`}
-                onClick={() => handleMobileRoute("/groups", false)}
+                className={`mobile-nav-btn${location.pathname === "/contas" ? " is-active" : ""}`}
+                onClick={() => handleMobileRoute("/contas")}
               >
-                {NAV_ICONS.groups}
-                <span>Grupos</span>
+                {NAV_ICONS.contas}
+                <span>Carteiras</span>
               </button>
 
               <button

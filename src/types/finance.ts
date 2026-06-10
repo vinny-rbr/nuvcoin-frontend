@@ -39,6 +39,20 @@ export interface FinanceItem {
   recurringTotal?: number;
 }
 
+// Conta bancária
+export interface BankAccount {
+  id: string;
+  userId: string;
+  nick: string;
+  bank: string;
+  accountType: string;
+  last4: string;
+  balanceCents: number;
+  face?: string | null;
+  createdAtUtc: string;
+  updatedAtUtc?: string | null;
+}
+
 // Resumo para o Dashboard.
 export interface FinanceSummary {
   totalReceitasCents: number;

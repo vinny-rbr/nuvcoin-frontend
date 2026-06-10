@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.94": [
+    { emoji: "💳", text: "Carteiras: gerencie seus bancos com cartões animados, transferências entre contas e saldo total consolidado." },
+  ],
   "1.0.93": [
     { emoji: "🏷️", text: "Importação OFX: toque em qualquer lançamento para escolher a categoria — com navegação por subcategorias e memória por estabelecimento." },
   ],

@@ -22,6 +22,7 @@ import Groups from "./pages/Groups"; // Página de grupos (Splitwise)
 import Relatorios from "./pages/Relatorios";
 import Perfil from "./pages/Perfil";
 import AdminSugestoes from "./pages/AdminSugestoes";
+import Contas from "./pages/Contas";
 
 type AnimatedPageProps = {
   children: ReactNode; // Conteúdo da página
@@ -198,6 +199,20 @@ export default function App() {
             <Layout>
               <AnimatedPage>
                 <Perfil />
+              </AnimatedPage>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Contas / Carteiras */}
+      <Route
+        path="/contas"
+        element={
+          <ProtectedRoute requireActiveSubscription>
+            <Layout>
+              <AnimatedPage>
+                <Contas />
               </AnimatedPage>
             </Layout>
           </ProtectedRoute>
