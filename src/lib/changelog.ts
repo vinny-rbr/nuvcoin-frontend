@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.91": [
+    { emoji: "🎬", text: "Tutorial de importação de extrato OFX atualizado." },
+  ],
   "1.0.90": [
     { emoji: "⚖️", text: "Importação OFX detecta diferença de saldo e oferece lançamento de ajuste automático." },
   ],
