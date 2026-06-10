@@ -17,7 +17,7 @@ interface Tutorial {
 
 const TUTORIALS: Tutorial[] = [
   {
-    id: "iO1MJsA0vVo",
+    id: "qCLuQI1JLMs",
     title: "Lançamento de receitas",
     desc: "Adicione entradas e acompanhe seu saldo no dashboard.",
     long: "Veja como registrar uma receita do zero: toque em Nova receita, escolha a categoria, informe o valor e a data. O lançamento aparece no dashboard na hora e já atualiza o saldo do mês.",
@@ -25,8 +25,8 @@ const TUTORIALS: Tutorial[] = [
     duration: "0:42",
     cat: "Primeiros passos",
     accent: "#22c55e",
-    thumb: "https://i.ytimg.com/vi/iO1MJsA0vVo/hqdefault.jpg",
-    url: "https://www.youtube.com/shorts/iO1MJsA0vVo",
+    thumb: "https://i.ytimg.com/vi/qCLuQI1JLMs/hqdefault.jpg",
+    url: "https://www.youtube.com/shorts/qCLuQI1JLMs",
     ready: true,
     isShort: true,
   },
