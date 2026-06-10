@@ -1,4 +1,5 @@
 ﻿import { logClientEvent } from "./lib/clientLogger";
+import { playSound, vibrateDevice } from "./lib/pushService";
 import { useEffect, useState, type ReactNode } from "react"; // Hooks + tipo
 import { Routes, Route, Navigate, useLocation } from "react-router-dom"; // Rotas do React Router
 import Layout from "./components/Layout"; // Layout premium (topbar + container)
@@ -61,6 +62,18 @@ function AnimatedPage({ children }: AnimatedPageProps) {
 
 export default function App() {
   const location = useLocation();
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === "NOTIF_SOUND") {
+        playSound(e.data.sound as string | undefined);
+        if (e.data.vibrate) vibrateDevice();
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, []);
 
   useEffect(() => {
     logClientEvent({

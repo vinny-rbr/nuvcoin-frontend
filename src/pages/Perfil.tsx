@@ -7,6 +7,14 @@ import {
   persistSubscriptionState,
   type SubscriptionStatus,
 } from "../lib/auth";
+import {
+  NOTIF_SOUNDS,
+  getNotifSound, setNotifSound,
+  getNotifVibrate, setNotifVibrate,
+  getNotifEnabled,
+  subscribePush, unsubscribePush,
+  playSound, vibrateDevice,
+} from "../lib/pushService";
 
 function persistLifetimeState(value: boolean) {
   if (typeof window === "undefined") return;
@@ -237,6 +245,12 @@ export default function Perfil() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const [showNotifPanel, setShowNotifPanel] = useState(false);
+  const [notifEnabled, setNotifEnabled_] = useState(() => getNotifEnabled());
+  const [notifSound, setNotifSound_] = useState(() => getNotifSound());
+  const [notifVibrate, setNotifVibrate_] = useState(() => getNotifVibrate());
+  const [notifLoading, setNotifLoading] = useState(false);
 
   const [suggestionText, setSuggestionText] = useState("");
   const [suggestionSending, setSuggestionSending] = useState(false);
@@ -646,7 +660,7 @@ export default function Perfil() {
       >
         <ActionRow icon={ICON_SHIELD} label="Segurança e senha" />
         <div style={{ borderTop: "1px solid rgba(148,163,184,0.09)" }}>
-          <ActionRow icon={ICON_BELL} label="Notificações" />
+          <ActionRow icon={ICON_BELL} label="Notificações" onClick={() => setShowNotifPanel(true)} />
         </div>
         <div style={{ borderTop: "1px solid rgba(148,163,184,0.09)" }}>
           <ActionRow icon={ICON_LOGOUT} label="Sair da conta" danger onClick={handleLogout} showChev={false} />
@@ -841,6 +855,145 @@ export default function Perfil() {
             >
               Cancelar
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Painel Notificações ── */}
+      {showNotifPanel && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            background: "rgba(2,6,23,0.88)",
+            display: "flex", alignItems: "flex-end", justifyContent: "center",
+          }}
+          onClick={() => setShowNotifPanel(false)}
+        >
+          <div
+            style={{
+              background: "linear-gradient(160deg, #1e293b, #0f172a)",
+              border: "1px solid rgba(148,163,184,0.18)",
+              borderRadius: "24px 24px 0 0",
+              padding: "24px 20px 40px",
+              width: "100%", maxWidth: 520,
+              maxHeight: "90vh", overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+              <span style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", fontWeight: 700, fontSize: 20, letterSpacing: "-0.3px" }}>
+                Notificações
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowNotifPanel(false)}
+                style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(148,163,184,0.1)", border: 0, color: "#94a3b8", cursor: "pointer", display: "grid", placeItems: "center", fontSize: 18 }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* ativar toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", borderRadius: 16, background: "rgba(30,41,59,0.7)", border: "1px solid rgba(148,163,184,0.13)", marginBottom: 16 }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: "#f1f5f9" }}>Ativar notificações</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>Alertas às 9h, 13h, 19h e 23h e avisos de grupo</div>
+              </div>
+              <button
+                type="button"
+                disabled={notifLoading}
+                onClick={async () => {
+                  setNotifLoading(true);
+                  if (notifEnabled) {
+                    await unsubscribePush();
+                    setNotifEnabled_(false);
+                  } else {
+                    const ok = await subscribePush();
+                    setNotifEnabled_(ok);
+                  }
+                  setNotifLoading(false);
+                }}
+                style={{
+                  width: 52, height: 30, borderRadius: 999, border: 0, cursor: "pointer", flexShrink: 0,
+                  background: notifEnabled ? "linear-gradient(135deg,#60a5fa,#2563eb)" : "rgba(148,163,184,0.15)",
+                  transition: "background .2s", position: "relative",
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: 3, left: notifEnabled ? 24 : 3,
+                  width: 24, height: 24, borderRadius: "50%", background: "#fff",
+                  transition: "left .2s", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                }} />
+              </button>
+            </div>
+
+            {/* vibração toggle */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", borderRadius: 16, background: "rgba(30,41,59,0.7)", border: "1px solid rgba(148,163,184,0.13)", marginBottom: 20 }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 15, color: "#f1f5f9" }}>Vibração</div>
+                <div style={{ fontSize: 12, color: "#64748b", marginTop: 3 }}>Vibrar ao receber notificação (mobile)</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const next = !notifVibrate;
+                  setNotifVibrate(next);
+                  setNotifVibrate_(next);
+                  if (next) vibrateDevice();
+                }}
+                style={{
+                  width: 52, height: 30, borderRadius: 999, border: 0, cursor: "pointer", flexShrink: 0,
+                  background: notifVibrate ? "linear-gradient(135deg,#60a5fa,#2563eb)" : "rgba(148,163,184,0.15)",
+                  transition: "background .2s", position: "relative",
+                }}
+              >
+                <span style={{
+                  position: "absolute", top: 3, left: notifVibrate ? 24 : 3,
+                  width: 24, height: 24, borderRadius: "50%", background: "#fff",
+                  transition: "left .2s", boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                }} />
+              </button>
+            </div>
+
+            {/* som */}
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: "1.4px", textTransform: "uppercase", color: "#64748b", marginBottom: 12 }}>
+              Som de notificação
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {NOTIF_SOUNDS.map((s) => {
+                const selected = notifSound === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => {
+                      setNotifSound(s.id);
+                      setNotifSound_(s.id);
+                      playSound(s.id);
+                    }}
+                    style={{
+                      display: "flex", alignItems: "center", justifyContent: "space-between",
+                      padding: "13px 16px", borderRadius: 14, border: 0, cursor: "pointer",
+                      background: selected ? "rgba(37,99,235,0.22)" : "rgba(30,41,59,0.55)",
+                      outline: selected ? "1.5px solid rgba(96,165,250,0.55)" : "1.5px solid transparent",
+                      transition: "all .15s",
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, fontSize: 14, color: selected ? "#93c5fd" : "#f1f5f9" }}>
+                      {s.label}
+                    </span>
+                    <span style={{
+                      width: 28, height: 28, borderRadius: "50%", display: "grid", placeItems: "center",
+                      background: selected ? "rgba(96,165,250,0.2)" : "rgba(148,163,184,0.1)",
+                      color: selected ? "#60a5fa" : "#64748b", fontSize: 15,
+                    }}>
+                      ▶
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
