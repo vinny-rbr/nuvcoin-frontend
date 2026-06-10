@@ -87,6 +87,11 @@ const NAV_ICONS = {
       <rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/>
     </svg>
   ),
+  cartaoCredito: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/>
+    </svg>
+  ),
 };
 
 const navItems = [
@@ -96,6 +101,7 @@ const navItems = [
   { to: "/categorias", label: "Categorias", icon: NAV_ICONS.categorias, requiresActiveSubscription: true },
   { to: "/importar-ofx", label: "Importar extrato", icon: NAV_ICONS.importar, requiresActiveSubscription: true },
   { to: "/contas", label: "Carteiras", icon: NAV_ICONS.contas, requiresActiveSubscription: true },
+  { to: "/cartao-credito", label: "Crédito", icon: NAV_ICONS.cartaoCredito, requiresActiveSubscription: true },
   { to: "/groups", label: "Grupos", icon: NAV_ICONS.groups, requiresActiveSubscription: false },
 ];
 

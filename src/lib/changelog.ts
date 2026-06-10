@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.112": [
+    { emoji: "💳", text: "Cartões de Crédito: nova aba para gerenciar cartões, controlar faturas abertas, lançar gastos e pagar a fatura debitando de uma conta bancária." },
+    { emoji: "📊", text: "Hero de crédito com barra de limite, deck empilhado estilo Google Wallet e modo lista." },
+  ],
   "1.0.97": [
     { emoji: "🔧", text: "Seção Meus cartões só aparece no Dashboard quando há contas cadastradas." },
   ],

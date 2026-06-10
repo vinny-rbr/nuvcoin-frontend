@@ -1,0 +1,1125 @@
+/* ── CartaoCredito page ───────────────────────────────────────────────────── */
+
+.cc-page {
+  padding: 16px 16px 100px;
+  display: grid;
+  gap: 18px;
+}
+
+/* ── Hero card (total invoice) ──────────────────────────────────────────── */
+
+.cc-hero {
+  border-radius: 22px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(245, 158, 11, 0.30);
+  background:
+    radial-gradient(circle at 16% 0%, rgba(245, 158, 11, 0.34), transparent 42%),
+    linear-gradient(135deg, #3a2a10 0%, #271c0c 60%, #1c1407 100%);
+  box-shadow: 0 18px 48px rgba(60, 40, 5, 0.45);
+}
+
+.cc-hero-bg-orb {
+  position: absolute;
+  right: -40px;
+  top: -30px;
+  width: 180px;
+  height: 180px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.10);
+  pointer-events: none;
+}
+
+.cc-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.cc-hero-label {
+  color: #fde68a;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.cc-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.16);
+  color: #fde68a;
+  font-size: 12px;
+  font-weight: 800;
+  border: none;
+  cursor: default;
+}
+
+.cc-hero-amount {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 40px;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-top: 6px;
+  position: relative;
+}
+
+.cc-hero-bar-row {
+  margin-top: 14px;
+  position: relative;
+}
+
+.cc-hero-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.cc-hero-bar-free {
+  color: #fcd34d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cc-hero-bar-pct {
+  color: #a8a29e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ── Limit bar ──────────────────────────────────────────────────────────── */
+
+.cc-limit-bar-track {
+  width: 100%;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  overflow: hidden;
+}
+
+.cc-limit-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s var(--ease);
+}
+
+/* ── Deck / carousel layout wrapper ────────────────────────────────────── */
+
+.cc-deck-wrap {
+  display: grid;
+  gap: 18px;
+}
+
+.cc-deck-area {
+  position: relative;
+  margin: 0 auto;
+  touch-action: pan-y;
+  user-select: none;
+  transition: height 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.cc-deck-card-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transition:
+    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.4s ease;
+}
+
+.cc-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.cc-dot {
+  height: 7px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+  background: rgba(148, 163, 184, 0.3);
+  width: 7px;
+}
+
+.cc-dot.is-active {
+  width: 22px;
+  background: linear-gradient(90deg, #FBBF24, #F59E0B);
+}
+
+.cc-deck-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.cc-pill-btn {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.55);
+  color: #E2E8F0;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.cc-pill-btn.amber {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(251, 191, 36, 0.35);
+  color: #fde68a;
+}
+
+/* ── Summary panel (below deck) ────────────────────────────────────────── */
+
+.cc-summary {
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(30, 41, 59, 0.5);
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.cc-summary-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.cc-summary-invoice-label {
+  color: #94A3B8;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.cc-summary-invoice-amount {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 28px;
+  color: #FBBF24;
+  letter-spacing: -0.02em;
+}
+
+.cc-summary-details-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #94A3B8;
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: var(--font, "Manrope", system-ui);
+  padding-top: 4px;
+}
+
+.cc-summary-bar-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 7px;
+}
+
+.cc-summary-bar-label {
+  color: #64748B;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.cc-summary-bar-free {
+  color: #94A3B8;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+/* ── Date chips (3-column grid) ─────────────────────────────────────────── */
+
+.cc-date-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.cc-date-chip {
+  display: grid;
+  gap: 4px;
+  padding: 10px 8px;
+  border-radius: 13px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+  justify-items: center;
+  text-align: center;
+}
+
+.cc-date-chip-label {
+  color: #64748B;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.cc-date-chip-value {
+  color: #E2E8F0;
+  font-size: 12.5px;
+  font-weight: 800;
+  font-family: var(--font, "Manrope", system-ui);
+  white-space: nowrap;
+}
+
+/* ── Action buttons row ─────────────────────────────────────────────────── */
+
+.cc-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cc-btn-amber {
+  width: 100%;
+  min-height: 46px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  color: #241803;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 900;
+  font-size: 14.5px;
+  box-shadow: 0 10px 26px rgba(245, 158, 11, 0.32);
+}
+
+.cc-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  border-radius: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.55);
+  color: #E2E8F0;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+/* ── List layout ────────────────────────────────────────────────────────── */
+
+.cc-list {
+  display: grid;
+  gap: 14px;
+}
+
+.cc-list-item {
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(30, 41, 59, 0.5);
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.cc-list-item-header {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+
+.cc-list-mini-card {
+  width: 60px;
+  height: 38px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.cc-list-nick {
+  color: #F1F5F9;
+  font-weight: 800;
+  font-size: 15px;
+  font-family: var(--display, "Space Grotesk", system-ui);
+}
+
+.cc-list-meta {
+  color: #64748B;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── Add CTA ────────────────────────────────────────────────────────────── */
+
+.cc-add-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 54px;
+  border-radius: 16px;
+  border: 1.5px dashed rgba(251, 191, 36, 0.4);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fde68a;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 800;
+  font-size: 14.5px;
+  cursor: pointer;
+}
+
+/* ── Detail full-screen overlay ─────────────────────────────────────────── */
+
+.cc-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--bg-deep, #0A0F1E);
+  display: flex;
+  flex-direction: column;
+  animation: ccSlideIn 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes ccSlideIn {
+  from { transform: translateX(28px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.cc-detail-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.cc-detail-hero-area {
+  position: relative;
+  padding: 52px 20px 22px;
+}
+
+.cc-detail-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cc-detail-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #E2E8F0;
+  padding: 8px 13px 8px 9px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+  font-family: var(--font, "Manrope", system-ui);
+}
+
+.cc-detail-edit-btn {
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #E2E8F0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+  font-family: var(--font, "Manrope", system-ui);
+}
+
+.cc-detail-card-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.cc-detail-meta {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.cc-detail-nick {
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cc-detail-invoice-label {
+  color: #64748B;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.cc-detail-invoice-amount {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 34px;
+  color: #FBBF24;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+}
+
+.cc-detail-limit-box {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.cc-detail-limit-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 9px;
+}
+
+.cc-detail-limit-used-label {
+  color: #94A3B8;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.cc-detail-limit-pct {
+  color: #E2E8F0;
+  font-size: 12.5px;
+  font-weight: 800;
+}
+
+.cc-detail-limit-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 9px;
+}
+
+.cc-detail-transactions {
+  padding: 14px 20px 100px;
+}
+
+.cc-detail-tx-title {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 17px;
+  color: #F1F5F9;
+  margin: 0 2px 8px;
+}
+
+.cc-tx-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+}
+
+.cc-tx-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.cc-tx-icon.out { background: rgba(239, 68, 68, 0.12); }
+.cc-tx-icon.in  { background: rgba(34, 197, 94, 0.12); }
+
+.cc-tx-title {
+  color: #F1F5F9;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.cc-tx-sub {
+  color: #64748B;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.cc-tx-amount {
+  margin-left: auto;
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+.cc-tx-amount.out { color: #F87171; }
+.cc-tx-amount.in  { color: #4ADE80; }
+
+.cc-tx-divider {
+  height: 1px;
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.cc-tx-empty {
+  color: #64748B;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ── Bottom sheet ───────────────────────────────────────────────────────── */
+
+.cc-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(3, 6, 18, 0.66);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-end;
+  animation: ccFadeIn 0.2s ease;
+}
+
+@keyframes ccFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.cc-sheet {
+  width: 100%;
+  max-height: 92dvh;
+  background: var(--bg-card-solid, #18233B);
+  border-radius: 26px 26px 0 0;
+  padding: 0 20px 32px;
+  overflow-y: auto;
+  animation: ccSheetUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ccSheetUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.cc-sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.25);
+  margin: 12px auto 20px;
+}
+
+/* ── Sheet form elements ────────────────────────────────────────────────── */
+
+.cc-sheet-title {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 21px;
+  color: #F1F5F9;
+  letter-spacing: -0.01em;
+}
+
+.cc-sheet-sub {
+  color: #94A3B8;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.cc-field {
+  display: grid;
+  gap: 8px;
+}
+
+.cc-field-label {
+  color: #94A3B8;
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.cc-input {
+  min-height: 48px;
+  border-radius: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(11, 17, 32, 0.72);
+  color: #F1F5F9;
+  padding: 0 14px;
+  font-family: var(--font, "Manrope", system-ui);
+  font-size: 15px;
+  font-weight: 600;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.cc-input:focus {
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.cc-sheet-form {
+  display: grid;
+  gap: 16px;
+}
+
+.cc-primary-btn {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  color: #241803;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 900;
+  font-size: 15.5px;
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.36);
+}
+
+.cc-primary-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cc-ghost-btn {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  color: #94A3B8;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.cc-danger-btn {
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+/* ── Bank grid (step 1 of add card) ─────────────────────────────────────── */
+
+.cc-bank-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.cc-bank-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 12px 13px;
+  border-radius: 15px;
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+  text-align: left;
+}
+
+.cc-bank-mini-card {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.cc-bank-name {
+  color: #E2E8F0;
+  font-weight: 800;
+  font-size: 13.5px;
+  font-family: var(--font, "Manrope", system-ui);
+}
+
+/* ── Color swatches ─────────────────────────────────────────────────────── */
+
+.cc-color-swatches {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.cc-swatch {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.cc-swatch.selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px #F59E0B;
+}
+
+/* ── Day stepper ─────────────────────────────────────────────────────────── */
+
+.cc-stepper-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.cc-stepper {
+  display: grid;
+  gap: 6px;
+}
+
+.cc-stepper-label {
+  color: #94A3B8;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.cc-stepper-ctrl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(11, 17, 32, 0.72);
+}
+
+.cc-stepper-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.7);
+  color: #E2E8F0;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.cc-stepper-value {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 18px;
+  color: #F1F5F9;
+  min-width: 22px;
+  text-align: center;
+}
+
+/* ── Money input ─────────────────────────────────────────────────────────── */
+
+.cc-money-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  border-radius: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(11, 17, 32, 0.72);
+  padding: 0 14px;
+}
+
+.cc-money-prefix {
+  color: #64748B;
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.cc-money-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #F1F5F9;
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  outline: none;
+  min-width: 0;
+}
+
+/* ── Payment chips ──────────────────────────────────────────────────────── */
+
+.cc-pay-chips {
+  display: flex;
+  gap: 7px;
+}
+
+.cc-pay-chip {
+  flex: 1;
+  min-height: 40px;
+  border-radius: 11px;
+  cursor: pointer;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 800;
+  font-size: 11.5px;
+  padding: 4px 6px;
+  line-height: 1.2;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.5);
+  color: #94A3B8;
+}
+
+.cc-pay-chip.active {
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(245, 158, 11, 0.16);
+  color: #fde68a;
+}
+
+/* ── Account chooser ────────────────────────────────────────────────────── */
+
+.cc-account-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.cc-account-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 8px 13px;
+  border-radius: 13px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.5);
+  cursor: pointer;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #94A3B8;
+}
+
+.cc-account-chip.active {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.12);
+  color: #60A5FA;
+}
+
+.cc-account-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+/* ── Pay card display ───────────────────────────────────────────────────── */
+
+.cc-pay-card-display {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(245, 158, 11, 0.26);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.cc-pay-mini-card {
+  width: 56px;
+  height: 36px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* ── Expense category chips ─────────────────────────────────────────────── */
+
+.cc-cat-chips {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  margin: 0 -2px;
+  padding: 0 2px 4px;
+  scrollbar-width: none;
+}
+
+.cc-cat-chip {
+  flex-shrink: 0;
+  padding: 8px 13px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 700;
+  font-size: 12.5px;
+  white-space: nowrap;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(15, 23, 42, 0.5);
+  color: #94A3B8;
+}
+
+.cc-cat-chip.active {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(245, 158, 11, 0.16);
+  color: #fde68a;
+}
+
+/* ── Confirm delete box ─────────────────────────────────────────────────── */
+
+.cc-confirm-del {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(127, 29, 29, 0.18);
+}
+
+.cc-confirm-del-text {
+  color: #fecaca;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.cc-confirm-del-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cc-delete-btn {
+  min-height: 48px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  font-family: var(--font, "Manrope", system-ui);
+  font-weight: 900;
+  font-size: 15px;
+}
+
+/* ── Done state ─────────────────────────────────────────────────────────── */
+
+.cc-done-state {
+  display: grid;
+  gap: 16px;
+  padding: 16px 0;
+  text-align: center;
+}
+
+.cc-done-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  font-size: 32px;
+  animation: ccPop 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ccPop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.cc-done-title {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 22px;
+  color: #F1F5F9;
+}
+
+.cc-done-sub {
+  color: #94A3B8;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+/* ── Loading / error states ─────────────────────────────────────────────── */
+
+.cc-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #64748B;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.cc-empty-title {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 20px;
+  color: #F1F5F9;
+}
+
+.cc-empty-sub {
+  color: #64748B;
+  font-size: 13.5px;
+  font-weight: 600;
+  max-width: 260px;
+}
+
+/* ── Page header ────────────────────────────────────────────────────────── */
+
+.cc-page-header {
+  display: grid;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.cc-page-eyebrow {
+  color: #F59E0B;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.cc-page-title {
+  font-family: var(--display, "Space Grotesk", system-ui);
+  font-weight: 700;
+  font-size: 28px;
+  color: #F1F5F9;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.cc-page-subtitle {
+  color: #94A3B8;
+  font-size: 13.5px;
+  font-weight: 600;
+}
