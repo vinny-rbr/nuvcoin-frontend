@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { BankAccount, FinanceItem } from "../types/finance";
-import { financeList, financeSubscribe } from "../lib/financeService";
+import { financeList, financeSubscribe, acctMapClearByAccountId } from "../lib/financeService";
 import {
   listBankAccounts,
   createBankAccount,
@@ -695,6 +695,7 @@ export default function Contas() {
     if (!editing) return;
     try {
       await deleteBankAccount(editing.id);
+      acctMapClearByAccountId(editing.id);
       setAccounts(prev => prev.filter(a => a.id !== editing.id));
       if (detail?.id === editing.id) setDetail(null);
     } catch {

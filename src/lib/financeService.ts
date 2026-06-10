@@ -357,6 +357,18 @@ function acctMapRemove(itemId: string): void {
   const m = loadAcctMap(); delete m[itemId]; saveAcctMap(m);
 }
 
+// Remove all mappings pointing to a given bankAccountId and strips accountId from those finance items
+export function acctMapClearByAccountId(bankAccountId: string): void {
+  const m = loadAcctMap();
+  const idsToRemove = Object.keys(m).filter(k => m[k] === bankAccountId);
+  if (idsToRemove.length === 0) return;
+  for (const id of idsToRemove) delete m[id];
+  saveAcctMap(m);
+  // Also strip accountId from cached finance items
+  const updated = getCache().map(i => i.accountId === bankAccountId ? { ...i, accountId: undefined } : i);
+  setCache(updated);
+  saveItemsStorage(updated);
+}
 
 function ensureUserScopedCache(): void {
   const currentStorageKey = getFinanceStorageKey();
