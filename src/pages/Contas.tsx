@@ -67,6 +67,63 @@ function AccountDetail({ account, onBack, onEdit, onTransfer }: {
           </div>
         </div>
 
+          {/* Receitas / Despesas cards — values are 0 until OFX import is done per account */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14, padding: "0 20px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true">
+                <path d="M12 19V5M12 5l-6 6M12 5l6 6"/>
+              </svg>
+              <div style={{ display: "grid", gap: 1 }}>
+                <small style={{ color: "#86efac", fontSize: 11, fontWeight: 700 }}>Receitas</small>
+                {/* TODO: filter financeItems by accountId once API exposes account link */}
+                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true">
+                <path d="M12 5v14M12 19l6-6M12 19l-6-6"/>
+              </svg>
+              <div style={{ display: "grid", gap: 1 }}>
+                <small style={{ color: "#fca5a5", fontSize: 11, fontWeight: 700 }}>Despesas</small>
+                {/* TODO: filter financeItems by accountId once API exposes account link */}
+                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
+              </div>
+            </div>
+          </div>
+
+        {/* Weekly bar chart — "Movimento do mês" */}
+        <div style={{ padding: "14px 20px 0" }}>
+          <div style={{ borderRadius: 18, border: "1px solid rgba(148,163,184,0.1)", background: "rgba(30,41,59,0.5)", padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <span style={{ color: "#F1F5F9", fontWeight: 800, fontSize: 14, fontFamily: "Manrope, system-ui" }}>
+                Movimento do mês
+              </span>
+              <div style={{ display: "flex", gap: 12 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#94A3B8", fontSize: 11, fontWeight: 700 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 3, background: "#22C55E", display: "inline-block" }} />
+                  Entr.
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#94A3B8", fontSize: 11, fontWeight: 700 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 3, background: "#EF4444", display: "inline-block" }} />
+                  Saíd.
+                </span>
+              </div>
+            </div>
+            {/* Placeholder 4-week bars — will be populated once per-account transaction data is available */}
+            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-around", height: 96, gap: 14 }}>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} style={{ display: "grid", justifyItems: "center", gap: 6, flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 76 }}>
+                    <div style={{ width: 13, height: 4, borderRadius: "4px 4px 0 0", background: "linear-gradient(180deg,#4ADE80,#16A34A)", opacity: 0.35 }} />
+                    <div style={{ width: 13, height: 4, borderRadius: "4px 4px 0 0", background: "linear-gradient(180deg,#F87171,#DC2626)", opacity: 0.35 }} />
+                  </div>
+                  <span style={{ color: "#64748B", fontSize: 10.5, fontWeight: 700 }}>S{i + 1}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="cc-detail-info-section">
           <div className="cc-detail-info-card">
             <div className="cc-info-row">

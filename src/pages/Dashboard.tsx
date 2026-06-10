@@ -952,20 +952,31 @@ export default function Dashboard() {
 
           <div className="dash-hero-bal-row">
             <div>
-              <span
-                className="dash-hero-bal"
-                style={{
-                  fontSize: heroBalSize(heroData.saldoCents, balanceHidden),
-                  color: heroData.saldoCents < 0 ? "#FFCBC6" : "#ffffff",
-                }}
-              >
-                {balanceHidden ? "R$ •••••" : formatBRLFromCents(heroData.saldoCents)}
-              </span>
-              {bankAccounts.length > 0 && (
-                <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginTop: 2, fontWeight: 500 }}>
-                  somando {bankAccounts.length} {bankAccounts.length === 1 ? "conta" : "contas"}
-                </div>
-              )}
+              {(() => {
+                // When bank accounts are cadastered, show their real balance sum.
+                // Otherwise fall back to the transaction-derived cumulative balance.
+                const displayCents = bankAccounts.length > 0
+                  ? bankAccounts.reduce((s, a) => s + a.balanceCents, 0)
+                  : heroData.saldoCents;
+                return (
+                  <>
+                    <span
+                      className="dash-hero-bal"
+                      style={{
+                        fontSize: heroBalSize(displayCents, balanceHidden),
+                        color: displayCents < 0 ? "#FFCBC6" : "#ffffff",
+                      }}
+                    >
+                      {balanceHidden ? "R$ •••••" : formatBRLFromCents(displayCents)}
+                    </span>
+                    {bankAccounts.length > 0 && (
+                      <div style={{ fontSize: 12, color: "rgba(255,255,255,.55)", marginTop: 2, fontWeight: 500 }}>
+                        somando {bankAccounts.length} {bankAccounts.length === 1 ? "conta" : "contas"}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
             <button
               type="button"

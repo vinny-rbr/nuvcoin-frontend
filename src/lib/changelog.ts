@@ -4,6 +4,11 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.96": [
+    { emoji: "💳", text: "BankCard com logo real de cada banco (Nubank, BB, Itaú, Inter, C6, Caixa, Santander, PicPay) e bandeira da rede (Mastercard, Visa, Elo)." },
+    { emoji: "💰", text: "Saldo em contas no Dashboard agora reflete o saldo real das contas bancárias cadastradas." },
+    { emoji: "📊", text: "Detalhe de conta: cards de Receitas/Despesas e gráfico de barras semanal." },
+  ],
   "1.0.95": [
     { emoji: "💳", text: "Dashboard: seção Meus cartões com CardDeck animado — swipe para trocar, toque para abrir a conta." },
   ],
