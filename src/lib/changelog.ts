@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.97": [
+    { emoji: "🔧", text: "Seção Meus cartões só aparece no Dashboard quando há contas cadastradas." },
+  ],
   "1.0.96": [
     { emoji: "💳", text: "BankCard com logo real de cada banco (Nubank, BB, Itaú, Inter, C6, Caixa, Santander, PicPay) e bandeira da rede (Mastercard, Visa, Elo)." },
     { emoji: "💰", text: "Saldo em contas no Dashboard agora reflete o saldo real das contas bancárias cadastradas." },
