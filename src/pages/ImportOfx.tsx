@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 
-import { financeAdd, financeFlushRecent, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate } from "../lib/financeService";
+import { financeAdd, financeFlushRecent, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate, makeId } from "../lib/financeService";
 import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
-import { parseBankFile, toFinanceItem, type OfxParsedItem } from "../lib/ofxImport";
+import { parseBankFile, toFinanceItem, type OfxParsedItem, type LedgerBal } from "../lib/ofxImport";
 import type { FinanceItem, FinanceStatus } from "../types/finance";
 
 import "./import-extrato.css";
 
 // ── Types ────────────────────────────────────────────────────────────
 
-type WizardStep = "select" | "reading" | "review" | "done";
+type WizardStep = "select" | "reading" | "review" | "adjust" | "done";
 
 type ReviewNewItem = {
   parsedItem: OfxParsedItem;
@@ -657,6 +657,69 @@ function StepReview({
   );
 }
 
+// ── Step 3b — Adjust ─────────────────────────────────────────────────
+
+function StepAdjust({
+  info,
+  onApply,
+  onSkip,
+}: {
+  info: { bankCents: number; appCents: number; dateISO: string };
+  onApply: () => void;
+  onSkip: () => void;
+}) {
+  const diff = info.bankCents - info.appCents;
+  const absDiff = Math.abs(diff);
+  const months = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  const [y, m, d] = info.dateISO.split("-");
+  const dateLabel = `${Number(d)} ${months[Number(m) - 1]} ${y}`;
+
+  return (
+    <div className="ix-fade">
+      <div className="ix-card" style={{ textAlign: "center", padding: "28px 20px 24px" }}>
+        <div style={{
+          width: 52, height: 52, borderRadius: 16, margin: "0 auto 16px",
+          background: "rgba(245,158,11,.15)", border: "1px solid rgba(245,158,11,.3)",
+          display: "grid", placeItems: "center", color: "#fbbf24",
+        }}>
+          <WarnIcon />
+        </div>
+        <h3 style={{ fontFamily: "var(--display)", fontSize: 18, fontWeight: 700, margin: "0 0 10px" }}>
+          Diferença de saldo detectada
+        </h3>
+        <p style={{ color: "var(--text-2)", fontSize: 13, lineHeight: 1.55, margin: "0 0 20px" }}>
+          O banco informa saldo de <strong style={{ color: "#f1f5f9" }}>{brl(info.bankCents)}</strong> em {dateLabel}.
+          O app calculou <strong style={{ color: "#f1f5f9" }}>{brl(info.appCents)}</strong>.
+        </p>
+
+        <div style={{
+          padding: "14px 16px", borderRadius: 14, marginBottom: 20,
+          background: diff > 0 ? "rgba(34,197,94,.1)" : "rgba(239,68,68,.1)",
+          border: `1px solid ${diff > 0 ? "rgba(74,222,128,.25)" : "rgba(248,113,113,.25)"}`,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: ".04em", color: "var(--text-2)", marginBottom: 4 }}>
+            LANÇAMENTO DE AJUSTE
+          </div>
+          <div style={{ fontFamily: "var(--display)", fontSize: 22, fontWeight: 700, color: diff > 0 ? "#4ade80" : "#f87171" }}>
+            {diff > 0 ? "+" : "−"}{brl(absDiff)}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--text-2)", marginTop: 4 }}>
+            "{diff > 0 ? "Receita" : "Despesa"}" · Saldo inicial — ajuste de importação · {dateLabel}
+          </div>
+        </div>
+
+        <button type="button" className="ix-btn-primary" onClick={onApply} style={{ marginBottom: 10 }}>
+          <CheckIcon />
+          Criar ajuste e finalizar
+        </button>
+        <button type="button" className="ix-btn-ghost" onClick={onSkip}>
+          Pular — não criar ajuste
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ── Step 4 — Done ─────────────────────────────────────────────────────
 
 function StepDone({ result, onRestart }: { result: ImportResult; onRestart: () => void }) {
@@ -700,6 +763,8 @@ export default function ImportOfx() {
   const [newItems, setNewItems] = useState<ReviewNewItem[]>([]);
   const [dupItems, setDupItems] = useState<ReviewDupItem[]>([]);
   const [importResult, setImportResult] = useState<ImportResult>({ added: 0, updated: 0, skipped: 0 });
+  const [ledgerBal, setLedgerBal] = useState<LedgerBal | null>(null);
+  const [adjustInfo, setAdjustInfo] = useState<{ bankCents: number; appCents: number; dateISO: string } | null>(null);
 
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
@@ -775,8 +840,9 @@ export default function ImportOfx() {
           if (ext === "ofx" || ext === "csv") {
             rawText = await pendingFile.text();
           }
-          const { items } = await parseBankFile(pendingFile);
+          const { items, ledgerBal: lb } = await parseBankFile(pendingFile);
           parsed = items;
+          if (lb) setLedgerBal(lb);
 
           let bank = "Extrato";
           let account = "Conta bancária";
@@ -936,6 +1002,45 @@ export default function ImportOfx() {
     const updated = filteredDup.filter((d) => d.action === "update").length;
     const skipped = filteredDup.filter((d) => d.action === "skip").length;
     setImportResult({ added, updated, skipped });
+
+    // Check if OFX had a LEDGERBAL to offer balance adjustment
+    if (ledgerBal) {
+      const cutoff = ledgerBal.dateISO;
+      // Cumulative balance in app up to cutoff (existing + just-imported)
+      const allAfterImport = financeList();
+      let cumRec = 0, cumDes = 0;
+      for (const item of allAfterImport) {
+        if (item.dateISO > cutoff) continue;
+        if (item.type === "RECEITA") cumRec += item.amountCents;
+        if (item.type === "DESPESA") cumDes += item.amountCents;
+      }
+      const appCents = cumRec - cumDes;
+      const diff = Math.abs(ledgerBal.balanceCents - appCents);
+      if (diff > 0) {
+        setAdjustInfo({ bankCents: ledgerBal.balanceCents, appCents, dateISO: cutoff });
+        setStep("adjust");
+        return;
+      }
+    }
+
+    setStep("done");
+  }
+
+  function applyAdjustment() {
+    if (!adjustInfo) { setStep("done"); return; }
+    const diff = adjustInfo.bankCents - adjustInfo.appCents;
+    const adj: FinanceItem = {
+      id: makeId(),
+      type: diff > 0 ? "RECEITA" : "DESPESA",
+      title: "Saldo inicial — ajuste de importação",
+      category: diff > 0 ? (incomeCategories[0] ?? "Outros") : (expenseCategories[0] ?? "Outros"),
+      amountCents: Math.abs(diff),
+      dateISO: adjustInfo.dateISO,
+      createdAtISO: new Date().toISOString(),
+      paymentType: "debit",
+      status: "paid",
+    };
+    financeAdd(adj);
     setStep("done");
   }
 
@@ -952,6 +1057,8 @@ export default function ImportOfx() {
     setFilterTo("");
     setRangeFrom("");
     setRangeTo("");
+    setLedgerBal(null);
+    setAdjustInfo(null);
     setStep("select");
   }
 
@@ -1005,6 +1112,14 @@ export default function ImportOfx() {
           rangeTo={rangeTo}
           setFilterFrom={setFilterFrom}
           setFilterTo={setFilterTo}
+        />
+      )}
+
+      {step === "adjust" && adjustInfo && (
+        <StepAdjust
+          info={adjustInfo}
+          onApply={applyAdjustment}
+          onSkip={() => setStep("done")}
         />
       )}
 

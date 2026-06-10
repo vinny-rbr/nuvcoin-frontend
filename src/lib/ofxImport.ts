@@ -16,6 +16,11 @@ export type OfxParsedItem = {
 
 export type BankFileKind = "OFX" | "CSV" | "XLSX" | "PDF";
 
+export type LedgerBal = {
+  balanceCents: number;
+  dateISO: string;
+};
+
 type ParsedRow = Record<string, string | number | undefined>;
 type RawSheetCell = string | number | Date | undefined;
 type CategoryInput = string | string[];
@@ -216,10 +221,10 @@ function inferType(block: string, amountRaw: string): FinanceItem["type"] {
   return "DESPESA";
 }
 
-export function parseOfx(text: string): OfxParsedItem[] {
+export function parseOfx(text: string): { items: OfxParsedItem[]; ledgerBal: LedgerBal | null } {
   const blocks = text.match(/<STMTTRN\b[^>]*>[\s\S]*?(?=<STMTTRN\b|<\/BANKTRANLIST>|<\/OFX>|$)/gi) ?? [];
 
-  return blocks
+  const items = blocks
     .map((block) => {
       const amountRaw = readTag(block, "TRNAMT");
       const amountCents = parseAmountCents(amountRaw);
@@ -239,6 +244,20 @@ export function parseOfx(text: string): OfxParsedItem[] {
       };
     })
     .filter((item) => item.amountCents > 0 && Boolean(item.title.trim()));
+
+  // Extract LEDGERBAL (closing balance reported by the bank)
+  const balAmtRaw = text.match(/<LEDGERBAL[\s\S]*?<BALAMT>([^\r\n<]+)/i)?.[1]?.trim();
+  const balDateRaw = text.match(/<LEDGERBAL[\s\S]*?<DTASOF>([^\r\n<]+)/i)?.[1]?.trim();
+  let ledgerBal: LedgerBal | null = null;
+  if (balAmtRaw && balDateRaw) {
+    const balanceCents = Math.round(Number(balAmtRaw.replace(",", ".").replace(/[^\d.-]/g, "")) * 100);
+    const dateISO = parseOfxDate(balDateRaw);
+    if (Number.isFinite(balanceCents) && dateISO) {
+      ledgerBal = { balanceCents, dateISO };
+    }
+  }
+
+  return { items, ledgerBal };
 }
 
 function splitCsvLine(line: string, separator: string): string[] {
@@ -408,11 +427,12 @@ export async function parsePdf(file: File): Promise<OfxParsedItem[]> {
   return parsePdfLines(lines.join("\n"));
 }
 
-export async function parseBankFile(file: File): Promise<{ kind: BankFileKind; items: OfxParsedItem[] }> {
+export async function parseBankFile(file: File): Promise<{ kind: BankFileKind; items: OfxParsedItem[]; ledgerBal?: LedgerBal | null }> {
   const extension = file.name.split(".").pop()?.toLowerCase();
 
   if (extension === "ofx") {
-    return { kind: "OFX", items: parseOfx(await file.text()) };
+    const { items, ledgerBal } = parseOfx(await file.text());
+    return { kind: "OFX", items, ledgerBal };
   }
 
   if (extension === "csv") {
