@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { BankAccount, FinanceItem } from "../types/finance";
-import { financeList, financeSubscribe, acctMapClearByAccountId } from "../lib/financeService";
+import { financeList, financeRefreshFromApi, financeSubscribe, acctMapClearByAccountId } from "../lib/financeService";
 import {
   listBankAccounts,
   createBankAccount,
@@ -37,8 +37,10 @@ function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
   const [allItems, setAllItems] = useState<FinanceItem[]>(() => financeList());
 
   useEffect(() => {
-    // Lê do cache local (que tem accountId) e subscreve a mudanças
     setAllItems(financeList());
+    // financeRefreshFromApi não seta lastWriteFromApiAt, então o subscribe
+    // não é bloqueado pelo anti-rebote e chama setAllItems com dados frescos da API
+    void financeRefreshFromApi().then(setAllItems).catch(() => undefined);
     return financeSubscribe(() => setAllItems(financeList()));
   }, []);
 
