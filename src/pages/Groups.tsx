@@ -312,6 +312,7 @@ export default function Groups() {
       );
     },
     reloadGroups,
+    existingNames: groups.map((g) => g.name),
   });
 
   const {
@@ -714,8 +715,21 @@ export default function Groups() {
           </div>
         )}
 
+        {state.groups.length === 0 && (
+          <div style={getClockEntryStyle(1)}>
+            <button
+              type="button"
+              className="grp-btn"
+              onClick={createGroup.open}
+              style={{ width: "100%", padding: "14px 20px", fontSize: 15, borderRadius: 16 }}
+            >
+              + Criar meu primeiro grupo
+            </button>
+          </div>
+        )}
+
         {!selectedGroup && (
-          <div style={getClockEntryStyle(state.groups.length > 0 ? 3 : 1)}>
+          <div style={getClockEntryStyle(state.groups.length > 0 ? 3 : 2)}>
             <div className="grp-invite-card">
               <span className="grp-hero-kicker">Entrar em grupo</span>
               <h3 style={{ fontFamily: "var(--display)", fontSize: 17, margin: "6px 0 2px" }}>

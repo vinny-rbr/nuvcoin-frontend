@@ -3,13 +3,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type CreateGroupFn = (name: string) => Promise<void>;
 
 type Props = {
-  createGroupRequest: CreateGroupFn; // função que chama a API
-  reloadGroups: () => Promise<void>; // função pra recarregar lista
+  createGroupRequest: CreateGroupFn;
+  reloadGroups: () => Promise<void>;
+  existingNames?: string[];
 };
 
 export function useGroupsCreateGroup({
   createGroupRequest,
   reloadGroups,
+  existingNames = [],
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState("");
@@ -67,6 +69,14 @@ export function useGroupsCreateGroup({
 
     if (!trimmedName) {
       setError("Informe um nome para o grupo");
+      return;
+    }
+
+    const duplicate = existingNames.some(
+      (n) => n.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicate) {
+      setError("Você já tem um grupo com esse nome");
       return;
     }
 
