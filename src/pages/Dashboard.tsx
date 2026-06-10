@@ -591,13 +591,21 @@ export default function Dashboard() {
   const saldoClass = summary.saldoCents >= 0 ? "green" : "red";
 
   const heroData = useMemo(() => {
-    let rec = 0, des = 0;
+    // rec/des = movimentação do mês selecionado (para o breakdown)
+    // saldo   = acumulado de todos os lançamentos ATÉ o fim do mês selecionado
+    let rec = 0, des = 0, cumRec = 0, cumDes = 0;
+    const endExclusive = addMonthsYM(heroMonth, 1); // primeiro dia do mês seguinte
     for (const item of items) {
-      if (!item.dateISO.startsWith(heroMonth)) continue;
-      if (item.type === "RECEITA") rec += item.amountCents;
-      if (item.type === "DESPESA") des += item.amountCents;
+      if (item.dateISO.startsWith(heroMonth)) {
+        if (item.type === "RECEITA") rec += item.amountCents;
+        if (item.type === "DESPESA") des += item.amountCents;
+      }
+      if (item.dateISO < endExclusive) {
+        if (item.type === "RECEITA") cumRec += item.amountCents;
+        if (item.type === "DESPESA") cumDes += item.amountCents;
+      }
     }
-    return { receitasCents: rec, despesasCents: des, saldoCents: rec - des };
+    return { receitasCents: rec, despesasCents: des, saldoCents: cumRec - cumDes };
   }, [items, heroMonth]);
 
   const sparklines = useMemo(() => {

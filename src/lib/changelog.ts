@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.89": [
+    { emoji: "💰", text: "Saldo em contas agora é acumulado — ao virar o mês sem movimentos, o saldo anterior é transportado corretamente." },
+  ],
   "1.0.88": [
     { emoji: "💡", text: "Envie sugestões de melhorias direto pelo Perfil — toda ideia é lida." },
   ],
