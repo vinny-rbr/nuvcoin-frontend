@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import type { BankAccount } from "../types/finance";
 import {
   listBankAccounts,
@@ -22,14 +23,17 @@ const BANK_LIST = ["nubank", "bb", "itau", "picpay", "inter", "c6", "caixa", "sa
 
 // ── AccountDetail slide-in ────────────────────────────────────────────────────
 
-function AccountDetail({ account, onBack, onEdit, onTransfer }: {
+function AccountDetail({ account, onBack, onEdit, onTransfer, onImport }: {
   account: BankAccount;
   onBack: () => void;
   onEdit: (a: BankAccount) => void;
   onTransfer: (a: BankAccount) => void;
+  onImport: (a: BankAccount) => void;
 }) {
   const b = brandOf(account.bank);
   const face = brandFace(account.bank, account.face);
+  const [reconciled, setReconciled] = useState(false);
+  const [catFilter, setCatFilter] = useState("Tudo");
 
   return (
     <div className="cc-detail">
@@ -51,14 +55,34 @@ function AccountDetail({ account, onBack, onEdit, onTransfer }: {
             <div className="cc-detail-account-label">{account.nick} · {account.accountType}</div>
             <div className="cc-detail-balance">{fmtBRL(account.balanceCents)}</div>
           </div>
-          <div className="cc-detail-actions-row">
+
+          {/* Receitas / Despesas */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true"><path d="M12 19V5M12 5l-6 6M12 5l6 6"/></svg>
+              <div style={{ display: "grid", gap: 1 }}>
+                <small style={{ color: "#86efac", fontSize: 11, fontWeight: 700 }}>Receitas</small>
+                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true"><path d="M12 5v14M12 19l6-6M12 19l-6-6"/></svg>
+              <div style={{ display: "grid", gap: 1 }}>
+                <small style={{ color: "#fca5a5", fontSize: 11, fontWeight: 700 }}>Despesas</small>
+                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="cc-detail-actions-row" style={{ marginTop: 10 }}>
             <button type="button" className="cc-detail-action-btn" onClick={() => onTransfer(account)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="#7dd3fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={16} height={16} aria-hidden="true">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
               </svg>
               Transferir
             </button>
-            <button type="button" className="cc-detail-action-btn" onClick={onBack}>
+            <button type="button" className="cc-detail-action-btn" onClick={() => onImport(account)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={16} height={16} aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
@@ -67,49 +91,20 @@ function AccountDetail({ account, onBack, onEdit, onTransfer }: {
           </div>
         </div>
 
-          {/* Receitas / Despesas cards — values are 0 until OFX import is done per account */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 14, padding: "0 20px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)" }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="#4ADE80" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true">
-                <path d="M12 19V5M12 5l-6 6M12 5l6 6"/>
-              </svg>
-              <div style={{ display: "grid", gap: 1 }}>
-                <small style={{ color: "#86efac", fontSize: 11, fontWeight: 700 }}>Receitas</small>
-                {/* TODO: filter financeItems by accountId once API exposes account link */}
-                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 14, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)" }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="#F87171" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" width={17} height={17} aria-hidden="true">
-                <path d="M12 5v14M12 19l6-6M12 19l-6-6"/>
-              </svg>
-              <div style={{ display: "grid", gap: 1 }}>
-                <small style={{ color: "#fca5a5", fontSize: 11, fontWeight: 700 }}>Despesas</small>
-                {/* TODO: filter financeItems by accountId once API exposes account link */}
-                <strong style={{ color: "#fff", fontSize: 15, fontWeight: 800, fontFamily: "Space Grotesk, system-ui", whiteSpace: "nowrap" }}>R$ 0,00</strong>
-              </div>
-            </div>
-          </div>
-
-        {/* Weekly bar chart — "Movimento do mês" */}
+        {/* Weekly bar chart */}
         <div style={{ padding: "14px 20px 0" }}>
           <div style={{ borderRadius: 18, border: "1px solid rgba(148,163,184,0.1)", background: "rgba(30,41,59,0.5)", padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-              <span style={{ color: "#F1F5F9", fontWeight: 800, fontSize: 14, fontFamily: "Manrope, system-ui" }}>
-                Movimento do mês
-              </span>
+              <span style={{ color: "#F1F5F9", fontWeight: 800, fontSize: 14, fontFamily: "Manrope, system-ui" }}>Movimento de junho</span>
               <div style={{ display: "flex", gap: 12 }}>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#94A3B8", fontSize: 11, fontWeight: 700 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 3, background: "#22C55E", display: "inline-block" }} />
-                  Entr.
+                  <span style={{ width: 9, height: 9, borderRadius: 3, background: "#22C55E", display: "inline-block" }} />Entr.
                 </span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5, color: "#94A3B8", fontSize: 11, fontWeight: 700 }}>
-                  <span style={{ width: 9, height: 9, borderRadius: 3, background: "#EF4444", display: "inline-block" }} />
-                  Saíd.
+                  <span style={{ width: 9, height: 9, borderRadius: 3, background: "#EF4444", display: "inline-block" }} />Saíd.
                 </span>
               </div>
             </div>
-            {/* Placeholder 4-week bars — will be populated once per-account transaction data is available */}
             <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-around", height: 96, gap: 14 }}>
               {[0, 1, 2, 3].map((i) => (
                 <div key={i} style={{ display: "grid", justifyItems: "center", gap: 6, flex: 1 }}>
@@ -124,30 +119,54 @@ function AccountDetail({ account, onBack, onEdit, onTransfer }: {
           </div>
         </div>
 
-        <div className="cc-detail-info-section">
-          <div className="cc-detail-info-card">
-            <div className="cc-info-row">
-              <span className="cc-info-label">Banco</span>
-              <span className="cc-info-value">{b.name}</span>
-            </div>
-            <div className="cc-info-divider" />
-            <div className="cc-info-row">
-              <span className="cc-info-label">Tipo</span>
-              <span className="cc-info-value">{account.accountType}</span>
-            </div>
-            <div className="cc-info-divider" />
-            <div className="cc-info-row">
-              <span className="cc-info-label">Final</span>
-              <span className="cc-info-value">•••• {account.last4}</span>
-            </div>
+        {/* Movimentações section */}
+        <div style={{ padding: "14px 20px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "0 2px 10px" }}>
+            <h3 style={{ fontFamily: "Space Grotesk, system-ui", fontWeight: 700, fontSize: 17, color: "#F1F5F9", margin: 0 }}>Movimentações</h3>
+            <button
+              type="button"
+              onClick={() => setReconciled(r => !r)}
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                border: reconciled ? "1px solid rgba(34,197,94,0.4)" : "1px solid rgba(96,165,250,0.3)",
+                background: reconciled ? "rgba(34,197,94,0.14)" : "rgba(59,130,246,0.14)",
+                color: reconciled ? "#4ADE80" : "#bfdbfe",
+                fontWeight: 800, fontSize: 12, cursor: "pointer",
+                padding: "6px 11px", borderRadius: 999, fontFamily: "Manrope, system-ui",
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" width={13} height={13} aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+              {reconciled ? "Conciliado" : "Conciliar"}
+            </button>
           </div>
-        </div>
 
-        <div className="cc-detail-empty-txn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={32} height={32} className="cc-detail-empty-icon" aria-hidden="true">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-          </svg>
-          <p>Importe um extrato OFX para ver as movimentações desta conta.</p>
+          {/* Category filter chips */}
+          <div style={{ display: "flex", gap: 7, overflowX: "auto", margin: "0 -2px 8px", padding: "0 2px 6px", scrollbarWidth: "none" }}>
+            {["Tudo"].map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCatFilter(c)}
+                style={{
+                  flexShrink: 0, padding: "7px 13px", borderRadius: 999, cursor: "pointer",
+                  fontFamily: "Manrope, system-ui", fontWeight: 700, fontSize: 12.5, whiteSpace: "nowrap",
+                  border: catFilter === c ? "1px solid rgba(96,165,250,0.4)" : "1px solid rgba(148,163,184,0.16)",
+                  background: catFilter === c ? "rgba(59,130,246,0.16)" : "rgba(15,23,42,0.5)",
+                  color: catFilter === c ? "#bfdbfe" : "#94A3B8",
+                }}
+              >{c}</button>
+            ))}
+          </div>
+
+          {/* Empty state */}
+          <div style={{ display: "grid", placeItems: "center", textAlign: "center", padding: "32px 0 8px", gap: 12 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" width={32} height={32} aria-hidden="true">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+            </svg>
+            <p style={{ color: "#64748B", fontSize: 13, fontWeight: 600, maxWidth: 260, lineHeight: 1.5, margin: 0 }}>
+              Importe um extrato OFX para ver as movimentações desta conta.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -201,7 +220,9 @@ function CadastroSheet({ onClose, onDone }: { onClose: () => void; onDone: (data
           <div className="cc-bank-grid">
             {BANK_LIST.map(id => (
               <button key={id} type="button" className="cc-bank-pick" onClick={() => { setBank(id); setNick(brandOf(id).name); setStep("form"); }}>
-                <span className="cc-bank-icon" style={{ background: brandOf(id).face }} />
+                {(() => { const { Logo, face } = brandOf(id); return (
+                  <span className="cc-bank-icon" style={{ background: face, display: "grid", placeItems: "center" }}><Logo s={13} /></span>
+                ); })()}
                 <span className="cc-bank-pick-label">{brandOf(id).name}</span>
               </button>
             ))}
@@ -375,7 +396,9 @@ function TransferSheet({ accounts, defaultFrom, onClose, onConfirm }: {
           const on = value === a.id;
           return (
             <button key={a.id} type="button" className={`cc-transfer-chip${on ? " is-active" : ""}`} onClick={() => setValue(a.id)}>
-              <span className="cc-chip-icon" style={{ background: brandFace(a.bank, a.face) }} />
+              {(() => { const { Logo } = brandOf(a.bank); return (
+                <span className="cc-chip-icon" style={{ background: brandFace(a.bank, a.face), display: "grid", placeItems: "center" }}><Logo s={10} /></span>
+              ); })()}
               {a.nick}
             </button>
           );
@@ -450,9 +473,102 @@ function TransferSheet({ accounts, defaultFrom, onClose, onConfirm }: {
   );
 }
 
+// ── QuickAddMenu ──────────────────────────────────────────────────────────────
+
+function QuickAddMenu({ onClose, onAdd, onImport, onTransfer }: {
+  onClose: () => void;
+  onAdd: () => void;
+  onImport: () => void;
+  onTransfer: () => void;
+}) {
+  const navigate = useNavigate();
+
+  function item(
+    icon: React.ReactNode,
+    color: string,
+    label: string,
+    sub: string,
+    onClick: () => void,
+  ) {
+    return (
+      <button type="button" onClick={onClick} style={{
+        display: "flex", alignItems: "center", gap: 13, width: "100%", padding: "13px 14px", borderRadius: 15,
+        border: "1px solid rgba(148,163,184,0.12)", background: "rgba(30,41,59,0.6)", cursor: "pointer", textAlign: "left",
+      }}>
+        <span style={{ width: 40, height: 40, borderRadius: 12, background: `${color}22`, display: "grid", placeItems: "center", flexShrink: 0 }}>{icon}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ color: "#F1F5F9", fontWeight: 800, fontSize: 14.5, fontFamily: "Manrope, system-ui" }}>{label}</div>
+          <div style={{ color: "#64748B", fontSize: 12, fontWeight: 600 }}>{sub}</div>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={16} height={16} aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    );
+  }
+
+  return (
+    <Sheet onClose={onClose}>
+      <div style={{ display: "grid", gap: 10 }}>
+        <div className="cc-sheet-title" style={{ marginBottom: 4 }}>Adicionar</div>
+        {item(
+          <svg viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={19} height={19} aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10v8M10 10v8M14 10v8M19 10v8"/><path d="M3 20h18"/></svg>,
+          "#60A5FA", "Novo banco", "Cadastrar conta ou cartão",
+          () => { onClose(); onAdd(); }
+        )}
+        {item(
+          <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={19} height={19} aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>,
+          "#a78bfa", "Importar extrato", "OFX, CSV, XLSX ou PDF",
+          () => { onClose(); onImport(); }
+        )}
+        {item(
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2dd4bf" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={19} height={19} aria-hidden="true"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5H18v3"/><path d="M3 7v10.5A2.5 2.5 0 0 0 5.5 20H20a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H5.5"/><circle cx="16.5" cy="13.5" r="1.2" fill="#2dd4bf" stroke="none"/></svg>,
+          "#2dd4bf", "Transferência", "Mover entre suas contas",
+          () => { onClose(); onTransfer(); }
+        )}
+        {item(
+          <svg viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={19} height={19} aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>,
+          "#22C55E", "Nova receita", "Lançar entrada manual",
+          () => { onClose(); navigate("/receitas"); }
+        )}
+        {item(
+          <svg viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={19} height={19} aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>,
+          "#EF4444", "Nova despesa", "Lançar saída manual",
+          () => { onClose(); navigate("/despesas"); }
+        )}
+      </div>
+    </Sheet>
+  );
+}
+
+// ── OfxSheet (simplified — routes to the full importer) ───────────────────────
+
+function OfxSheet({ onClose }: { onClose: () => void }) {
+  const navigate = useNavigate();
+
+  return (
+    <Sheet onClose={onClose}>
+      <div style={{ display: "grid", gap: 16 }}>
+        <div>
+          <div className="cc-sheet-title">Importar extrato</div>
+          <div className="cc-sheet-sub">Envie um arquivo do banco (OFX, CSV, XLSX ou PDF). A gente reconhece o banco e organiza tudo.</div>
+        </div>
+        <div style={{ display: "grid", placeItems: "center", gap: 8, padding: "22px", borderRadius: 18, border: "1.5px dashed rgba(167,139,250,0.4)", background: "rgba(167,139,250,0.08)" }}>
+          <span style={{ width: 52, height: 52, borderRadius: 15, background: "rgba(167,139,250,0.18)", display: "grid", placeItems: "center" }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={24} height={24} aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+          </span>
+          <span style={{ color: "#94A3B8", fontSize: 12.5, fontWeight: 600 }}>arraste aqui ou escolha um arquivo</span>
+        </div>
+        <button type="button" className="cc-primary-btn" onClick={() => { onClose(); navigate("/importar-ofx"); }}>
+          Abrir importador de extrato
+        </button>
+        <button type="button" className="cc-ghost-btn" onClick={onClose}>Cancelar</button>
+      </div>
+    </Sheet>
+  );
+}
+
 // ── Main Contas page ──────────────────────────────────────────────────────────
 
-type ActiveSheet = "add" | "edit" | "transfer" | null;
+type ActiveSheet = "add" | "edit" | "transfer" | "ofx" | "fab" | null;
 
 export default function Contas() {
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
@@ -462,6 +578,12 @@ export default function Contas() {
   const [sheet, setSheet] = useState<ActiveSheet>(null);
   const [editing, setEditing] = useState<BankAccount | null>(null);
   const [transferFrom, setTransferFrom] = useState<string | undefined>();
+
+  useEffect(() => {
+    function handler() { setSheet("fab"); }
+    window.addEventListener("conciliaai:open-quick-add-accounts", handler);
+    return () => window.removeEventListener("conciliaai:open-quick-add-accounts", handler);
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -532,6 +654,7 @@ export default function Contas() {
           onBack={() => setDetail(null)}
           onEdit={(a) => { setEditing(a); setSheet("edit"); }}
           onTransfer={(a) => { setTransferFrom(a.id); setSheet("transfer"); }}
+          onImport={() => setSheet("ofx")}
         />
       ) : (
         <>
@@ -568,10 +691,11 @@ export default function Contas() {
                   <div className="cc-account-list">
                     {accounts.map((acc, i) => {
                       const face = brandFace(acc.bank, acc.face);
+                      const { Logo } = brandOf(acc.bank);
                       return (
                         <button key={acc.id} type="button" className="cc-account-row" onClick={() => setDetail(acc)}
                           style={{ borderTop: i > 0 ? "1px solid rgba(148,163,184,.08)" : "none" }}>
-                          <span className="cc-row-icon" style={{ background: face }} />
+                          <span className="cc-row-icon" style={{ background: face, display: "grid", placeItems: "center" }}><Logo s={15} /></span>
                           <div className="cc-row-info">
                             <div className="cc-row-nick">{acc.nick}</div>
                             <div className="cc-row-sub">{acc.accountType} · ••{acc.last4}</div>
@@ -595,11 +719,24 @@ export default function Contas() {
                   Transferência entre contas
                 </button>
               )}
+
+              <button type="button" className="cc-ofx-import-btn" onClick={() => setSheet("ofx")}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width={18} height={18} aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+                Importar extrato (OFX)
+              </button>
             </>
           )}
         </>
       )}
 
+      {sheet === "fab" && (
+        <QuickAddMenu
+          onClose={() => setSheet(null)}
+          onAdd={() => setSheet("add")}
+          onImport={() => setSheet("ofx")}
+          onTransfer={() => { setTransferFrom(undefined); setSheet("transfer"); }}
+        />
+      )}
       {sheet === "add" && (
         <CadastroSheet onClose={() => setSheet(null)} onDone={handleAdd} />
       )}
@@ -608,6 +745,9 @@ export default function Contas() {
       )}
       {sheet === "transfer" && accounts.length >= 2 && (
         <TransferSheet accounts={accounts} defaultFrom={transferFrom} onClose={() => setSheet(null)} onConfirm={handleTransfer} />
+      )}
+      {sheet === "ofx" && (
+        <OfxSheet onClose={() => setSheet(null)} />
       )}
     </div>
   );

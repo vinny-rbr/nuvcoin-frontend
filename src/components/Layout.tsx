@@ -499,6 +499,12 @@ export default function Layout({ children }: Props) {
 
   function handleQuickAddToggle(event: ReactMouseEvent<HTMLButtonElement>) {
     event.stopPropagation();
+
+    if (location.pathname === "/contas") {
+      window.dispatchEvent(new CustomEvent("conciliaai:open-quick-add-accounts"));
+      return;
+    }
+
     logClientEvent({
       event: "navigation.quick_add.toggle",
       message: "Menu rapido de lancamento alternado",
