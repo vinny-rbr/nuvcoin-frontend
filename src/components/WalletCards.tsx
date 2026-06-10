@@ -320,7 +320,7 @@ export function CardDeck({ accounts, onSelect, onAdd, w = 290 }: {
 export function DashboardWalletSection({ accounts, loading }: { accounts: BankAccount[]; loading: boolean }) {
   const navigate = useNavigate();
 
-  if (loading || accounts.length === 0) return null;
+  if (loading) return null;
 
   return (
     <div className="wc-dash-section">
