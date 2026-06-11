@@ -904,6 +904,7 @@ export default function Perfil() {
                 type="button"
                 disabled={notifLoading}
                 onClick={async () => {
+                  alert(`DEBUG v14 — notifEnabled=${notifEnabled} | Notification=${typeof Notification !== "undefined" ? Notification.permission : "N/A"} | SW=${"serviceWorker" in navigator} | Push=${"PushManager" in window}`);
                   setNotifLoading(true);
                   try {
                     if (notifEnabled) {
