@@ -250,7 +250,6 @@ export default function Perfil() {
   const [notifEnabled, setNotifEnabled_] = useState(() => getNotifEnabled());
   const [notifSound, setNotifSound_] = useState(() => getNotifSound());
   const [notifVibrate, setNotifVibrate_] = useState(() => getNotifVibrate());
-  const [notifLoading, setNotifLoading] = useState(false);
   const [notifMsg, setNotifMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   // sync visual com o estado real da subscription no browser
