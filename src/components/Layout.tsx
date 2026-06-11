@@ -929,11 +929,11 @@ export default function Layout({ children }: Props) {
 
               <button
                 type="button"
-                className={`mobile-nav-btn${location.pathname === "/cartao-credito" ? " is-active" : ""}`}
-                onClick={() => handleMobileRoute("/cartao-credito")}
+                className={`mobile-nav-btn${location.pathname === "/categorias" ? " is-active" : ""}`}
+                onClick={() => handleMobileRoute("/categorias")}
               >
-                {NAV_ICONS.cartaoCredito}
-                <span>Crédito</span>
+                {NAV_ICONS.categorias}
+                <span>Categorias</span>
               </button>
 
               {/* Central FAB */}
