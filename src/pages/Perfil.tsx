@@ -11,7 +11,7 @@ import {
   NOTIF_SOUNDS,
   getNotifSound, setNotifSound,
   getNotifVibrate, setNotifVibrate,
-  getNotifEnabled,
+  getNotifEnabled, setNotifEnabled,
   subscribePush, unsubscribePush,
   playSound, vibrateDevice,
 } from "../lib/pushService";
@@ -251,6 +251,20 @@ export default function Perfil() {
   const [notifSound, setNotifSound_] = useState(() => getNotifSound());
   const [notifVibrate, setNotifVibrate_] = useState(() => getNotifVibrate());
   const [notifLoading, setNotifLoading] = useState(false);
+
+  // sync visual com o estado real da subscription no browser
+  useEffect(() => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => {
+        const hasRealSub = !!sub;
+        if (getNotifEnabled() !== hasRealSub) {
+          setNotifEnabled(hasRealSub);  // atualiza localStorage
+          setNotifEnabled_(hasRealSub); // atualiza React state
+        }
+      }).catch(() => undefined);
+    }).catch(() => undefined);
+  }, []);
 
   const [suggestionText, setSuggestionText] = useState("");
   const [suggestionSending, setSuggestionSending] = useState(false);
@@ -904,7 +918,6 @@ export default function Perfil() {
                 type="button"
                 disabled={notifLoading}
                 onClick={async () => {
-                  alert(`DEBUG v14 — notifEnabled=${notifEnabled} | Notification=${typeof Notification !== "undefined" ? Notification.permission : "N/A"} | SW=${"serviceWorker" in navigator} | Push=${"PushManager" in window}`);
                   setNotifLoading(true);
                   try {
                     if (notifEnabled) {
