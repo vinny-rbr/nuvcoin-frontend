@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.11.9": [
+    { emoji: "🔔", text: "Push notifications reais — agora você recebe um aviso no celular toda vez que um gasto for lançado no cartão de crédito, mesmo com o app fechado." },
+    { emoji: "🔕", text: "Som e vibração personalizados: o push toca o som que você configurou nas notificações do seu perfil." },
+  ],
   "26.6.10.4": [
     { emoji: "🔢", text: "Nova numeração de versão: AA.M.D.N — você vê exatamente o dia e quantas atualizações saíram no mês." },
   ],

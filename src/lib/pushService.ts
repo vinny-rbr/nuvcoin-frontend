@@ -66,23 +66,32 @@ export async function requestPushPermission(): Promise<NotificationPermission> {
   return Notification.requestPermission();
 }
 
+async function fetchVapidPublicKey(): Promise<string> {
+  const cached = localStorage.getItem("conciliaai_vapid_public");
+  if (cached) return cached;
+  try {
+    const res = await fetch(apiUrl("/api/push/vapid-public-key"));
+    if (!res.ok) return "";
+    const data = (await res.json()) as { publicKey?: string };
+    if (data.publicKey) localStorage.setItem("conciliaai_vapid_public", data.publicKey);
+    return data.publicKey ?? "";
+  } catch {
+    return "";
+  }
+}
+
 export async function subscribePush(): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
   const permission = await requestPushPermission();
   if (permission !== "granted") return false;
 
   try {
+    const vapidKey = await fetchVapidPublicKey();
+    if (!vapidKey) return false;
+
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
-      // VAPID public key will come from the backend — for now use a placeholder
-      // that gets replaced once the backend is set up
-      const vapidKey = localStorage.getItem("conciliaai_vapid_public") ?? "";
-      if (!vapidKey) {
-        // No VAPID key yet — still store that push is enabled for UX
-        setNotifEnabled(true);
-        return true;
-      }
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
@@ -91,7 +100,6 @@ export async function subscribePush(): Promise<boolean> {
 
     const token = localStorage.getItem("token");
     if (token) {
-      // apiUrl imported at top of file
       await fetch(apiUrl("/api/push/subscribe"), {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
