@@ -905,32 +905,32 @@ export default function Perfil() {
                 disabled={notifLoading}
                 onClick={async () => {
                   setNotifLoading(true);
-                  if (notifEnabled) {
-                    await unsubscribePush();
-                    setNotifEnabled_(false);
-                  } else {
-                    if (!("Notification" in window)) {
-                      alert("Seu navegador não suporta notificações push. Tente pelo Chrome ou adicione o app à tela inicial.");
-                      setNotifLoading(false);
-                      return;
+                  try {
+                    if (notifEnabled) {
+                      await unsubscribePush();
+                      setNotifEnabled_(false);
+                    } else {
+                      if (!("Notification" in window)) {
+                        alert("Seu navegador não suporta notificações push. Tente pelo Chrome ou adicione o app à tela inicial.");
+                        return;
+                      }
+                      if (Notification.permission === "denied") {
+                        alert("Notificações bloqueadas no navegador. Acesse as configurações do site e permita notificações manualmente.");
+                        return;
+                      }
+                      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+                        alert("Push não suportado neste navegador. No iPhone, adicione o app à tela inicial pelo Safari. No Android, use o Chrome.");
+                        return;
+                      }
+                      const ok = await subscribePush();
+                      if (!ok) {
+                        alert("Não foi possível ativar as notificações. Verifique se o app está instalado na tela inicial e se a permissão foi concedida.");
+                      }
+                      setNotifEnabled_(ok);
                     }
-                    if (Notification.permission === "denied") {
-                      alert("Notificações bloqueadas no navegador. Acesse as configurações do site e permita notificações manualmente.");
-                      setNotifLoading(false);
-                      return;
-                    }
-                    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-                      alert("Push não suportado neste navegador. No iPhone, adicione o app à tela inicial pelo Safari. No Android, use o Chrome.");
-                      setNotifLoading(false);
-                      return;
-                    }
-                    const ok = await subscribePush();
-                    if (!ok) {
-                      alert("Não foi possível ativar as notificações. Verifique se o app está instalado na tela inicial e se a permissão foi concedida.");
-                    }
-                    setNotifEnabled_(ok);
+                  } finally {
+                    setNotifLoading(false);
                   }
-                  setNotifLoading(false);
                 }}
                 style={{
                   width: 52, height: 30, borderRadius: 999, border: 0, cursor: "pointer", flexShrink: 0,
