@@ -9,7 +9,7 @@ import LoginAnimatedBg from "./LoginAnimatedBg";
 import "./auth.css";
 
 export default function Login() {
-  const navigate = useNavigate(); // Permite redirecionar o usuÃ¡rio para outra rota
+  const navigate = useNavigate(); // Permite redirecionar o usuário para outra rota
 
   const [email, setEmail] = useState(""); // Estado que guarda o e-mail digitado
   const [password, setPassword] = useState(""); // Estado que guarda a senha digitada
@@ -17,7 +17,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false); // Estado de carregamento
 
   async function handleLogin() {
-    // FunÃ§Ã£o executada ao clicar no botÃ£o "Entrar"
+    // Função executada ao clicar no botão "Entrar"
     logClientEvent({
       event: "auth.login.submit",
       message: "Tentativa de login",
@@ -34,7 +34,7 @@ export default function Login() {
       setLoading(true); // Ativa loading
 
       // =========================
-      // âœ… Chama backend pra gerar JWT vÃ¡lido
+      // âœ… Chama backend pra gerar JWT válido
       // =========================
 
       const res = await fetch(apiUrl("/api/auth/login"), {
@@ -43,8 +43,8 @@ export default function Login() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: email.trim(), // Email do usuÃ¡rio
-          password: password, // Senha do usuÃ¡rio
+          email: email.trim(), // Email do usuário
+          password: password, // Senha do usuário
         }),
       });
 
@@ -85,19 +85,19 @@ export default function Login() {
       };
 
       if (!data.token) {
-        // Se nÃ£o vier token, nÃ£o dÃ¡ pra continuar
-        throw new Error("Login falhou: token nÃ£o retornou.");
+        // Se não vier token, não dá pra continuar
+        throw new Error("Login falhou: token não retornou.");
       }
 
       // =========================
       // âœ… Chaves oficiais do app
       // =========================
 
-      localStorage.setItem("auth", "true"); // Marca como logado (compatÃ­vel com ProtectedRoute)
-      localStorage.setItem("token", data.token); // âœ… JWT real (compatÃ­vel com financeServices)
+      localStorage.setItem("auth", "true"); // Marca como logado (compatível com ProtectedRoute)
+      localStorage.setItem("token", data.token); // âœ… JWT real (compatível com financeServices)
 
       // =========================
-      // âœ… Chaves especÃ­ficas do Conciliaaí
+      // âœ… Chaves específicas do Conciliaaí
       // =========================
 
       localStorage.setItem("conciliaai_email", data.email); // Email
@@ -226,8 +226,8 @@ O que foi feito:
 âœ” Removido login por "dev token"
 âœ” Agora chama POST /api/auth/token
 âœ” Salva JWT real em localStorage.setItem("token", jwt)
-âœ” MantÃ©m "auth=true" para continuar compatÃ­vel com ProtectedRoute
-âœ” Salva dados Ãºteis: conciliaai_email, conciliaai_userId, conciliaai_name
+âœ” Mantém "auth=true" para continuar compatível com ProtectedRoute
+âœ” Salva dados úteis: conciliaai_email, conciliaai_userId, conciliaai_name
 */
 
 

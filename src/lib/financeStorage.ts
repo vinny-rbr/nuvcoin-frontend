@@ -23,7 +23,7 @@ export function isFinanceStorageKey(key: string | null): boolean {
 }
 
 /* =====================================================
-   EVENTO INTERNO PARA ATUALIZAÃ‡ÃƒO EM TEMPO REAL
+   EVENTO INTERNO PARA ATUALIZAÇÃƒO EM TEMPO REAL
    ===================================================== */
 
 export function notifyFinanceUpdated(): void {
@@ -32,33 +32,33 @@ export function notifyFinanceUpdated(): void {
 }
 
 /* =====================================================
-   NORMALIZAÃ‡ÃƒO (garante compatibilidade)
+   NORMALIZAÇÃƒO (garante compatibilidade)
    ===================================================== */
 
 function normalizeItem(raw: any): FinanceItem {
   // Garante ID (se vier faltando)
   const id: string = raw?.id ?? makeId(); // ID seguro
 
-  // Garante type/tÃ­tulo bÃ¡sicos
+  // Garante type/título básicos
   const type = raw?.type ?? "DESPESA"; // Default seguro
   const title = raw?.title ?? ""; // Default
 
   // Garante categoria
   const category = raw?.category ?? "Outros"; // Default
 
-  // Garante amount em nÃºmero
+  // Garante amount em número
   const amountCents = Number(raw?.amountCents ?? 0); // Default 0
 
-  // Garante datas no padrÃ£o do FRONT (dateISO / createdAtISO)
+  // Garante datas no padrão do FRONT (dateISO / createdAtISO)
   const dateISO: string =
     raw?.dateISO ??
-    raw?.date ?? // caso alguÃ©m salve "date"
+    raw?.date ?? // caso alguém salve "date"
     todayISO(); // fallback
 
   const createdAtISO: string =
     raw?.createdAtISO ??
     raw?.createdAtUtc ?? // caso venha do backend
-    raw?.createdAt ?? // variaÃ§Ãµes
+    raw?.createdAt ?? // variações
     new Date().toISOString(); // fallback
 
   // Garante paymentType/status
@@ -76,8 +76,8 @@ function normalizeItem(raw: any): FinanceItem {
 }
 
 function normalizeList(parsed: any): FinanceItem[] {
-  // Se nÃ£o for array, volta vazio
-  if (!Array.isArray(parsed)) return []; // ProteÃ§Ã£o
+  // Se não for array, volta vazio
+  if (!Array.isArray(parsed)) return []; // Proteção
 
   // Normaliza item a item (evita quebrar a UI por dados antigos)
   return parsed.map((x) => normalizeItem(x)); // Normaliza
@@ -89,8 +89,8 @@ function normalizeList(parsed: any): FinanceItem[] {
 
 export function loadFinanceItems(): FinanceItem[] {
   try {
-    const raw = localStorage.getItem(getFinanceStorageKey()); // LÃª do localStorage do usuario atual
-    if (!raw) return []; // Se nÃ£o tiver nada, retorna vazio
+    const raw = localStorage.getItem(getFinanceStorageKey()); // Lê do localStorage do usuario atual
+    if (!raw) return []; // Se não tiver nada, retorna vazio
 
     const parsed = JSON.parse(raw); // Converte JSON -> qualquer coisa
 
@@ -202,7 +202,7 @@ export function makeId(): string {
 export function todayISO(): string {
   const d = new Date(); // Data atual
   const yyyy = d.getFullYear(); // Ano
-  const mm = String(d.getMonth() + 1).padStart(2, "0"); // MÃªs
+  const mm = String(d.getMonth() + 1).padStart(2, "0"); // Mês
   const dd = String(d.getDate()).padStart(2, "0"); // Dia
 
   return `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
@@ -218,12 +218,12 @@ O que este arquivo faz agora:
 
 âœ” Armazena itens financeiros no localStorage
 âœ” Atualiza automaticamente Dashboard/Receitas/Despesas
-âœ” Dispara evento interno para atualizaÃ§Ã£o em tempo real
-âœ” Calcula resumo financeiro (inclui crÃ©dito)
+âœ” Dispara evento interno para atualização em tempo real
+âœ” Calcula resumo financeiro (inclui crédito)
 âœ” Gera ID seguro
-âœ” Retorna data ISO padrÃ£o
+âœ” Retorna data ISO padrão
 âœ” Normaliza dados antigos (date -> dateISO / createdAtUtc -> createdAtISO)
 
-CrÃ©dito:
+Crédito:
 - totalCreditoCents = soma de DESPESA onde paymentType = "credit"
 */

@@ -5,7 +5,7 @@ import { readApiErrorMessage } from "../lib/apiError";
 import { logClientEvent } from "../lib/clientLogger";
 import { getPasswordPolicyError } from "../lib/passwordPolicy";
 import "./auth.css";
-// useNavigate permite redirecionar apÃ³s criar conta
+// useNavigate permite redirecionar após criar conta
 
 export default function Register() {
   const navigate = useNavigate();
@@ -69,7 +69,7 @@ export default function Register() {
         });
 
         if (res.status === 409) {
-          alert("Esse e-mail jÃ¡ estÃ¡ cadastrado.");
+          alert("Esse e-mail já está cadastrado.");
           return;
         }
 

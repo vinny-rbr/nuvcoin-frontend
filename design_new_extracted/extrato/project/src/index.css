@@ -1,0 +1,328 @@
+﻿/* ========================= */
+/* CONCILIAAÍ - TEMA OFICIAL   */
+/* Minimalista Tech Dark    */
+/* ========================= */
+
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@500;600;700&display=swap");
+@import url("./styles/redesign.css");
+
+:root {
+  --bg-deep: #0A0F1E;
+  --bg-main: #0F172A;
+  --bg-card: #1E293B;
+  --bg-card-solid: #18233B;
+  --primary: #3B82F6;
+  --primary-2: #2563EB;
+  --primary-lt: #60A5FA;
+  --success: #22C55E;
+  --success-lt: #4ADE80;
+  --danger: #EF4444;
+  --danger-lt: #F87171;
+  --text-main: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-2: #94A3B8;
+  --text-3: #64748B;
+  --stroke: rgba(148, 163, 184, 0.13);
+  --stroke-soft: rgba(148, 163, 184, 0.09);
+  --grad-primary: linear-gradient(135deg, #60A5FA 0%, #2563EB 100%);
+  --grad-success: linear-gradient(135deg, #4ADE80 0%, #16A34A 100%);
+  --shadow-card: 0 18px 48px rgba(2, 6, 23, 0.45);
+  --shadow-pop: 0 28px 80px rgba(2, 6, 23, 0.6);
+  --font: "Manrope", system-ui, sans-serif;
+  --display: "Space Grotesk", "Manrope", system-ui, sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: var(--font);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  touch-action: pan-y;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background:
+    radial-gradient(900px 580px at 12% -10%, rgba(37, 99, 235, 0.18), transparent 55%),
+    radial-gradient(760px 520px at 100% 0%, rgba(34, 197, 94, 0.10), transparent 50%),
+    radial-gradient(720px 720px at 80% 110%, rgba(167, 139, 250, 0.10), transparent 55%),
+    var(--bg-deep);
+  color: var(--text-main);
+  overscroll-behavior-x: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(circle at 50% 28%, #000 0%, transparent 78%);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.18);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-update-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10000;
+  width: min(390px, calc(100vw - 28px));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top left, rgba(96, 165, 250, 0.20), transparent 38%),
+    rgba(15, 23, 42, 0.96);
+  color: var(--text-main);
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
+  backdrop-filter: blur(16px);
+  animation: appUpdateToastIn 0.28s ease both;
+}
+
+.app-update-toast div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.app-update-toast strong {
+  font-size: 15px;
+}
+
+.app-update-toast span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.app-update-toast button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+@keyframes appUpdateToastIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .app-update-toast {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    width: auto;
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .app-update-toast button {
+    width: 100%;
+  }
+}
+
+/* ── What's New modal ── */
+.wnm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(5, 9, 20, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  animation: wnmScrimIn 0.2s ease;
+}
+@keyframes wnmScrimIn { from { opacity: 0 } to { opacity: 1 } }
+
+.wnm-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(180deg, rgba(20, 29, 48, 0.99), rgba(11, 17, 32, 0.99));
+  border: 1px solid rgba(96, 165, 250, 0.18);
+  border-bottom: 0;
+  border-radius: 26px 26px 0 0;
+  padding: 12px 20px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  box-shadow: 0 -28px 70px rgba(0, 0, 0, 0.55);
+  animation: wnmSheetUp 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes wnmSheetUp {
+  from { transform: translateY(56px); opacity: 0.3 }
+  to   { transform: translateY(0);    opacity: 1 }
+}
+
+.wnm-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+  margin: 0 auto 20px;
+}
+
+.wnm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.wnm-icon {
+  font-size: 34px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.wnm-title {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #f1f5f9;
+  line-height: 1.1;
+}
+.wnm-version {
+  font-size: 12px;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-top: 3px;
+  letter-spacing: 0.02em;
+}
+
+.wnm-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.wnm-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(148, 163, 184, 0.09);
+  font-size: 14px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.35;
+}
+.wnm-emoji {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.wnm-btn {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #60a5fa, #2563eb);
+  color: #fff;
+  font-weight: 900;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 12px 32px rgba(37, 99, 235, 0.38);
+  transition: opacity 0.16s;
+}
+.wnm-btn:active { opacity: 0.85; }
+
+/* Cards padrÃ£o */
+.card {
+  background:
+    radial-gradient(circle at 16% 0%, rgba(96, 165, 250, 0.10), transparent 36%),
+    rgba(30, 41, 59, 0.66);
+  padding: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 20px;
+  box-shadow: var(--shadow-card), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  margin-bottom: 20px;
+}
+
+/* BotÃµes */
+.button-primary {
+  background-color: var(--primary);
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.button-primary:hover {
+  opacity: 0.85;
+}
+
+/* Inputs */
+input {
+  background-color: var(--bg-card);
+  border: 1px solid #334155;
+  padding: 10px;
+  border-radius: 8px;
+  color: var(--text-main);
+  margin-bottom: 10px;
+}

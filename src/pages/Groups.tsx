@@ -7,24 +7,24 @@ import GroupsGroupsLane from "./groups/components/GroupsGroupsLane";
 import GroupsModalsHub from "./groups/components/GroupsModalsHub";
 import { acceptGroupInvite } from "./groups/services/groups.api";
 
-import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de aÃ§Ãµes do mÃ³dulo
+import useGroupsActions from "./groups/hooks/useGroupsActions"; // Hook de ações do módulo
 import useGroupsBaseConfig from "./groups/hooks/useGroupsBaseConfig"; // Hook da base salarial / percentual
-import { useGroupsCalculations } from "./groups/hooks/useGroupsCalculations"; // Hook de cÃ¡lculos do dashboard
-import { useGroupsCreateGroup } from "./groups/hooks/useGroupsCreateGroup"; // Hook dedicado Ã  criaÃ§Ã£o de grupo
-import useGroupsCreateTransition from "./groups/hooks/useGroupsCreateTransition"; // Hook da transiÃ§Ã£o visual ao criar grupo
+import { useGroupsCalculations } from "./groups/hooks/useGroupsCalculations"; // Hook de cálculos do dashboard
+import { useGroupsCreateGroup } from "./groups/hooks/useGroupsCreateGroup"; // Hook dedicado Ã  criação de grupo
+import useGroupsCreateTransition from "./groups/hooks/useGroupsCreateTransition"; // Hook da transição visual ao criar grupo
 import { useGroupsDashboard } from "./groups/hooks/useGroupsDashboard"; // Hook central do dashboard
-import useGroupsEditExpense from "./groups/hooks/useGroupsEditExpense"; // Hook da ediÃ§Ã£o de despesa
-import useGroupsExpenses from "./groups/hooks/useGroupsExpenses"; // Hook das despesas do mÃ³dulo
-import useGroupsForms from "./groups/hooks/useGroupsForms"; // Hook de formulÃ¡rios do mÃ³dulo
+import useGroupsEditExpense from "./groups/hooks/useGroupsEditExpense"; // Hook da edição de despesa
+import useGroupsExpenses from "./groups/hooks/useGroupsExpenses"; // Hook das despesas do módulo
+import useGroupsForms from "./groups/hooks/useGroupsForms"; // Hook de formulários do módulo
 import useGroupsHeaderActions from "./groups/hooks/useGroupsHeaderActions";
-import useGroupsModals from "./groups/hooks/useGroupsModals"; // Hook de modais do mÃ³dulo
+import useGroupsModals from "./groups/hooks/useGroupsModals"; // Hook de modais do módulo
 
 import type {
   GroupDto,
   GroupsApiState,
-} from "./groups/types/groups.types"; // Tipos do mÃ³dulo
+} from "./groups/types/groups.types"; // Tipos do módulo
 
-import { safeName } from "./groups/utils/groups.helpers"; // Helpers do mÃ³dulo
+import { safeName } from "./groups/utils/groups.helpers"; // Helpers do módulo
 
 import {
   dangerButtonSmall,
@@ -44,7 +44,7 @@ import {
   subtleText,
   tabButton,
   timelineCard,
-} from "./groups/styles/groups.styles"; // Estilos centralizados do mÃ³dulo
+} from "./groups/styles/groups.styles"; // Estilos centralizados do módulo
 import "./groups/styles/groups.css"; // Premium redesign CSS
 
 ChartJS.register(ArcElement, Tooltip, Legend); // Registra componentes do Chart.js
@@ -142,12 +142,12 @@ export default function Groups() {
   const [inviteCodeLoading, setInviteCodeLoading] = useState(false);
   const [animate, setAnimate] = useState(false);
   const [pageReady, setPageReady] = useState(false);
-  const [animationKey, setAnimationKey] = useState(0); // forÃ§a nova execuÃ§Ã£o visual
-  const [highlightGroupId, setHighlightGroupId] = useState<string | null>(null); // Destaca visualmente o grupo recÃ©m-criado
-  const [pendingCreatedGroupName, setPendingCreatedGroupName] = useState<string | null>(null); // Guarda o nome do grupo recÃ©m-criado atÃ© a lista atualizar
+  const [animationKey, setAnimationKey] = useState(0); // força nova execução visual
+  const [highlightGroupId, setHighlightGroupId] = useState<string | null>(null); // Destaca visualmente o grupo recém-criado
+  const [pendingCreatedGroupName, setPendingCreatedGroupName] = useState<string | null>(null); // Guarda o nome do grupo recém-criado até a lista atualizar
   const [isGroupsLaneAnimating, setIsGroupsLaneAnimating] = useState(false); // Faz a faixa dos grupos reagir quando um novo grupo entra
   const [isSwitchingGroup, setIsSwitchingGroup] = useState(false); // Faz a troca entre grupos ficar suave
-  const [isDeleteGroupConfirmOpen, setIsDeleteGroupConfirmOpen] = useState(false); // Controla o modal customizado de exclusÃ£o
+  const [isDeleteGroupConfirmOpen, setIsDeleteGroupConfirmOpen] = useState(false); // Controla o modal customizado de exclusão
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") return false;
     return window.innerWidth < 768;
@@ -228,7 +228,7 @@ export default function Groups() {
   });
 
   // ==============================
-  // HOOK: ediÃ§Ã£o de despesa
+  // HOOK: edição de despesa
   // ==============================
 
   const {
@@ -391,7 +391,7 @@ export default function Groups() {
   }, [closeHeaderActionModal, openCreateExpenseModal, prepareQuickExpenseFlow]);
 
   // ==============================
-  // EFFECT: animaÃ§Ã£o ao entrar/trocar grupo
+  // EFFECT: animação ao entrar/trocar grupo
   // ==============================
 
   useEffect(() => {
@@ -408,7 +408,7 @@ export default function Groups() {
   }, [selectedGroupId]);
 
   // ==============================
-  // EFFECT: encontra e destaca o grupo recÃ©m-criado
+  // EFFECT: encontra e destaca o grupo recém-criado
   // ==============================
 
   useEffect(() => {
@@ -1160,15 +1160,15 @@ Desenvolvido por Lucas Vinicius
 lucassousa@gmail.com
 =====================================================
 
-MudanÃ§a feita nesta etapa:
+Mudança feita nesta etapa:
 
 âœ” Subi os atalhos principais para o topo em formato quadrado
-âœ” Adicionei hover com o nome de cada aÃ§Ã£o
-âœ” Adicionei clique abrindo uma janela com as informaÃ§Ãµes
-âœ” Removi da Ã¡rea fixa de baixo os blocos de Pessoas, Base, LanÃ§ar despesa, Resumo e HistÃ³rico
-âœ” No lugar deixei a Ã¡rea inferior mais limpa e focada no dashboard
-âœ” Mantive os modais jÃ¡ existentes do projeto sem quebrar o fluxo
-âœ” Mantive criaÃ§Ã£o de grupo, atualizaÃ§Ã£o e seleÃ§Ã£o funcionando
+âœ” Adicionei hover com o nome de cada ação
+âœ” Adicionei clique abrindo uma janela com as informações
+âœ” Removi da área fixa de baixo os blocos de Pessoas, Base, Lançar despesa, Resumo e Histórico
+âœ” No lugar deixei a área inferior mais limpa e focada no dashboard
+âœ” Mantive os modais já existentes do projeto sem quebrar o fluxo
+âœ” Mantive criação de grupo, atualização e seleção funcionando
 */
 
 

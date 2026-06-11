@@ -2,11 +2,11 @@
 import type { GroupSplitMode } from "../types/groups.types";
 
 export function salaryStorageKey(groupId: string): string {
-  return `conciliaai:group:${groupId}:salaryBase`; // Chave fixa para salÃ¡rios
+  return `conciliaai:group:${groupId}:salaryBase`; // Chave fixa para salários
 }
 
 export function splitModeStorageKey(groupId: string): string {
-  return `conciliaai:group:${groupId}:splitMode`; // Chave fixa para modo de divisÃ£o
+  return `conciliaai:group:${groupId}:splitMode`; // Chave fixa para modo de divisão
 }
 
 export function manualPercentStorageKey(groupId: string): string {

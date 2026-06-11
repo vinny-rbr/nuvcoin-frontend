@@ -443,15 +443,15 @@ export async function deleteExpense(expenseId: string): Promise<void> {
 // lucassousa@gmail.com
 //
 // Este arquivo centraliza todas as chamadas de API
-// do mÃ³dulo Groups do CONCILIAAÍ.
+// do módulo Groups do CONCILIAAÍ.
 //
-// Novas funÃ§Ãµes adicionadas nesta etapa:
+// Novas funções adicionadas nesta etapa:
 // - createGroup
 // - deleteGroup
 // - addMember
 // - removeMember
 //
-// ObservaÃ§Ã£o importante:
+// Observação importante:
 // - Mantive os payloads de grupo/membro de forma segura e simples.
 // - Para addMember, o frontend envia apenas o e-mail.
 
