@@ -20,7 +20,7 @@ function authHeaders(): Record<string, string> {
 
 export async function listCreditCards(): Promise<CreditCard[]> {
   const res = await fetch(BASE, { headers: authHeaders() });
-  if (!res.ok) throw new Error(`HTTP ${res.status} em GET /api/credit-cards`);
+  if (!res.ok) throw new Error("Erro ao carregar cartões.");
   return res.json();
 }
 

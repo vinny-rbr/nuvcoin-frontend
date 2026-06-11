@@ -987,9 +987,8 @@ export default function CartaoCredito() {
       setCards(fetchedCards);
       setBankAccounts(fetchedAccounts);
       setError(null);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setError(`Erro ao carregar cartões: ${msg}`);
+    } catch {
+      setError("Não foi possível carregar os cartões. Verifique sua conexão.");
     } finally {
       setLoading(false);
     }
