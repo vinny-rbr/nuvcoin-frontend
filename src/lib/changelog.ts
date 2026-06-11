@@ -4,22 +4,17 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.10.4": [
+    { emoji: "🔢", text: "Nova numeração de versão: AA.M.D.N — você vê exatamente o dia e quantas atualizações saíram no mês." },
+  ],
   "26.6.10.1": [
-    { emoji: "🔢", text: "Versão agora usa formato AA.M.D.N — ano, mês, dia e número da build do dia." },
-    { emoji: "🔧", text: "Sheets de cartão de crédito agora ficam acima do menu inferior — scroll funciona em todo o conteúdo." },
-  ],
-  "1.0.115": [
-    { emoji: "➕", text: "Menu '+' virou um bottom sheet com ícones: Novo banco, Novo cartão, Gasto no cartão, Importar extrato, Transferência, Lançar por foto, Nova receita e Nova despesa." },
-  ],
-  "1.0.114": [
-    { emoji: "💳", text: "Cartões de Crédito agora abrem pelo card 'Crédito' na home; Categorias voltou ao menu inferior mobile; botão ← Início na tela de cartões." },
-  ],
-  "1.0.113": [
-    { emoji: "💳", text: "Crédito no menu inferior mobile; ícones nas datas da fatura; teclado numérico funciona no celular." },
-  ],
-  "1.0.112": [
-    { emoji: "💳", text: "Cartões de Crédito: nova aba para gerenciar cartões, controlar faturas abertas, lançar gastos e pagar a fatura debitando de uma conta bancária." },
-    { emoji: "📊", text: "Hero de crédito com barra de limite, deck empilhado estilo Google Wallet e modo lista." },
+    { emoji: "💳", text: "Cartões de Crédito — gerencie todos os seus cartões em um só lugar: cadastre com limite, datas de vencimento, fechamento e melhor dia de compra." },
+    { emoji: "📊", text: "Painel visual estilo Google Wallet com deck empilhado, barra de limite colorida (verde → âmbar → vermelho) e hero com fatura total aberta." },
+    { emoji: "💸", text: "Pague a fatura direto pelo app: escolha de qual conta debitar, pagamento parcial com chips de 15% / metade / total, e o saldo da conta é descontado na hora." },
+    { emoji: "🛒", text: "Lance gastos no cartão por dentro da fatura de cada cartão — a fatura atualiza em tempo real." },
+    { emoji: "➕", text: "Menu '+' repaginado: bottom sheet deslizante com ícones coloridos para Novo banco, Novo cartão, Gasto no cartão, Importar extrato, Transferência, Lançar por foto, Nova receita e Nova despesa." },
+    { emoji: "🏠", text: "Card 'Crédito' na home abre a tela de cartões com animação; Categorias voltou ao menu inferior; botão ← Início para voltar facilmente." },
+    { emoji: "🔧", text: "Scroll corrigido nos sheets de cartão — o menu inferior não bloqueia mais o conteúdo inferior das telas de edição e pagamento." },
   ],
   "1.0.97": [
     { emoji: "🔧", text: "Seção Meus cartões só aparece no Dashboard quando há contas cadastradas." },
