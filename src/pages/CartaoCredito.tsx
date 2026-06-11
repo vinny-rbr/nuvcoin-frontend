@@ -104,10 +104,16 @@ function CreditBankCard({
   );
 }
 
+const DATE_CHIP_ICONS: Record<string, React.ReactNode> = {
+  Vence: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={CREDIT_ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 9.5h18M8 3v4M16 3v4"/></svg>,
+  Fecha: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={CREDIT_ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3v18l2.5-1.6L10 21l2-1.6L14 21l2.5-1.6L19 21V3l-2.5 1.6L14 3l-2 1.6L10 3 7.5 4.6Z"/><path d="M9 8h6M9 12h6"/></svg>,
+  "Melhor dia": <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={CREDIT_ACCENT} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 2"/></svg>,
+};
+
 function DateChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="cc-date-chip">
-      <span style={{ fontSize: 16 }}>📅</span>
+      {DATE_CHIP_ICONS[label]}
       <span className="cc-date-chip-label">{label}</span>
       <span className="cc-date-chip-value">{value}</span>
     </div>
@@ -137,20 +143,35 @@ function TxRow({ tx }: { tx: CreditCardTransaction }) {
 // ─── MoneyInput ────────────────────────────────────────────────────────────────
 
 function MoneyInput({ cents, onChange }: { cents: number; onChange: (c: number) => void }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const display = (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-  function handleKey(e: React.KeyboardEvent<HTMLInputElement>) {
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    e.preventDefault();
     if (e.key === "Backspace") { onChange(Math.floor(cents / 10)); return; }
     const d = parseInt(e.key, 10);
     if (!isNaN(d)) onChange(cents * 10 + d);
   }
+
+  function handleBeforeInput(e: React.FormEvent<HTMLInputElement>) {
+    e.preventDefault();
+    const data = (e as React.FormEvent<HTMLInputElement> & { data?: string }).data;
+    if (data === undefined) return;
+    if (data === "") { onChange(Math.floor(cents / 10)); return; }
+    const d = parseInt(data, 10);
+    if (!isNaN(d)) onChange(cents * 10 + d);
+  }
+
   return (
-    <div className="cc-money-wrap">
+    <div className="cc-money-wrap" onClick={() => inputRef.current?.focus()}>
       <span className="cc-money-prefix">R$</span>
       <input
+        ref={inputRef}
         className="cc-money-input"
         readOnly
         value={display}
-        onKeyDown={handleKey}
+        onKeyDown={handleKeyDown}
+        onBeforeInput={handleBeforeInput}
         inputMode="numeric"
         style={{ caretColor: "transparent" }}
       />
@@ -1013,7 +1034,7 @@ export default function CartaoCredito() {
 
   function onExpenseAdded(tx: CreditCardTransaction) {
     if (!activeCard) return;
-    setCards(prev => prev.map(c => c.id === activeCard.id ? { ...c, invoiceCents: c.invoiceCents + tx.amountCents } : c));
+    setCards(prev => prev.map(c => c.id === activeCard.id ? { ...c, invoiceCents: c.invoiceCents + Math.abs(tx.amountCents) } : c));
     if (detail?.id === activeCard.id) {
       setDetail(prev => prev ? { ...prev, invoiceCents: prev.invoiceCents + tx.amountCents } : null);
       setDetailTxs(prev => [tx, ...prev]);
