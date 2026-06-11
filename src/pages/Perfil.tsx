@@ -924,27 +924,14 @@ export default function Perfil() {
                       await unsubscribePush();
                       setNotifEnabled_(false);
                     } else {
-                      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-                        alert("Push não suportado neste navegador. No Android, use o Chrome. No iPhone, adicione o app à tela inicial pelo Safari.");
-                        return;
-                      }
-                      let ok = false;
                       try {
-                        ok = await subscribePush();
+                        await subscribePush();
+                        setNotifEnabled_(true);
+                        alert("Notificações ativadas com sucesso!");
                       } catch (err) {
-                        alert(`Erro: ${err instanceof Error ? err.message : String(err)}`);
+                        setNotifEnabled_(false);
+                        alert(`Erro ao ativar: ${err instanceof Error ? err.message : String(err)}`);
                       }
-                      if (!ok) {
-                        const perm = (Notification.permission as string);
-                        if (perm === "denied") {
-                          alert("Notificações bloqueadas. Abra o Chrome → Configurações do site → Notificações → permita este site.");
-                        } else if (perm === "default") {
-                          alert("Permissão não concedida. Toque em Permitir quando o sistema perguntar.");
-                        } else {
-                          alert("Não foi possível ativar. Tente recarregar o app.");
-                        }
-                      }
-                      setNotifEnabled_(ok);
                     }
                   } finally {
                     setNotifLoading(false);

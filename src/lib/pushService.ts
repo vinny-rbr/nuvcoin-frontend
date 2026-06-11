@@ -67,55 +67,55 @@ export async function requestPushPermission(): Promise<NotificationPermission> {
 }
 
 async function fetchVapidPublicKey(): Promise<string> {
-  const cached = localStorage.getItem("conciliaai_vapid_public");
-  if (cached) return cached;
-  try {
-    const res = await fetch(apiUrl("/api/push/vapid-public-key"));
-    if (!res.ok) return "";
-    const data = (await res.json()) as { publicKey?: string };
-    if (data.publicKey) localStorage.setItem("conciliaai_vapid_public", data.publicKey);
-    return data.publicKey ?? "";
-  } catch {
-    return "";
-  }
+  // sempre busca do backend (não usa cache) para garantir chave atual
+  localStorage.removeItem("conciliaai_vapid_public");
+  const res = await fetch(apiUrl("/api/push/vapid-public-key"));
+  if (!res.ok) throw new Error(`Falha ao buscar VAPID key: HTTP ${res.status}`);
+  const data = (await res.json()) as { publicKey?: string };
+  if (!data.publicKey) throw new Error("Backend não retornou VAPID public key");
+  localStorage.setItem("conciliaai_vapid_public", data.publicKey);
+  return data.publicKey;
 }
 
+// Lança erro em vez de retornar false, para o chamador poder mostrar o motivo
 export async function subscribePush(): Promise<boolean> {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
-  const permission = await requestPushPermission();
-  if (permission !== "granted") return false;
-
-  try {
-    const vapidKey = await fetchVapidPublicKey();
-    if (!vapidKey) return false;
-
-    const reg = await navigator.serviceWorker.ready;
-    let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
-    }
-
-    const token = localStorage.getItem("token");
-    if (token) {
-      await fetch(apiUrl("/api/push/subscribe"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          subscription: sub.toJSON(),
-          sound: getNotifSound(),
-          vibrate: getNotifVibrate(),
-        }),
-      }).catch(() => undefined);
-    }
-
-    setNotifEnabled(true);
-    return true;
-  } catch {
-    return false;
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    throw new Error("Push não suportado neste navegador");
   }
+  const permission = await requestPushPermission();
+  if (permission !== "granted") {
+    throw new Error(`Permissão de notificação: ${permission}`);
+  }
+
+  const vapidKey = await fetchVapidPublicKey();
+
+  const reg = await navigator.serviceWorker.ready;
+
+  // descarta subscription antiga (pode ter sido criada sem VAPID key)
+  const existing = await reg.pushManager.getSubscription();
+  if (existing) await existing.unsubscribe();
+
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidKey),
+  });
+
+  const token = localStorage.getItem("token");
+  if (token) {
+    const saveRes = await fetch(apiUrl("/api/push/subscribe"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        subscription: sub.toJSON(),
+        sound: getNotifSound(),
+        vibrate: getNotifVibrate(),
+      }),
+    });
+    if (!saveRes.ok) throw new Error(`Falha ao salvar subscription no servidor: HTTP ${saveRes.status}`);
+  }
+
+  setNotifEnabled(true);
+  return true;
 }
 
 export async function unsubscribePush(): Promise<void> {
