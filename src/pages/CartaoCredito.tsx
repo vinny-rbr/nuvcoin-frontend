@@ -145,22 +145,33 @@ function TxRow({ tx }: { tx: CreditCardTransaction }) {
 
 function MoneyInput({ cents, onChange }: { cents: number; onChange: (c: number) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const centsRef = useRef(cents);
+  centsRef.current = cents;
+
   const display = (cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+
+  function applyDigit(digit: string | null) {
+    if (digit === null) onChange(Math.floor(centsRef.current / 10));
+    else {
+      const d = parseInt(digit, 10);
+      if (!isNaN(d)) onChange(centsRef.current * 10 + d);
+    }
+  }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     e.preventDefault();
-    if (e.key === "Backspace") { onChange(Math.floor(cents / 10)); return; }
-    const d = parseInt(e.key, 10);
-    if (!isNaN(d)) onChange(cents * 10 + d);
+    if (e.key === "Backspace") applyDigit(null);
+    else applyDigit(e.key);
   }
 
-  function handleBeforeInput(e: React.FormEvent<HTMLInputElement>) {
-    e.preventDefault();
-    const data = (e as React.FormEvent<HTMLInputElement> & { data?: string }).data;
-    if (data === undefined) return;
-    if (data === "") { onChange(Math.floor(cents / 10)); return; }
-    const d = parseInt(data, 10);
-    if (!isNaN(d)) onChange(cents * 10 + d);
+  function handleInput(e: React.FormEvent<HTMLInputElement>) {
+    const native = e.nativeEvent as InputEvent;
+    // Restaura o valor imediatamente para evitar flickering
+    if (inputRef.current) {
+      inputRef.current.value = (centsRef.current / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+    }
+    if (native.inputType?.startsWith("delete")) applyDigit(null);
+    else if (native.data) applyDigit(native.data);
   }
 
   return (
@@ -169,11 +180,12 @@ function MoneyInput({ cents, onChange }: { cents: number; onChange: (c: number) 
       <input
         ref={inputRef}
         className="cc-money-input"
-        readOnly
-        value={display}
-        onKeyDown={handleKeyDown}
-        onBeforeInput={handleBeforeInput}
+        type="text"
         inputMode="numeric"
+        value={display}
+        onChange={() => {}}
+        onKeyDown={handleKeyDown}
+        onInput={handleInput}
         style={{ caretColor: "transparent" }}
       />
     </div>
