@@ -910,16 +910,8 @@ export default function Perfil() {
                       await unsubscribePush();
                       setNotifEnabled_(false);
                     } else {
-                      if (!("Notification" in window)) {
-                        alert("Seu navegador não suporta notificações push. Tente pelo Chrome ou adicione o app à tela inicial.");
-                        return;
-                      }
-                      if (Notification.permission === "denied") {
-                        alert("Notificações bloqueadas no navegador. Acesse as configurações do site e permita notificações manualmente.");
-                        return;
-                      }
-                      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-                        alert("Push não suportado neste navegador. No iPhone, adicione o app à tela inicial pelo Safari. No Android, use o Chrome.");
+                      if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+                        alert("Push não suportado neste navegador. No Android, use o Chrome. No iPhone, adicione o app à tela inicial pelo Safari.");
                         return;
                       }
                       let ok = false;
@@ -929,13 +921,13 @@ export default function Perfil() {
                         alert(`Erro: ${err instanceof Error ? err.message : String(err)}`);
                       }
                       if (!ok) {
-                        const perm = Notification.permission;
+                        const perm = (Notification.permission as string);
                         if (perm === "denied") {
-                          alert("Notificações bloqueadas. Abra as configurações do Chrome → Configurações do site → Notificações → permita este site.");
+                          alert("Notificações bloqueadas. Abra o Chrome → Configurações do site → Notificações → permita este site.");
                         } else if (perm === "default") {
-                          alert("A permissão de notificação não foi concedida. Toque em 'Permitir' quando o sistema perguntar.");
+                          alert("Permissão não concedida. Toque em Permitir quando o sistema perguntar.");
                         } else {
-                          alert("Não foi possível registrar a subscription. Tente recarregar o app.");
+                          alert("Não foi possível ativar. Tente recarregar o app.");
                         }
                       }
                       setNotifEnabled_(ok);
