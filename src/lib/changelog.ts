@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.11.24": [
+    { emoji: "📊", text: "Tela Planejamento: orçamentos por categoria com barra de progresso (verde/âmbar/vermelho) e metas de economia com anel de progresso." },
+    { emoji: "👤", text: "Perfil subiu para o topo — o avatar fica no canto superior esquerdo no mobile, liberando espaço na barra inferior para o Planejamento." },
+  ],
   "26.6.11.9": [
     { emoji: "🔔", text: "Push notifications reais — agora você recebe um aviso no celular toda vez que um gasto for lançado no cartão de crédito, mesmo com o app fechado." },
     { emoji: "🔕", text: "Som e vibração personalizados: o push toca o som que você configurou nas notificações do seu perfil." },

@@ -25,6 +25,7 @@ import Perfil from "./pages/Perfil";
 import AdminSugestoes from "./pages/AdminSugestoes";
 import Contas from "./pages/Contas";
 import CartaoCredito from "./pages/CartaoCredito";
+import Planejamento from "./pages/Planejamento";
 
 type AnimatedPageProps = {
   children: ReactNode; // Conteúdo da página
@@ -241,6 +242,20 @@ export default function App() {
             <Layout>
               <AnimatedPage>
                 <CartaoCredito />
+              </AnimatedPage>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Planejamento */}
+      <Route
+        path="/planejamento"
+        element={
+          <ProtectedRoute requireActiveSubscription>
+            <Layout>
+              <AnimatedPage>
+                <Planejamento />
               </AnimatedPage>
             </Layout>
           </ProtectedRoute>

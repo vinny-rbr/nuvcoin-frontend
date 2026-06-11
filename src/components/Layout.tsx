@@ -92,6 +92,16 @@ const NAV_ICONS = {
       <rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/>
     </svg>
   ),
+  orcamento: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  ),
+  metas: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+    </svg>
+  ),
 };
 
 const navItems = [
@@ -102,6 +112,7 @@ const navItems = [
   { to: "/importar-ofx", label: "Importar extrato", icon: NAV_ICONS.importar, requiresActiveSubscription: true },
   { to: "/contas", label: "Carteiras", icon: NAV_ICONS.contas, requiresActiveSubscription: true },
   { to: "/cartao-credito", label: "Crédito", icon: NAV_ICONS.cartaoCredito, requiresActiveSubscription: true },
+  { to: "/planejamento", label: "Planejamento", icon: NAV_ICONS.orcamento, requiresActiveSubscription: true },
   { to: "/groups", label: "Grupos", icon: NAV_ICONS.groups, requiresActiveSubscription: false },
 ];
 
@@ -693,6 +704,19 @@ export default function Layout({ children }: Props) {
       {/* Topbar fixa com blur e cara de SaaS */}
       <header className="topbar">
         <div className="topbar-inner">
+          {/* Perfil no topo (mobile) */}
+          {isMobile ? (
+            <button
+              type="button"
+              className="mobile-top-profile"
+              aria-label="Abrir perfil"
+              onClick={() => navigate("/perfil")}
+            >
+              <span className="mobile-top-profile-avatar" aria-hidden="true">
+                {profilePhoto ? <img src={profilePhoto} alt="" /> : profileInitials.slice(0, 1)}
+              </span>
+            </button>
+          ) : null}
           {/* Marca do app */}
           <div className="brand-cluster">
             <div className="brand">
@@ -1030,18 +1054,14 @@ export default function Layout({ children }: Props) {
 
               <button
                 type="button"
-                className={`mobile-nav-btn${location.pathname === "/perfil" ? " is-active" : ""}`}
-                aria-label="Perfil"
-                onClick={() => navigate("/perfil")}
+                className={`mobile-nav-btn${location.pathname === "/planejamento" ? " is-active" : ""}`}
+                aria-label="Planejamento"
+                onClick={() => handleMobileRoute("/planejamento")}
               >
-                <span className="mobile-nav-avatar" aria-hidden="true">
-                  {profilePhoto ? (
-                    <img src={profilePhoto} alt="" />
-                  ) : (
-                    profileInitials.slice(0, 1)
-                  )}
-                </span>
-                <span>Perfil</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 20V10" /><path d="M18 20V4" /><path d="M6 20v-4" />
+                </svg>
+                <span>Planejamento</span>
               </button>
             </div>
           </nav>
