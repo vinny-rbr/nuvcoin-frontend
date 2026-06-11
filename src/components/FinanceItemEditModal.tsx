@@ -10,6 +10,7 @@ type FinanceItemEditModalProps = {
   categoryOptions: string[];
   onClose: () => void;
   onSaved: (items: FinanceItem[]) => void;
+  onDelete?: (id: string) => void;
 };
 
 function formatCentsForInput(cents: number): string {
@@ -23,7 +24,7 @@ function parseBRLToCents(input: string): number {
   return Math.round(value * 100);
 }
 
-export default function FinanceItemEditModal({ item, categoryOptions, onClose, onSaved }: FinanceItemEditModalProps) {
+export default function FinanceItemEditModal({ item, categoryOptions, onClose, onSaved, onDelete }: FinanceItemEditModalProps) {
   const [title, setTitle] = useState(item.title);
   const [category, setCategory] = useState(item.category);
   const [amount, setAmount] = useState(formatCentsForInput(item.amountCents));
@@ -125,11 +126,16 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
         </div>
 
         <div className="finance-edit-actions">
+          {onDelete ? (
+            <button className="finance-danger-button" type="button" onClick={() => onDelete(item.id)}>
+              Remover
+            </button>
+          ) : null}
           <button className="categories-secondary-button" type="button" onClick={onClose}>
             Cancelar
           </button>
           <button className="finance-primary-button" type="button" onClick={handleSave}>
-            Salvar alteracoes
+            Salvar
           </button>
         </div>
       </div>

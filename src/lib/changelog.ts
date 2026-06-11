@@ -4,6 +4,11 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.11.32": [
+    { emoji: "📅", text: "Despesas e Receitas redesenhadas: cabeçalho compacto com seletor de tipo, navegação por mês (‹ Junho ›), transações agrupadas por dia e resumo pendente/pago." },
+    { emoji: "✅", text: "Toggle de status direto na linha — marque como pago ou pendente com um toque, sem abrir o item." },
+    { emoji: "➕", text: "Botão + abre um sheet de adição direto na tela de Despesas ou Receitas." },
+  ],
   "26.6.11.24": [
     { emoji: "📊", text: "Tela Planejamento: orçamentos por categoria com barra de progresso (verde/âmbar/vermelho) e metas de economia com anel de progresso." },
     { emoji: "👤", text: "Perfil subiu para o topo — o avatar fica no canto superior esquerdo no mobile, liberando espaço na barra inferior para o Planejamento." },

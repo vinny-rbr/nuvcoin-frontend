@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import PhotoFlow from "./PhotoFlow";
 import TutoriaisModal from "./TutoriaisModal";
@@ -17,7 +17,7 @@ import { hasCompletedOnboarding } from "../lib/onboarding";
 import "./layout.css"; // Importa o CSS do layout premium
 
 type Props = {
-  children: React.ReactNode; // Tudo que vai dentro do layout (cada pÃ¡gina)
+  children: React.ReactNode; // Tudo que vai dentro do layout (cada pÃƒÂ¡gina)
 };
 
 type Plan = {
@@ -111,7 +111,7 @@ const navItems = [
   { to: "/categorias", label: "Categorias", icon: NAV_ICONS.categorias, requiresActiveSubscription: true },
   { to: "/importar-ofx", label: "Importar extrato", icon: NAV_ICONS.importar, requiresActiveSubscription: true },
   { to: "/contas", label: "Carteiras", icon: NAV_ICONS.contas, requiresActiveSubscription: true },
-  { to: "/cartao-credito", label: "Crédito", icon: NAV_ICONS.cartaoCredito, requiresActiveSubscription: true },
+  { to: "/cartao-credito", label: "CrÃ©dito", icon: NAV_ICONS.cartaoCredito, requiresActiveSubscription: true },
   { to: "/planejamento", label: "Planejamento", icon: NAV_ICONS.orcamento, requiresActiveSubscription: true },
   { to: "/groups", label: "Grupos", icon: NAV_ICONS.groups, requiresActiveSubscription: false },
 ];
@@ -186,7 +186,7 @@ export default function Layout({ children }: Props) {
     const userId = window.localStorage.getItem("conciliaai_userId");
     return window.localStorage.getItem(getProfilePhotoStorageKey(userId));
   });
-  const profileDisplayName = profileName || profileEmail.split("@")[0] || "Usuário";
+  const profileDisplayName = profileName || profileEmail.split("@")[0] || "UsuÃ¡rio";
   const profileInitials = getInitials(profileDisplayName || profileEmail);
 
   useEffect(() => {
@@ -522,6 +522,16 @@ export default function Layout({ children }: Props) {
       return;
     }
 
+    if (location.pathname === "/despesas") {
+      window.dispatchEvent(new CustomEvent("conciliaai:open-despesa"));
+      return;
+    }
+
+    if (location.pathname === "/receitas") {
+      window.dispatchEvent(new CustomEvent("conciliaai:open-receita"));
+      return;
+    }
+
     logClientEvent({
       event: "navigation.quick_add.toggle",
       message: "Menu rapido de lancamento alternado",
@@ -726,11 +736,11 @@ export default function Layout({ children }: Props) {
                 </svg>
               </span>
               <span className="brand-copy">
-                <strong>Conciliaaí</strong>
-                <small>FINANÇAS</small>
+                <strong>ConciliaaÃ­</strong>
+                <small>FINANÃ‡AS</small>
               </span>
             </div>
-            <span className="badge">FINANÇAS</span>
+            <span className="badge">FINANÃ‡AS</span>
           </div>
 
           <div
@@ -766,8 +776,8 @@ export default function Layout({ children }: Props) {
               </button>
             ) : null}
 
-            {/* NavegaÃ§Ã£o */}
-            <nav className="nav" aria-label="Navegação principal">
+            {/* NavegaÃƒÂ§ÃƒÂ£o */}
+            <nav className="nav" aria-label="NavegaÃ§Ã£o principal">
               {navItems.map((item) => (
                 <Link
                   key={item.to}
@@ -790,7 +800,7 @@ export default function Layout({ children }: Props) {
             <button
               type="button"
               onClick={openTutoriais}
-              aria-label="Tutoriais em vídeo"
+              aria-label="Tutoriais em vÃ­deo"
               style={{
                 position: "relative",
                 width: 38,
@@ -880,9 +890,9 @@ export default function Layout({ children }: Props) {
                   </span>
                   <span className="quick-add-item-text">
                     <span className="quick-add-item-title">Despesa de grupo</span>
-                    <span className="quick-add-item-desc">Lançar gasto compartilhado</span>
+                    <span className="quick-add-item-desc">LanÃ§ar gasto compartilhado</span>
                   </span>
-                  <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                 </button>
               ) : (
                 <>
@@ -892,9 +902,9 @@ export default function Layout({ children }: Props) {
                     </span>
                     <span className="quick-add-item-text">
                       <span className="quick-add-item-title">Novo banco</span>
-                      <span className="quick-add-item-desc">Cadastrar conta ou cartão</span>
+                      <span className="quick-add-item-desc">Cadastrar conta ou cartÃ£o</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/cartao-credito")}>
@@ -902,10 +912,10 @@ export default function Layout({ children }: Props) {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
                     </span>
                     <span className="quick-add-item-text">
-                      <span className="quick-add-item-title">Novo cartão de crédito</span>
+                      <span className="quick-add-item-title">Novo cartÃ£o de crÃ©dito</span>
                       <span className="quick-add-item-desc">Limite, fatura e vencimento</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); navigate("/cartao-credito"); }}>
@@ -913,10 +923,10 @@ export default function Layout({ children }: Props) {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>
                     </span>
                     <span className="quick-add-item-text">
-                      <span className="quick-add-item-title">Gasto no cartão</span>
-                      <span className="quick-add-item-desc">Lançar compra na fatura</span>
+                      <span className="quick-add-item-title">Gasto no cartÃ£o</span>
+                      <span className="quick-add-item-desc">LanÃ§ar compra na fatura</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/importar-ofx")}>
@@ -927,7 +937,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Importar extrato</span>
                       <span className="quick-add-item-desc">OFX, CSV, XLSX ou PDF</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); navigate("/contas"); window.dispatchEvent(new CustomEvent("conciliaai:open-transfer")); }}>
@@ -935,10 +945,10 @@ export default function Layout({ children }: Props) {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
                     </span>
                     <span className="quick-add-item-text">
-                      <span className="quick-add-item-title">Transferência</span>
+                      <span className="quick-add-item-title">TransferÃªncia</span>
                       <span className="quick-add-item-desc">Mover entre suas contas</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); setIsPhotoFlowOpen(true); }}>
@@ -946,8 +956,8 @@ export default function Layout({ children }: Props) {
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
                     </span>
                     <span className="quick-add-item-text">
-                      <span className="quick-add-item-title">Lançar por foto</span>
-                      <span className="quick-add-item-desc">IA lê o recibo automaticamente</span>
+                      <span className="quick-add-item-title">LanÃ§ar por foto</span>
+                      <span className="quick-add-item-desc">IA lÃª o recibo automaticamente</span>
                     </span>
                     <span className="quick-add-item-chevron quick-add-item-chevron-new" aria-hidden="true">NOVO</span>
                   </button>
@@ -958,9 +968,9 @@ export default function Layout({ children }: Props) {
                     </span>
                     <span className="quick-add-item-text">
                       <span className="quick-add-item-title">Nova receita</span>
-                      <span className="quick-add-item-desc">Lançar entrada manual</span>
+                      <span className="quick-add-item-desc">LanÃ§ar entrada manual</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/despesas")}>
@@ -969,19 +979,19 @@ export default function Layout({ children }: Props) {
                     </span>
                     <span className="quick-add-item-text">
                       <span className="quick-add-item-title">Nova despesa</span>
-                      <span className="quick-add-item-desc">Lançar saída manual</span>
+                      <span className="quick-add-item-desc">LanÃ§ar saÃ­da manual</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/relatorios")}>
                     <span className="quick-add-item-icon" style={{ background: "rgba(99,102,241,.18)", color: "#a5b4fc" }} aria-hidden="true">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
                     </span>
                     <span className="quick-add-item-text">
-                      <span className="quick-add-item-title">Relatórios</span>
-                      <span className="quick-add-item-desc">Gráficos e exportar PDF</span>
+                      <span className="quick-add-item-title">RelatÃ³rios</span>
+                      <span className="quick-add-item-desc">GrÃ¡ficos e exportar PDF</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
                   </button>
                 </>
               )}
@@ -1026,7 +1036,7 @@ export default function Layout({ children }: Props) {
                 onClick={() => handleMobileRoute("/dashboard")}
               >
                 {NAV_ICONS.dashboard}
-                <span>Início</span>
+                <span>InÃ­cio</span>
               </button>
 
               <button
@@ -1043,7 +1053,7 @@ export default function Layout({ children }: Props) {
                 <button
                   type="button"
                   className={`mobile-fab${isQuickAddOpen ? " is-open" : ""}`}
-                  aria-label={isQuickAddOpen ? "Fechar lançamento rápido" : "Novo lançamento"}
+                  aria-label={isQuickAddOpen ? "Fechar lanÃ§amento rÃ¡pido" : "Novo lanÃ§amento"}
                   aria-expanded={isQuickAddOpen}
                   onClick={handleQuickAddToggle}
                 >
@@ -1173,7 +1183,7 @@ export default function Layout({ children }: Props) {
                 <div style={{ display: "grid", gap: "8px" }}>
                   <strong style={{ fontSize: "18px", color: "#f1f5f9" }}>Aguardando pagamento...</strong>
                   <p style={{ margin: 0, fontSize: "14px", color: "#94a3b8", lineHeight: 1.5 }}>
-                    A fatura foi aberta em uma nova aba. Após pagar, você será redirecionado automaticamente.
+                    A fatura foi aberta em uma nova aba. ApÃ³s pagar, vocÃª serÃ¡ redirecionado automaticamente.
                   </p>
                 </div>
                 <button
@@ -1392,7 +1402,7 @@ export default function Layout({ children }: Props) {
           }}>
             <h2 style={{ color: "#f1f5f9", margin: 0, fontSize: 20 }}>Cadastro completo</h2>
             <p style={{ color: "#94a3b8", margin: 0, fontSize: 14 }}>
-              Preencha seus dados para processar o pagamento. Estas informações ficam salvas no seu perfil.
+              Preencha seus dados para processar o pagamento. Estas informaÃ§Ãµes ficam salvas no seu perfil.
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <input
@@ -1536,7 +1546,7 @@ export default function Layout({ children }: Props) {
         </div>
       ) : null}
 
-      {/* Onboarding balloon — shows once for new users */}
+      {/* Onboarding balloon â€” shows once for new users */}
       {showTutorialBalloon && !isTutoriaisOpen && (
         <div style={{
           position: "fixed",
@@ -1559,11 +1569,11 @@ export default function Layout({ children }: Props) {
             boxShadow: "0 22px 54px rgba(30,64,175,.5)", color: "#fff",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
-              <span style={{ fontSize: 17 }}>👋</span>
+              <span style={{ fontSize: 17 }}>ðŸ‘‹</span>
               <strong style={{ fontFamily: "var(--display)", fontSize: 14.5, whiteSpace: "nowrap" }}>Novo por aqui?</strong>
             </div>
             <p style={{ fontSize: 12.5, lineHeight: 1.4, color: "rgba(255,255,255,.9)", marginBottom: 11, margin: "0 0 11px" }}>
-              Toque no <b>?</b> pra ver tutoriais rápidos em vídeo e dominar o app em minutos.
+              Toque no <b>?</b> pra ver tutoriais rÃ¡pidos em vÃ­deo e dominar o app em minutos.
             </p>
             <div style={{ display: "flex", gap: 8 }}>
               <button
@@ -1582,7 +1592,7 @@ export default function Layout({ children }: Props) {
                   background: "rgba(255,255,255,.14)", color: "#fff",
                   border: "1px solid rgba(255,255,255,.28)", fontWeight: 700, fontSize: 12.5,
                 }}
-              >Agora não</button>
+              >Agora nÃ£o</button>
             </div>
           </div>
         </div>
@@ -1593,7 +1603,7 @@ export default function Layout({ children }: Props) {
         <TutoriaisModal onClose={() => setIsTutoriaisOpen(false)} isMobile={isMobile} />
       )}
 
-      {/* ConteÃºdo da pÃ¡gina */}
+      {/* ConteÃƒÂºdo da pÃƒÂ¡gina */}
       <main className="page">{children}</main>
 
       <style>
@@ -1670,8 +1680,8 @@ lucassousa@gmail.com
 // O que esse Layout faz:
 // - Cria uma Topbar premium (sticky + blur)
 // - Centraliza tudo num container (max-width)
-// - Adiciona navegaÃ§Ã£o real (Dashboard/Receitas/Despesas/Groups)
-// - MantÃ©m o conteÃºdo das pÃ¡ginas dentro de <main className="page">
+// - Adiciona navegaÃƒÂ§ÃƒÂ£o real (Dashboard/Receitas/Despesas/Groups)
+// - MantÃƒÂ©m o conteÃƒÂºdo das pÃƒÂ¡ginas dentro de <main className="page">
 */
 
 
