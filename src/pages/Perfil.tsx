@@ -909,7 +909,25 @@ export default function Perfil() {
                     await unsubscribePush();
                     setNotifEnabled_(false);
                   } else {
+                    if (!("Notification" in window)) {
+                      alert("Seu navegador não suporta notificações push. Tente pelo Chrome ou adicione o app à tela inicial.");
+                      setNotifLoading(false);
+                      return;
+                    }
+                    if (Notification.permission === "denied") {
+                      alert("Notificações bloqueadas no navegador. Acesse as configurações do site e permita notificações manualmente.");
+                      setNotifLoading(false);
+                      return;
+                    }
+                    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+                      alert("Push não suportado neste navegador. No iPhone, adicione o app à tela inicial pelo Safari. No Android, use o Chrome.");
+                      setNotifLoading(false);
+                      return;
+                    }
                     const ok = await subscribePush();
+                    if (!ok) {
+                      alert("Não foi possível ativar as notificações. Verifique se o app está instalado na tela inicial e se a permissão foi concedida.");
+                    }
                     setNotifEnabled_(ok);
                   }
                   setNotifLoading(false);
