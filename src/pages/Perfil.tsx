@@ -917,27 +917,25 @@ export default function Perfil() {
               </div>
               <button
                 type="button"
-                disabled={notifLoading}
                 onClick={async () => {
-                  setNotifLoading(true);
-                  setNotifMsg(null);
-                  try {
-                    if (notifEnabled) {
+                  setNotifMsg({ type: "ok", text: "Aguardando..." });
+                  if (notifEnabled) {
+                    try {
                       await unsubscribePush();
                       setNotifEnabled_(false);
                       setNotifMsg({ type: "ok", text: "Notificações desativadas." });
-                    } else {
-                      try {
-                        await subscribePush();
-                        setNotifEnabled_(true);
-                        setNotifMsg({ type: "ok", text: "Notificações ativadas com sucesso!" });
-                      } catch (err) {
-                        setNotifEnabled_(false);
-                        setNotifMsg({ type: "err", text: err instanceof Error ? err.message : String(err) });
-                      }
+                    } catch (err) {
+                      setNotifMsg({ type: "err", text: `Erro: ${err instanceof Error ? err.message : String(err)}` });
                     }
-                  } finally {
-                    setNotifLoading(false);
+                  } else {
+                    try {
+                      await subscribePush();
+                      setNotifEnabled_(true);
+                      setNotifMsg({ type: "ok", text: "Notificações ativadas com sucesso!" });
+                    } catch (err) {
+                      setNotifEnabled_(false);
+                      setNotifMsg({ type: "err", text: err instanceof Error ? err.message : String(err) });
+                    }
                   }
                 }}
                 style={{
