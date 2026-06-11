@@ -15,23 +15,24 @@ function readGitCommit() {
   }
 }
 
-// Formato: AA.M.D.N  (ex: 26.6.10.3 = 10/jun/2026, 3ª build do dia)
+// Formato: AA.M.D.N  (ex: 26.6.10.3 = 10/jun/2026, 3ª build de junho)
+// N é contador mensal — reseta para 1 quando vira o mês
 const now = new Date();
-const yy   = String(now.getFullYear()).slice(2);  // "26"
-const m    = String(now.getMonth() + 1);          // "6"  (sem zero)
-const d    = String(now.getDate());               // "10" (sem zero)
-const dateKey = `${yy}.${m}.${d}`;               // "26.6.10"
+const yy      = String(now.getFullYear()).slice(2);  // "26"
+const m       = String(now.getMonth() + 1);          // "6"  (sem zero)
+const d       = String(now.getDate());               // "10" (sem zero)
+const monthKey = `${yy}.${m}`;                       // "26.6"  ← chave de controle
 
 const countFile = join(rootDir, "scripts", "buildcount.json");
-let stored = { date: "", count: 0 };
+let stored = { month: "", count: 0 };
 if (existsSync(countFile)) {
   try { stored = JSON.parse(readFileSync(countFile, "utf8")); } catch { /* ignore */ }
 }
 
-const count = stored.date === dateKey ? stored.count + 1 : 1;
-writeFileSync(countFile, JSON.stringify({ date: dateKey, count }, null, 2) + "\n");
+const count = stored.month === monthKey ? stored.count + 1 : 1;
+writeFileSync(countFile, JSON.stringify({ month: monthKey, count }, null, 2) + "\n");
 
-const version = `${dateKey}.${count}`;
+const version = `${yy}.${m}.${d}.${count}`;
 
 // Atualiza version no package.json
 const packageJsonPath = join(rootDir, "package.json");
