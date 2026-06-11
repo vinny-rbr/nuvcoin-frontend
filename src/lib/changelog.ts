@@ -4,7 +4,8 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
-  "1.0.116": [
+  "26.6.10.1": [
+    { emoji: "🔢", text: "Versão agora usa formato AA.M.D.N — ano, mês, dia e número da build do dia." },
     { emoji: "🔧", text: "Sheets de cartão de crédito agora ficam acima do menu inferior — scroll funciona em todo o conteúdo." },
   ],
   "1.0.115": [
