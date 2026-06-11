@@ -3,7 +3,7 @@
   "short_name": "Conciliaaí",
   "description": "Controle receitas, despesas, categorias e divisões financeiras pelo celular.",
   "id": "/",
-  "start_url": "/welcome",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],

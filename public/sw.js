@@ -1,7 +1,6 @@
-const CACHE_NAME = "conciliaai-shell-v2";
+const CACHE_NAME = "conciliaai-shell-v3";
 const APP_SHELL = [
   "/",
-  "/welcome",
   "/manifest.webmanifest",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
@@ -75,7 +74,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(() => caches.match("/welcome")));
+    event.respondWith(fetch(request).catch(() => caches.match("/")));
     return;
   }
 
