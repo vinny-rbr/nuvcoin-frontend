@@ -67,14 +67,26 @@ export async function requestPushPermission(): Promise<NotificationPermission> {
 }
 
 async function fetchVapidPublicKey(): Promise<string> {
-  // sempre busca do backend (não usa cache) para garantir chave atual
-  localStorage.removeItem("conciliaai_vapid_public");
-  const res = await fetch(apiUrl("/api/push/vapid-public-key"));
-  if (!res.ok) throw new Error(`Falha ao buscar VAPID key: HTTP ${res.status}`);
-  const data = (await res.json()) as { publicKey?: string };
-  if (!data.publicKey) throw new Error("Backend não retornou VAPID public key");
-  localStorage.setItem("conciliaai_vapid_public", data.publicKey);
-  return data.publicKey;
+  const cached = localStorage.getItem("conciliaai_vapid_public");
+  if (cached) return cached;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+  try {
+    const res = await fetch(apiUrl("/api/push/vapid-public-key"), { signal: controller.signal });
+    if (!res.ok) throw new Error(`Servidor indisponível (HTTP ${res.status}). Tente novamente em instantes.`);
+    const data = (await res.json()) as { publicKey?: string };
+    if (!data.publicKey) throw new Error("Servidor não retornou chave VAPID.");
+    localStorage.setItem("conciliaai_vapid_public", data.publicKey);
+    return data.publicKey;
+  } catch (err) {
+    if ((err as Error).name === "AbortError") {
+      throw new Error("Servidor demorou muito para responder. Tente novamente em instantes.");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // Lança erro em vez de retornar false, para o chamador poder mostrar o motivo
