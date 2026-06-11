@@ -272,8 +272,8 @@ export default function App() {
         }
       />
 
-      {/* Rota inicial */}
-      <Route path="/" element={<Navigate to="/welcome" replace />} />
+      {/* Rota inicial — pula onboarding se já tem sessão */}
+      <Route path="/" element={<Navigate to={localStorage.getItem("token") ? "/dashboard" : "/welcome"} replace />} />
 
       {/* Qualquer rota desconhecida */}
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
