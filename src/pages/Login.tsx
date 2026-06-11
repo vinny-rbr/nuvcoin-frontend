@@ -34,7 +34,7 @@ export default function Login() {
       setLoading(true); // Ativa loading
 
       // =========================
-      // âœ… Chama backend pra gerar JWT válido
+      // ✅ Chama backend pra gerar JWT válido
       // =========================
 
       const res = await fetch(apiUrl("/api/auth/login"), {
@@ -90,14 +90,14 @@ export default function Login() {
       }
 
       // =========================
-      // âœ… Chaves oficiais do app
+      // ✅ Chaves oficiais do app
       // =========================
 
       localStorage.setItem("auth", "true"); // Marca como logado (compatível com ProtectedRoute)
-      localStorage.setItem("token", data.token); // âœ… JWT real (compatível com financeServices)
+      localStorage.setItem("token", data.token); // ✅ JWT real (compatível com financeServices)
 
       // =========================
-      // âœ… Chaves específicas do Conciliaaí
+      // ✅ Chaves específicas do Conciliaaí
       // =========================
 
       localStorage.setItem("conciliaai_email", data.email); // Email

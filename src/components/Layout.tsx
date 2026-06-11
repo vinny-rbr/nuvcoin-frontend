@@ -892,7 +892,7 @@ export default function Layout({ children }: Props) {
                     <span className="quick-add-item-title">Despesa de grupo</span>
                     <span className="quick-add-item-desc">Lançar gasto compartilhado</span>
                   </span>
-                  <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                  <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                 </button>
               ) : (
                 <>
@@ -904,7 +904,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Novo banco</span>
                       <span className="quick-add-item-desc">Cadastrar conta ou cartão</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/cartao-credito")}>
@@ -915,7 +915,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Novo cartão de crédito</span>
                       <span className="quick-add-item-desc">Limite, fatura e vencimento</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); navigate("/cartao-credito"); }}>
@@ -926,7 +926,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Gasto no cartão</span>
                       <span className="quick-add-item-desc">Lançar compra na fatura</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/importar-ofx")}>
@@ -937,7 +937,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Importar extrato</span>
                       <span className="quick-add-item-desc">OFX, CSV, XLSX ou PDF</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); navigate("/contas"); window.dispatchEvent(new CustomEvent("conciliaai:open-transfer")); }}>
@@ -948,7 +948,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Transferência</span>
                       <span className="quick-add-item-desc">Mover entre suas contas</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); setIsPhotoFlowOpen(true); }}>
@@ -970,7 +970,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Nova receita</span>
                       <span className="quick-add-item-desc">Lançar entrada manual</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
 
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/despesas")}>
@@ -981,7 +981,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Nova despesa</span>
                       <span className="quick-add-item-desc">Lançar saída manual</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
                   <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/relatorios")}>
                     <span className="quick-add-item-icon" style={{ background: "rgba(99,102,241,.18)", color: "#a5b4fc" }} aria-hidden="true">
@@ -991,7 +991,7 @@ export default function Layout({ children }: Props) {
                       <span className="quick-add-item-title">Relatórios</span>
                       <span className="quick-add-item-desc">Gráficos e exportar PDF</span>
                     </span>
-                    <span className="quick-add-item-chevron" aria-hidden="true">â€º</span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                   </button>
                 </>
               )}
@@ -1546,7 +1546,7 @@ export default function Layout({ children }: Props) {
         </div>
       ) : null}
 
-      {/* Onboarding balloon â€” shows once for new users */}
+      {/* Onboarding balloon "” shows once for new users */}
       {showTutorialBalloon && !isTutoriaisOpen && (
         <div style={{
           position: "fixed",

@@ -13,7 +13,7 @@ import {
   loadFinanceItems, // Lê itens do localStorage
   getFinanceStorageKey,
   isFinanceStorageKey,
-  saveFinanceItems as saveItemsStorage, // Salva lista no localStorage (âœ… já dispara evento interno)
+  saveFinanceItems as saveItemsStorage, // Salva lista no localStorage (✅ já dispara evento interno)
   todayISO, // Data ISO padrão
   makeId, // ID seguro
 } from "./financeStorage"; // Implementação atual (localStorage)
@@ -22,18 +22,18 @@ import {
 // CONFIG
 // =============================
 
-const USE_API = true; // âœ… Agora vamos usar a API real
+const USE_API = true; // ✅ Agora vamos usar a API real
 const API_BASE_URL = apiUrl("/api/finance"); // Base da API
 
-// âœ… Freio anti-loop (evita fetch infinito)
+// ✅ Freio anti-loop (evita fetch infinito)
 const SYNC_MIN_INTERVAL_MS = 3000; // 3s entre syncs automáticos
 
-let syncInFlight = false; // âœ… trava quando já tem sync rolando
-let lastSyncAt = 0; // âœ… último sync (timestamp)
+let syncInFlight = false; // ✅ trava quando já tem sync rolando
+let lastSyncAt = 0; // ✅ último sync (timestamp)
 
-// âœ… Controle pra evitar â€œsync em cascataâ€ causado por evento/storage
-let hasHydratedFromApiThisSession = false; // âœ… já sincronizou 1x com a API nesta sessão
-let lastWriteFromApiAt = 0; // âœ… quando gravamos no storage vindo da API (para ignorar evento logo depois)
+// ✅ Controle pra evitar "sync em cascata" causado por evento/storage
+let hasHydratedFromApiThisSession = false; // ✅ já sincronizou 1x com a API nesta sessão
+let lastWriteFromApiAt = 0; // ✅ quando gravamos no storage vindo da API (para ignorar evento logo depois)
 
 // =============================
 // AUTH HELPERS
@@ -215,7 +215,7 @@ const apiProvider: FinanceProvider = {
     const created = normalizeApiItem(rawCreated); // Normaliza item criado
     financeDebugLog("API POST /finance sucesso", created);
 
-    return created; // âœ… Sem GET depois
+    return created; // ✅ Sem GET depois
   },
 
   update: async (id, patch) => {
@@ -265,7 +265,7 @@ const apiProvider: FinanceProvider = {
   },
 
   saveAll: async (items) => {
-    // âœ… Ainda não existe bulk no backend.
+    // ✅ Ainda não existe bulk no backend.
     // Por enquanto só salva local.
     saveItemsStorage(items); // Salva local e dispara evento interno
   },
@@ -450,7 +450,7 @@ function mergePendingLocalItems(fromApi: FinanceItem[]): FinanceItem[] {
 // API DO SERVICE (usada pelas telas)
 // =============================
 
-// âœ… Lista rápida via cache/local + 1 â€œhidrataçãoâ€ da API por sessão (sem cascata de eventos)
+// ✅ Lista rápida via cache/local + 1 "hidratação" da API por sessão (sem cascata de eventos)
 export function financeList(): FinanceItem[] {
   ensureUserScopedCache();
   const cached = getCache(); // Retorna cache imediato (UX rápida)
@@ -459,24 +459,24 @@ export function financeList(): FinanceItem[] {
 
   const now = Date.now(); // Agora
 
-  // âœ… Se já hidrataram 1x nesta sessão, não fica re-sincronizando a cada render/evento
+  // ✅ Se já hidrataram 1x nesta sessão, não fica re-sincronizando a cada render/evento
   if (hasHydratedFromApiThisSession) return cached;
 
-  // âœ… Se já está sincronizando, não começa outro
+  // ✅ Se já está sincronizando, não começa outro
   if (syncInFlight) return cached;
 
-  // âœ… Se sincronizou há pouco, não sincroniza de novo
+  // ✅ Se sincronizou há pouco, não sincroniza de novo
   if (now - lastSyncAt < SYNC_MIN_INTERVAL_MS) return cached;
 
-  // âœ… Marca sync ativo
+  // ✅ Marca sync ativo
   syncInFlight = true;
 
-  // âœ… Faz 1 sync em background (sem travar UI)
+  // ✅ Faz 1 sync em background (sem travar UI)
   void safe(
     async () => {
       const fromApi = mergeAccountIds(mergePendingLocalItems(await activeProvider.list()), getCache()); // Busca na API, preserva accountId local
 
-      // âœ… Só grava se mudou (evita evento Ã  toa)
+      // ✅ Só grava se mudou (evita evento Ã  toa)
       const a = JSON.stringify(fromApi); // API
       const b = JSON.stringify(cached); // Cache
 
@@ -486,7 +486,7 @@ export function financeList(): FinanceItem[] {
         setCache(fromApi); // Atualiza cache
       }
 
-      hasHydratedFromApiThisSession = true; // âœ… Pronto: não hidrata de novo até recarregar
+      hasHydratedFromApiThisSession = true; // ✅ Pronto: não hidrata de novo até recarregar
       return fromApi; // Retorna
     },
     async () => {
@@ -536,7 +536,7 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
     dateISO: item.dateISO,
   });
 
-  // âœ… Garantimos que o item tem um id temporário para o modo otimista
+  // ✅ Garantimos que o item tem um id temporário para o modo otimista
   const tempItem: FinanceItem = {
     ...item, // Copia campos
     id: item.id ?? makeId(), // Garante id
@@ -577,7 +577,7 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
         saveItemsStorage(next); // Sincroniza local (dispara evento interno)
         setCache(next); // Atualiza cache
 
-        // âœ… Como houve mudança real via API, marcamos que a sessão já hidratou
+        // ✅ Como houve mudança real via API, marcamos que a sessão já hidratou
         hasHydratedFromApiThisSession = true;
 
         return created; // Retorna item criado
@@ -620,7 +620,7 @@ export function financeRemove(id: string): FinanceItem[] {
       async () => {
         await activeProvider.remove(id); // DELETE no backend (sem GET depois)
 
-        // âœ… Como houve mudança real via API, marcamos que a sessão já hidratou
+        // ✅ Como houve mudança real via API, marcamos que a sessão já hidratou
         hasHydratedFromApiThisSession = true;
 
         return;
@@ -694,7 +694,7 @@ export function financeSubscribe(onChange: () => void): () => void {
 
       if (e.key !== getFinanceStorageKey()) return;
 
-      // âœ… Se o próprio service acabou de gravar vindo da API, ignora o â€œreboteâ€
+      // ✅ Se o próprio service acabou de gravar vindo da API, ignora o "rebote"
       if (Date.now() - lastWriteFromApiAt < 500) return;
 
       setCache(loadFinanceItems()); // Atualiza cache
@@ -705,7 +705,7 @@ export function financeSubscribe(onChange: () => void): () => void {
   const onUpdated = () => {
     ensureUserScopedCache();
 
-    // âœ… Se o próprio service acabou de gravar vindo da API, ignora o â€œreboteâ€
+    // ✅ Se o próprio service acabou de gravar vindo da API, ignora o "rebote"
     if (Date.now() - lastWriteFromApiAt < 500) return;
 
     setCache(loadFinanceItems()); // Atualiza cache
@@ -735,9 +735,9 @@ lucassousa@gmail.com
 
 O que foi corrigido agora:
 
-âœ” Evitado â€œcascataâ€ de GET: financeList() hidrata da API apenas 1x por sessão
+âœ” Evitado "cascata" de GET: financeList() hidrata da API apenas 1x por sessão
 âœ” Mantido freio anti-loop (inFlight + intervalo mínimo)
-âœ” Ignorado â€œreboteâ€ do evento/storage quando a gravação veio da API (500ms)
+âœ” Ignorado "rebote" do evento/storage quando a gravação veio da API (500ms)
 âœ” Mantido sem GET após POST/DELETE (usa retorno do backend e confirma DELETE)
 âœ” Mantido cache híbrido (API + localStorage) e eventos
 */
