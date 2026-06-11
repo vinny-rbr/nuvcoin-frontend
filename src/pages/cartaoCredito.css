@@ -585,7 +585,7 @@
 .cc-sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 200;
   background: rgba(3, 6, 18, 0.66);
   backdrop-filter: blur(4px);
   display: flex;
@@ -603,8 +603,9 @@
   max-height: 92dvh;
   background: var(--bg-card-solid, #18233B);
   border-radius: 26px 26px 0 0;
-  padding: 0 20px 32px;
+  padding: 0 20px calc(32px + env(safe-area-inset-bottom, 0px));
   overflow-y: auto;
+  overflow-x: hidden;
   animation: ccSheetUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "1.0.116": [
+    { emoji: "🔧", text: "Sheets de cartão de crédito agora ficam acima do menu inferior — scroll funciona em todo o conteúdo." },
+  ],
   "1.0.115": [
     { emoji: "➕", text: "Menu '+' virou um bottom sheet com ícones: Novo banco, Novo cartão, Gasto no cartão, Importar extrato, Transferência, Lançar por foto, Nova receita e Nova despesa." },
   ],
