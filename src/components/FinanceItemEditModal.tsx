@@ -78,6 +78,9 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
   const [category, setCategory] = useState(item.category);
   const [dateISO, setDateISO] = useState(item.dateISO);
   const [paymentType, setPaymentType] = useState<PaymentType>(item.paymentType ?? "pix");
+  const [note, setNote] = useState(item.note ?? "");
+  const [tags, setTags] = useState(item.tags ?? "");
+  const [ignoreInReports, setIgnoreInReports] = useState(item.ignoreInReports ?? false);
   const [showPayPicker, setShowPayPicker] = useState(false);
   const [anim, setAnim] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +106,12 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
     if (!title.trim()) { setError("Informe um título."); return; }
     if (amountCents <= 0) { setError("Informe um valor válido."); return; }
     setError(null);
-    const updated = financeUpdate(item.id, { title: title.trim(), category, amountCents, dateISO, paymentType, status });
+    const updated = financeUpdate(item.id, {
+      title: title.trim(), category, amountCents, dateISO, paymentType, status,
+      note: note.trim() || null,
+      tags: tags.trim() || null,
+      ignoreInReports,
+    });
     onSaved(updated);
     onClose();
   }
@@ -230,6 +238,57 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
               </button>
             </div>
           )}
+        </div>
+
+        {/* Extra fields card */}
+        <div className="ed2-card">
+          <div className="ed2-field">
+            <label>OBSERVAÇÃO</label>
+            <div className="ed2-control">
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Adicione uma observação..."
+                rows={3}
+                style={{ resize: "none", lineHeight: "1.5" }}
+              />
+            </div>
+          </div>
+
+          <div className="ed2-field">
+            <label>TAGS</label>
+            <div className="ed2-control">
+              <input
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="Ex: viagem, trabalho, família"
+              />
+            </div>
+          </div>
+
+          <div className="ed2-field">
+            <label>ANEXAR COMPROVANTE</label>
+            <button type="button" className="ed2-select" style={{ opacity: 0.55, cursor: "not-allowed" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 14 }}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" width="17" height="17">
+                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                </svg>
+                Em breve
+              </span>
+            </button>
+          </div>
+
+          <div className="ed2-field">
+            <div className="ed2-toggle-row" onClick={() => setIgnoreInReports((v) => !v)}>
+              <div>
+                <span className="ed2-toggle-label">IGNORAR NOS RELATÓRIOS</span>
+                <span className="ed2-toggle-sub">Este lançamento não entra nos totais</span>
+              </div>
+              <div className={`ed2-toggle${ignoreInReports ? " on" : ""}`}>
+                <div className="ed2-toggle-thumb" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

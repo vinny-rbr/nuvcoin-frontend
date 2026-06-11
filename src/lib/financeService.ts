@@ -105,6 +105,9 @@ function normalizeApiItem(raw: any): FinanceItem {
       recurringKind: raw.recurringKind ?? undefined,
       recurringTotal: raw.recurringTotal ? Number(raw.recurringTotal) : undefined,
     } : {}),
+    ...(raw?.note != null ? { note: raw.note } : {}),
+    ...(raw?.tags != null ? { tags: raw.tags } : {}),
+    ...(raw?.ignoreInReports != null ? { ignoreInReports: Boolean(raw.ignoreInReports) } : {}),
   } as FinanceItem;
 }
 
@@ -225,6 +228,9 @@ const apiProvider: FinanceProvider = {
     if (patch.dateISO !== undefined) payload.date = patch.dateISO;
     if (patch.paymentType !== undefined) payload.paymentType = patch.paymentType;
     if (patch.status !== undefined) payload.status = patch.status;
+    if (patch.note !== undefined) payload.note = patch.note ?? null;
+    if (patch.tags !== undefined) payload.tags = patch.tags ?? null;
+    if (patch.ignoreInReports !== undefined) payload.ignoreInReports = patch.ignoreInReports;
 
     const res = await fetch(`${API_BASE_URL}/${encodeURIComponent(id)}`, {
       method: "PUT",

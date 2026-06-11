@@ -38,6 +38,9 @@ export interface FinanceItem {
   recurringKind?: "fixo" | "parcelado";
   recurringTotal?: number;
   accountId?: string;
+  note?: string | null;
+  tags?: string | null;
+  ignoreInReports?: boolean;
 }
 
 // Conta bancária

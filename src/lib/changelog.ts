@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.11.36": [
+    { emoji: "📝", text: "Observação, Tags e Ignorar nos relatórios adicionados ao formulário de edição de despesas e receitas." },
+  ],
   "26.6.11.32": [
     { emoji: "📅", text: "Despesas e Receitas redesenhadas: cabeçalho compacto com seletor de tipo, navegação por mês (‹ Junho ›), transações agrupadas por dia e resumo pendente/pago." },
     { emoji: "✅", text: "Toggle de status direto na linha — marque como pago ou pendente com um toque, sem abrir o item." },
