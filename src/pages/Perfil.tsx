@@ -922,9 +922,14 @@ export default function Perfil() {
                         alert("Push não suportado neste navegador. No iPhone, adicione o app à tela inicial pelo Safari. No Android, use o Chrome.");
                         return;
                       }
-                      const ok = await subscribePush();
-                      if (!ok) {
-                        alert("Não foi possível ativar as notificações. Verifique se o app está instalado na tela inicial e se a permissão foi concedida.");
+                      let ok = false;
+                      try {
+                        ok = await subscribePush();
+                      } catch (err) {
+                        alert(`Erro ao ativar notificações: ${err instanceof Error ? err.message : String(err)}`);
+                      }
+                      if (!ok && Notification.permission === "granted") {
+                        alert("Permissão concedida, mas a subscription falhou. Tente recarregar o app.");
                       }
                       setNotifEnabled_(ok);
                     }
