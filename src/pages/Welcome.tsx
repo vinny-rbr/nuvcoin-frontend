@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./onboarding.css";
 
@@ -95,6 +95,12 @@ function WelcomeArt({ type }: { type: string }) {
 export default function Welcome() {
   const navigate = useNavigate();
   const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
   const slide = slides[activeIndex];
   const isLastSlide = activeIndex === slides.length - 1;
 
