@@ -251,6 +251,7 @@ export default function Perfil() {
   const [notifSound, setNotifSound_] = useState(() => getNotifSound());
   const [notifVibrate, setNotifVibrate_] = useState(() => getNotifVibrate());
   const [notifLoading, setNotifLoading] = useState(false);
+  const [notifMsg, setNotifMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   // sync visual com o estado real da subscription no browser
   useEffect(() => {
@@ -919,18 +920,20 @@ export default function Perfil() {
                 disabled={notifLoading}
                 onClick={async () => {
                   setNotifLoading(true);
+                  setNotifMsg(null);
                   try {
                     if (notifEnabled) {
                       await unsubscribePush();
                       setNotifEnabled_(false);
+                      setNotifMsg({ type: "ok", text: "Notificações desativadas." });
                     } else {
                       try {
                         await subscribePush();
                         setNotifEnabled_(true);
-                        alert("Notificações ativadas com sucesso!");
+                        setNotifMsg({ type: "ok", text: "Notificações ativadas com sucesso!" });
                       } catch (err) {
                         setNotifEnabled_(false);
-                        alert(`Erro ao ativar: ${err instanceof Error ? err.message : String(err)}`);
+                        setNotifMsg({ type: "err", text: err instanceof Error ? err.message : String(err) });
                       }
                     }
                   } finally {
@@ -950,6 +953,18 @@ export default function Perfil() {
                 }} />
               </button>
             </div>
+
+            {/* mensagem de status da subscription */}
+            {notifMsg && (
+              <div style={{
+                padding: "10px 14px", borderRadius: 12, marginBottom: 12, fontSize: 13,
+                background: notifMsg.type === "ok" ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
+                border: `1px solid ${notifMsg.type === "ok" ? "rgba(34,197,94,0.4)" : "rgba(239,68,68,0.4)"}`,
+                color: notifMsg.type === "ok" ? "#86efac" : "#fca5a5",
+              }}>
+                {notifMsg.text}
+              </div>
+            )}
 
             {/* vibração toggle */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px", borderRadius: 16, background: "rgba(30,41,59,0.7)", border: "1px solid rgba(148,163,184,0.13)", marginBottom: 20 }}>
