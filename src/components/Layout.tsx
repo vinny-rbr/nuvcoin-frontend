@@ -839,51 +839,119 @@ export default function Layout({ children }: Props) {
             />
           ) : null}
 
-          {/* Curved popup menu */}
+          {/* Bottom sheet menu */}
           <div
             ref={quickAddRef}
-            className={`mobile-curved-menu${isQuickAddOpen ? " is-open" : ""}`}
+            className={`quick-add-sheet${isQuickAddOpen ? " is-open" : ""}`}
             role="menu"
+            aria-label="Adicionar"
           >
-            {location.pathname === "/groups" ? (
-              <button type="button" className="mobile-curved-item" onClick={handleGroupExpenseQuickAdd}>
-                <span className="quick-add-dot quick-add-dot-group" aria-hidden="true" />
-                Lançar despesa de grupo
-              </button>
-            ) : (
-              <>
-                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/receitas")}>
-                  <span className="quick-add-dot quick-add-dot-income" aria-hidden="true" />
-                  Nova receita
+            <div className="quick-add-sheet-handle" aria-hidden="true" />
+            <div className="quick-add-sheet-title">Adicionar</div>
+            <div className="quick-add-sheet-list">
+              {location.pathname === "/groups" ? (
+                <button type="button" className="quick-add-item" onClick={handleGroupExpenseQuickAdd}>
+                  <span className="quick-add-item-icon" style={{ background: "rgba(96,165,250,.18)", color: "#60a5fa" }} aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6"/><path d="M17.5 14.4A5.5 5.5 0 0 1 20.5 19.5"/></svg>
+                  </span>
+                  <span className="quick-add-item-text">
+                    <span className="quick-add-item-title">Despesa de grupo</span>
+                    <span className="quick-add-item-desc">Lançar gasto compartilhado</span>
+                  </span>
+                  <span className="quick-add-item-chevron" aria-hidden="true">›</span>
                 </button>
-                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/despesas")}>
-                  <span className="quick-add-dot quick-add-dot-expense" aria-hidden="true" />
-                  Nova despesa
-                </button>
-                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/importar-ofx")}>
-                  <span className="quick-add-dot quick-add-dot-import" aria-hidden="true" />
-                  Importar extrato
-                </button>
-                <button
-                  type="button"
-                  className="mobile-curved-item mobile-curved-item-photo"
-                  onClick={() => { setIsQuickAddOpen(false); setIsPhotoFlowOpen(true); }}
-                >
-                  <span className="quick-add-dot quick-add-dot-photo" aria-hidden="true" />
-                  Lançar por foto
-                  <span className="quick-add-new-badge" aria-label="Novo">NOVO</span>
-                </button>
-                <button type="button" className="mobile-curved-item mobile-curved-item-report" onClick={() => handleMobileRoute("/relatorios")}>
-                  <span className="quick-add-dot quick-add-dot-report" aria-hidden="true" />
-                  Relatórios
-                  <span className="quick-add-new-badge" aria-label="Novo">NOVO</span>
-                </button>
-                <button type="button" className="mobile-curved-item" onClick={() => handleMobileRoute("/groups", false)}>
-                  <span className="quick-add-dot" style={{ background: "#94a3b8" }} aria-hidden="true" />
-                  Grupos
-                </button>
-              </>
-            )}
+              ) : (
+                <>
+                  <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/contas")}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(59,130,246,.18)", color: "#60a5fa" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h5v-5h4v5h5V9.5"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Novo banco</span>
+                      <span className="quick-add-item-desc">Cadastrar conta ou cartão</span>
+                    </span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  </button>
+
+                  <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/cartao-credito")}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(245,158,11,.18)", color: "#F59E0B" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Novo cartão de crédito</span>
+                      <span className="quick-add-item-desc">Limite, fatura e vencimento</span>
+                    </span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  </button>
+
+                  <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); navigate("/cartao-credito"); }}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(217,119,6,.22)", color: "#D97706" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Gasto no cartão</span>
+                      <span className="quick-add-item-desc">Lançar compra na fatura</span>
+                    </span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  </button>
+
+                  <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/importar-ofx")}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(139,92,246,.18)", color: "#a78bfa" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Importar extrato</span>
+                      <span className="quick-add-item-desc">OFX, CSV, XLSX ou PDF</span>
+                    </span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  </button>
+
+                  <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); navigate("/contas"); window.dispatchEvent(new CustomEvent("conciliaai:open-transfer")); }}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(20,184,166,.18)", color: "#2dd4bf" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Transferência</span>
+                      <span className="quick-add-item-desc">Mover entre suas contas</span>
+                    </span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  </button>
+
+                  <button type="button" className="quick-add-item" onClick={() => { setIsQuickAddOpen(false); setIsPhotoFlowOpen(true); }}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(96,165,250,.18)", color: "#60a5fa" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Lançar por foto</span>
+                      <span className="quick-add-item-desc">IA lê o recibo automaticamente</span>
+                    </span>
+                    <span className="quick-add-item-chevron quick-add-item-chevron-new" aria-hidden="true">NOVO</span>
+                  </button>
+
+                  <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/receitas")}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(34,197,94,.16)", color: "#4ade80" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5"/><path d="m6 11 6-6 6 6"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Nova receita</span>
+                      <span className="quick-add-item-desc">Lançar entrada manual</span>
+                    </span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  </button>
+
+                  <button type="button" className="quick-add-item" onClick={() => handleMobileRoute("/despesas")}>
+                    <span className="quick-add-item-icon" style={{ background: "rgba(239,68,68,.16)", color: "#f87171" }} aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>
+                    </span>
+                    <span className="quick-add-item-text">
+                      <span className="quick-add-item-title">Nova despesa</span>
+                      <span className="quick-add-item-desc">Lançar saída manual</span>
+                    </span>
+                    <span className="quick-add-item-chevron" aria-hidden="true">›</span>
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Curved bottom nav */}
