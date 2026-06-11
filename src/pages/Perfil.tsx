@@ -926,10 +926,17 @@ export default function Perfil() {
                       try {
                         ok = await subscribePush();
                       } catch (err) {
-                        alert(`Erro ao ativar notificações: ${err instanceof Error ? err.message : String(err)}`);
+                        alert(`Erro: ${err instanceof Error ? err.message : String(err)}`);
                       }
-                      if (!ok && Notification.permission === "granted") {
-                        alert("Permissão concedida, mas a subscription falhou. Tente recarregar o app.");
+                      if (!ok) {
+                        const perm = Notification.permission;
+                        if (perm === "denied") {
+                          alert("Notificações bloqueadas. Abra as configurações do Chrome → Configurações do site → Notificações → permita este site.");
+                        } else if (perm === "default") {
+                          alert("A permissão de notificação não foi concedida. Toque em 'Permitir' quando o sistema perguntar.");
+                        } else {
+                          alert("Não foi possível registrar a subscription. Tente recarregar o app.");
+                        }
                       }
                       setNotifEnabled_(ok);
                     }
