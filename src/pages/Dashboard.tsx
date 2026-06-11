@@ -1,6 +1,7 @@
 import "./dashboard.css";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   ResponsiveContainer,
@@ -505,6 +506,7 @@ function SparkLine({ values, color }: { values: number[]; color: string }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [items, setItems] = useState<FinanceItem[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [bankAccountsLoading, setBankAccountsLoading] = useState(true);
@@ -1070,7 +1072,15 @@ export default function Dashboard() {
           <SparkLine values={sparklines.despesas} color="#F87171" />
         </div>
 
-        <div className="stat-card">
+        <div
+          className="stat-card"
+          role="button"
+          tabIndex={0}
+          onClick={() => navigate("/cartao-credito")}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") navigate("/cartao-credito"); }}
+          style={{ cursor: "pointer" }}
+          title="Abrir cartões de crédito"
+        >
           <div className="stat-top">
             <span className="stat-title">Crédito</span>
             <span className="stat-ic" style={{ background: "rgba(249,115,22,.14)", color: "#F97316" }}>
@@ -1078,7 +1088,7 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="stat-value red"><FitValue>{formatBRLFromCents(summary.totalCreditoCents)}</FitValue></div>
-          <div className="stat-caption">gastos no crédito</div>
+          <div className="stat-caption">gastos no crédito · abrir cartões →</div>
           <SparkLine values={sparklines.credito} color="#F97316" />
         </div>
 

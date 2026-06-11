@@ -1102,6 +1102,25 @@
   margin-top: 2px;
 }
 
+.cc-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #94A3B8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 0 6px;
+  width: fit-content;
+  transition: color 0.15s;
+}
+
+.cc-back-btn:hover {
+  color: #E2E8F0;
+}
+
 .cc-page-eyebrow {
   color: #F59E0B;
   font-size: 11.5px;

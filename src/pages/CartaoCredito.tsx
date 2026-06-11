@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { createPortal } from "react-dom";
 import type { CreditCard, CreditCardTransaction } from "../types/creditCard";
 import type { BankAccount } from "../types/finance";
@@ -966,6 +967,7 @@ function EditCartaoSheet({
 type Sheet = "add" | "pay" | "spend" | "edit" | null;
 
 export default function CartaoCredito() {
+  const navigate = useNavigate();
   const [cards, setCards] = useState<CreditCard[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1059,6 +1061,15 @@ export default function CartaoCredito() {
     <>
       <div className="cc-page">
         <div className="cc-page-header">
+          <button
+            type="button"
+            className="cc-back-btn"
+            onClick={() => navigate(-1)}
+            aria-label="Voltar para o início"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+            Início
+          </button>
           <span className="cc-page-eyebrow">CRÉDITO</span>
           <h1 className="cc-page-title">Seus cartões</h1>
           <p className="cc-page-subtitle">
