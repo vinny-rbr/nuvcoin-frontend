@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.65": [
+    { emoji: "🏦", text: "Carteiras: campo de saldo no formulário de edição — edite o saldo da conta sem precisar excluí-la." },
+  ],
   "26.6.12.64": [
     { emoji: "☑️", text: "Importação: checkbox em cada transação — marque/desmarque individualmente quais importar sem abrir o detalhe." },
     { emoji: "🏷️", text: "Importação: ao trocar categoria de uma transação, se existirem outras com o mesmo nome/CNPJ, o app pergunta se deseja aplicar a todas de uma vez." },

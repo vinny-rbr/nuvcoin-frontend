@@ -371,13 +371,14 @@ function CadastroSheet({ onClose, onDone }: { onClose: () => void; onDone: (data
 function EditSheet({ account, onClose, onSave, onDelete }: {
   account: BankAccount;
   onClose: () => void;
-  onSave: (patch: { nick: string; accountType: string; face?: string | null }) => void;
+  onSave: (patch: { nick: string; accountType: string; face?: string | null; balanceCents: number }) => void;
   onDelete: () => void;
 }) {
   const [nick, setNick] = useState(account.nick);
   const [accountType, setAccountType] = useState(account.accountType);
   const [color, setColor] = useState("keep");
   const [confirmDel, setConfirmDel] = useState(false);
+  const [balanceRaw, setBalanceRaw] = useState(String(account.balanceCents / 100).replace(".", ","));
 
   const colors = [{ id: "keep", face: brandFace(account.bank, account.face) }, ...CARD_COLORS];
   const previewFace =
@@ -387,9 +388,15 @@ function EditSheet({ account, onClose, onSave, onDelete }: {
 
   const previewAcc: BankAccount = { ...account, face: previewFace, nick };
 
+  function parseBalanceCents(): number {
+    const cleaned = balanceRaw.replace(/\./g, "").replace(",", ".");
+    const val = parseFloat(cleaned);
+    return isNaN(val) ? account.balanceCents : Math.round(val * 100);
+  }
+
   function save() {
     const face = color === "keep" ? account.face : color === "auto" ? null : CARD_COLORS.find(c => c.id === color)?.face ?? null;
-    onSave({ nick: nick || account.nick, accountType, face });
+    onSave({ nick: nick || account.nick, accountType, face, balanceCents: parseBalanceCents() });
     onClose();
   }
 
@@ -404,6 +411,17 @@ function EditSheet({ account, onClose, onSave, onDelete }: {
         <label className="cc-field">
           <span className="cc-field-label">Apelido da conta</span>
           <input className="cc-input" value={nick} onChange={e => setNick(e.target.value)} />
+        </label>
+
+        <label className="cc-field">
+          <span className="cc-field-label">Saldo atual (R$)</span>
+          <input
+            className="cc-input"
+            inputMode="decimal"
+            value={balanceRaw}
+            onChange={e => setBalanceRaw(e.target.value)}
+            placeholder="0,00"
+          />
         </label>
 
         <div className="cc-field">
@@ -688,7 +706,7 @@ export default function Contas() {
     }
   }
 
-  async function handleSave(patch: { nick: string; accountType: string; face?: string | null }) {
+  async function handleSave(patch: { nick: string; accountType: string; face?: string | null; balanceCents: number }) {
     if (!editing) return;
     try {
       const updated = await updateBankAccount(editing.id, patch);
