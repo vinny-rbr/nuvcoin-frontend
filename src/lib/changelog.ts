@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.71": [
+    { emoji: "💳", text: "Parcelamentos: nova opção 'Parcelar no crédito' ao adicionar despesa — informe o nº de parcelas e o app cria automaticamente uma por mês com badge X/N na lista." },
+  ],
   "26.6.12.70": [
     { emoji: "🔍", text: "Importação: título limpo — remove prefixo de data/hora e CNPJ do BB. Busca e exibição usam o nome real do comerciante." },
   ],

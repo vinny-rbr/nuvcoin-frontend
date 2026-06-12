@@ -2996,9 +2996,19 @@
   font-size: 15px;
   font-weight: 700;
   color: #f1f5f9;
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dx-row-title > span:first-child,
+.dx-row-title-text {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .dx-row-sub {
@@ -3276,6 +3286,44 @@
 
 .dx-switch.on { background: #2563eb; }
 .dx-switch.on i { left: 21px; }
+
+/* ── Parcelamento ── */
+.dx-parcela-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(99,102,241,.22);
+  color: #a5b4fc;
+  vertical-align: middle;
+  letter-spacing: .02em;
+}
+
+.dx-row-title {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.dx-parcelas-wrap {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dx-parcelas-hint {
+  font-size: 12.5px;
+  color: #94a3b8;
+  padding: 8px 12px;
+  background: rgba(255,255,255,.04);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.07);
+}
+
+.dx-parcelas-hint strong { color: #f1f5f9; }
 
 .dx-save {
   width: 100%;

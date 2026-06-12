@@ -124,7 +124,12 @@ function TxRow({
         {catIcon}
       </span>
       <div className="dx-row-mid">
-        <div className="dx-row-title">{item.title}</div>
+        <div className="dx-row-title">
+          <span className="dx-row-title-text">{item.title}</span>
+          {item.recurringKind === "parcelado" && item.recurringIndex != null && item.recurringTotal != null && (
+            <span className="dx-parcela-badge">{item.recurringIndex}/{item.recurringTotal}</span>
+          )}
+        </div>
         <div className="dx-row-sub">{item.category} · {getPaymentLabel(item.paymentType)}</div>
       </div>
       <div className="dx-row-right">
@@ -177,6 +182,8 @@ export default function Despesas() {
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrenceMode, setRecurrenceMode] = useState<"forever" | "months">("forever");
   const [recurrenceMonths, setRecurrenceMonths] = useState("6");
+  const [isParcelado, setIsParcelado] = useState(false);
+  const [installmentCount, setInstallmentCount] = useState("12");
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -227,6 +234,7 @@ export default function Despesas() {
     setTitle(""); setAmount(""); setDateISO(todayISO());
     setPaymentType("pix"); setStatus("pending");
     setIsRecurring(false); setRecurrenceMode("forever"); setRecurrenceMonths("6");
+    setIsParcelado(false); setInstallmentCount("12");
     setSelectedAccount(null);
     setCategory(categoryOptions[0] ?? "Outros");
   }
@@ -325,36 +333,54 @@ export default function Despesas() {
   const onAdd = useCallback(() => {
     if (savingRef.current || saving) return;
     const amountCents = parseAmountToCents(amount);
-    const parsedMonths = Number(recurrenceMonths);
-    const totalMonths = isRecurring
-      ? (recurrenceMode === "forever" ? 12 : Math.min(Math.max(Math.trunc(parsedMonths || 0), 1), 60))
-      : 1;
     if (!title.trim()) { alert("Informe um título."); return; }
     if (amountCents <= 0) { alert("Informe um valor válido."); return; }
+
     savingRef.current = true;
     setSaving(true);
     const createdAtISO = new Date().toISOString();
-    const firstDateISO = isRecurring ? nextRecurringStartISO(dateISO) : dateISO;
-    const groupId = isRecurring && totalMonths > 1 ? makeId() : undefined;
-    const recurringKind = paymentType === "credit" ? "parcelado" as const : "fixo" as const;
-    for (let i = 0; i < totalMonths; i++) {
-      const isoDate = addMonthsISO(firstDateISO, i);
-      financeAdd({
-        id: makeId(), type: "DESPESA", title: title.trim(), category, amountCents,
-        dateISO: isoDate, createdAtISO, paymentType,
-        status: i === 0 && isoDate <= todayISO() ? status : "pending",
-        ...(groupId ? { recurringGroupId: groupId, recurringKind, recurringTotal: totalMonths } : {}),
-        ...(selectedAccount ? { accountId: selectedAccount.id } : {}),
-      });
+
+    if (isParcelado) {
+      const n = Math.min(Math.max(Math.trunc(Number(installmentCount) || 2), 2), 48);
+      const groupId = makeId();
+      for (let i = 0; i < n; i++) {
+        const isoDate = addMonthsISO(dateISO, i);
+        financeAdd({
+          id: makeId(), type: "DESPESA", title: title.trim(), category, amountCents,
+          dateISO: isoDate, createdAtISO, paymentType: "credit",
+          status: i === 0 && isoDate <= todayISO() ? status : "pending",
+          recurringGroupId: groupId, recurringKind: "parcelado", recurringTotal: n, recurringIndex: i + 1,
+          ...(selectedAccount ? { accountId: selectedAccount.id } : {}),
+        });
+      }
+    } else {
+      const parsedMonths = Number(recurrenceMonths);
+      const totalMonths = isRecurring
+        ? (recurrenceMode === "forever" ? 12 : Math.min(Math.max(Math.trunc(parsedMonths || 0), 1), 60))
+        : 1;
+      const firstDateISO = isRecurring ? nextRecurringStartISO(dateISO) : dateISO;
+      const groupId = isRecurring && totalMonths > 1 ? makeId() : undefined;
+      const recurringKind = paymentType === "credit" ? "parcelado" as const : "fixo" as const;
+      for (let i = 0; i < totalMonths; i++) {
+        const isoDate = addMonthsISO(firstDateISO, i);
+        financeAdd({
+          id: makeId(), type: "DESPESA", title: title.trim(), category, amountCents,
+          dateISO: isoDate, createdAtISO, paymentType,
+          status: i === 0 && isoDate <= todayISO() ? status : "pending",
+          ...(groupId ? { recurringGroupId: groupId, recurringKind, recurringTotal: totalMonths } : {}),
+          ...(selectedAccount ? { accountId: selectedAccount.id } : {}),
+        });
+      }
+      if (selectedAccount && !isRecurring) {
+        void adjustBankAccountBalance(selectedAccount, -amountCents).catch(() => undefined);
+      }
     }
-    if (selectedAccount && !isRecurring) {
-      void adjustBankAccountBalance(selectedAccount, -amountCents).catch(() => undefined);
-    }
+
     window.setTimeout(() => { savingRef.current = false; setSaving(false); }, 400);
     setSheetOpen(false);
     resetForm();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [amount, category, dateISO, isRecurring, paymentType, recurrenceMode, recurrenceMonths, saving, selectedAccount, status, title]);
+  }, [amount, category, dateISO, installmentCount, isParcelado, isRecurring, paymentType, recurrenceMode, recurrenceMonths, saving, selectedAccount, status, title]);
 
   return (
     <div className="dx-view">
@@ -622,43 +648,86 @@ export default function Despesas() {
 
               <button
                 type="button"
-                className={`dx-fixo${isRecurring ? " on" : ""}`}
-                onClick={() => setIsRecurring((v) => !v)}
+                className={`dx-fixo${isParcelado ? " on" : ""}`}
+                onClick={() => { setIsParcelado((v) => !v); if (!isParcelado) setIsRecurring(false); }}
               >
                 <span className="dx-fixo-ic">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" width="18" height="18">
-                    <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-                    <path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="18" height="18">
+                    <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4M14 15h4"/>
                   </svg>
                 </span>
                 <span className="dx-fixo-txt">
-                  <strong>Gasto fixo mensal</strong>
-                  <small>Repete nos próximos meses automaticamente</small>
+                  <strong>Parcelar no crédito</strong>
+                  <small>Cria uma parcela por mês automaticamente</small>
                 </span>
-                <span className={`dx-switch${isRecurring ? " on" : ""}`}><i /></span>
+                <span className={`dx-switch${isParcelado ? " on" : ""}`}><i /></span>
               </button>
 
-              {isRecurring && (
+              {isParcelado && (
+                <div className="dx-parcelas-wrap">
+                  <label className="dx-field">
+                    <span>Nº de parcelas</span>
+                    <input
+                      type="number" min="2" max="48"
+                      value={installmentCount}
+                      onChange={(e) => setInstallmentCount(e.target.value)}
+                    />
+                  </label>
+                  {(() => {
+                    const n = Math.max(2, Math.trunc(Number(installmentCount) || 2));
+                    const cents = parseAmountToCents(amount);
+                    return cents > 0 ? (
+                      <div className="dx-parcelas-hint">
+                        {n}× de {formatCentsBRL(cents)} = <strong>{formatCentsBRL(cents * n)}</strong> total
+                      </div>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+
+              {!isParcelado && (
                 <>
-                  <label className="finance-radio-card dx-field-full">
-                    <input type="radio" name="rec-mode-d" checked={recurrenceMode === "forever"} onChange={() => setRecurrenceMode("forever")} />
-                    <span>
-                      <strong>Sem data para acabar</strong>
-                      <small>Cria os próximos 12 meses agora.</small>
+                  <button
+                    type="button"
+                    className={`dx-fixo${isRecurring ? " on" : ""}`}
+                    onClick={() => setIsRecurring((v) => !v)}
+                  >
+                    <span className="dx-fixo-ic">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" width="18" height="18">
+                        <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+                        <path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+                      </svg>
                     </span>
-                  </label>
-                  <label className="finance-radio-card dx-field-full">
-                    <input type="radio" name="rec-mode-d" checked={recurrenceMode === "months"} onChange={() => setRecurrenceMode("months")} />
-                    <span>
-                      <strong>Por alguns meses</strong>
-                      <small>Você escolhe a quantidade de parcelas mensais.</small>
+                    <span className="dx-fixo-txt">
+                      <strong>Gasto fixo mensal</strong>
+                      <small>Repete nos próximos meses automaticamente</small>
                     </span>
-                  </label>
-                  {recurrenceMode === "months" && (
-                    <label className="dx-field dx-field-full">
-                      <span>Quantidade de meses</span>
-                      <input type="number" min="1" max="60" value={recurrenceMonths} onChange={(e) => setRecurrenceMonths(e.target.value)} />
-                    </label>
+                    <span className={`dx-switch${isRecurring ? " on" : ""}`}><i /></span>
+                  </button>
+
+                  {isRecurring && (
+                    <>
+                      <label className="finance-radio-card dx-field-full">
+                        <input type="radio" name="rec-mode-d" checked={recurrenceMode === "forever"} onChange={() => setRecurrenceMode("forever")} />
+                        <span>
+                          <strong>Sem data para acabar</strong>
+                          <small>Cria os próximos 12 meses agora.</small>
+                        </span>
+                      </label>
+                      <label className="finance-radio-card dx-field-full">
+                        <input type="radio" name="rec-mode-d" checked={recurrenceMode === "months"} onChange={() => setRecurrenceMode("months")} />
+                        <span>
+                          <strong>Por alguns meses</strong>
+                          <small>Você escolhe a quantidade de parcelas mensais.</small>
+                        </span>
+                      </label>
+                      {recurrenceMode === "months" && (
+                        <label className="dx-field dx-field-full">
+                          <span>Quantidade de meses</span>
+                          <input type="number" min="1" max="60" value={recurrenceMonths} onChange={(e) => setRecurrenceMonths(e.target.value)} />
+                        </label>
+                      )}
+                    </>
                   )}
                 </>
               )}

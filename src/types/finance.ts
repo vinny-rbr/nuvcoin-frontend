@@ -37,6 +37,7 @@ export interface FinanceItem {
   recurringGroupId?: string;
   recurringKind?: "fixo" | "parcelado";
   recurringTotal?: number;
+  recurringIndex?: number;
   accountId?: string;
   note?: string | null;
   tags?: string | null;
