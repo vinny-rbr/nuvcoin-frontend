@@ -4,7 +4,6 @@ import { createPortal } from "react-dom";
 import { financeAdd, financeFlushRecent, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate, makeId } from "../lib/financeService";
 import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
 import { parseBankFile, toFinanceItem, type OfxParsedItem, type LedgerBal, type PdfProgress } from "../lib/ofxImport";
-import { adjustBankAccountBalance } from "../lib/bankAccountsService";
 import BankAccountChips from "../components/BankAccountChips";
 import type { BankAccount, FinanceItem, FinanceStatus } from "../types/finance";
 
@@ -1357,7 +1356,6 @@ export default function ImportOfx() {
       expense: expenseCategories.length > 0 ? expenseCategories : ["Outros"],
     };
 
-    let balanceDelta = 0;
     for (const item of filteredNew) {
       if (!item.included) continue;
       const fi = toFinanceItem(item.parsedItem, categories);
@@ -1368,9 +1366,6 @@ export default function ImportOfx() {
         status: item.status,
         ...(selectedAccount ? { accountId: selectedAccount.id } : {}),
       });
-      if (selectedAccount) {
-        balanceDelta += fi.type === "RECEITA" ? fi.amountCents : -fi.amountCents;
-      }
     }
 
     for (const dup of filteredDup) {
@@ -1388,14 +1383,10 @@ export default function ImportOfx() {
     const skipped = filteredDup.filter((d) => d.action === "skip").length;
     setImportResult({ added, updated, skipped });
 
-    if (selectedAccount && balanceDelta !== 0) {
-      void adjustBankAccountBalance(selectedAccount, balanceDelta).catch(() => undefined);
-    }
-
-    // Check if OFX had a LEDGERBAL to offer balance adjustment
-    if (ledgerBal) {
+    // Offer balance adjustment only when ledgerBal is a real non-zero value.
+    // BB and some banks export BALAMT=0.00 which is invalid — skip in that case.
+    if (ledgerBal && ledgerBal.balanceCents > 0) {
       const cutoff = ledgerBal.dateISO;
-      // Cumulative balance in app up to cutoff (existing + just-imported)
       const allAfterImport = financeList();
       let cumRec = 0, cumDes = 0;
       for (const item of allAfterImport) {
