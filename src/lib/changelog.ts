@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.75": [
+    { emoji: "☑️", text: "Importação: botão 'Marcar todas / Desmarcar todas' no cabeçalho da lista — opera sobre os itens visíveis (filtro de busca incluso)." },
+  ],
   "26.6.12.71": [
     { emoji: "💳", text: "Parcelamentos: nova opção 'Parcelar no crédito' ao adicionar despesa — informe o nº de parcelas e o app cria automaticamente uma por mês com badge X/N na lista." },
   ],

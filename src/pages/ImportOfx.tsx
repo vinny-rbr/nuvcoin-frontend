@@ -838,6 +838,7 @@ function StepReview({
   memory,
   onSetCat,
   onToggle,
+  onToggleAll,
 }: {
   fileInfo: FileInfo;
   newItems: ReviewNewItem[];
@@ -856,6 +857,7 @@ function StepReview({
   memory: Record<string, string>;
   onSetCat: (id: string, cat: string, mKey: string, applyToAll: boolean, remember: boolean) => void;
   onToggle: (id: string) => void;
+  onToggleAll: (ids: string[], include: boolean) => void;
 }) {
   const [editing, setEditing] = useState<ReviewNewItem | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -1014,6 +1016,19 @@ function StepReview({
             <ArrowDownIcon />
             <h4>Novos lançamentos</h4>
             <span className="count">{searchQ ? `${visibleNew.length} encontrados` : `${included}/${newItems.length}`}</span>
+            {(() => {
+              const ids = visibleNew.map(i => i.parsedItem.id);
+              const allOn = visibleNew.every(i => i.included);
+              return (
+                <button
+                  type="button"
+                  className="ix-toggle-all"
+                  onClick={() => onToggleAll(ids, !allOn)}
+                >
+                  {allOn ? "Desmarcar todas" : "Marcar todas"}
+                </button>
+              );
+            })()}
           </div>
           <div className="ix-stagger">
             {visibleNew.map((i) => (
@@ -1439,6 +1454,11 @@ export default function ImportOfx() {
     setNewItems((arr) => arr.map((i) => i.parsedItem.id === id ? { ...i, included: !i.included } : i));
   }
 
+  function toggleAll(ids: string[], include: boolean) {
+    const set = new Set(ids);
+    setNewItems((arr) => arr.map((i) => set.has(i.parsedItem.id) ? { ...i, included: include } : i));
+  }
+
   function confirmImport() {
     if (isDemo) {
       const added = filteredNew.filter((i) => i.included).length;
@@ -1597,6 +1617,7 @@ export default function ImportOfx() {
           memory={catMemory}
           onSetCat={handleSetCat}
           onToggle={toggleItem}
+          onToggleAll={toggleAll}
         />
       )}
 
