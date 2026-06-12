@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { financeUpdate } from "../lib/financeService";
+import { deleteAllReceipts, fileToReceipt, loadReceipts, saveReceipts, type Receipt } from "../lib/receiptsService";
 import type { FinanceItem, FinanceStatus, PaymentType } from "../types/finance";
 import CategoryPicker from "./CategoryPicker";
 
@@ -84,6 +85,10 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
   const [showPayPicker, setShowPayPicker] = useState(false);
   const [anim, setAnim] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [receipts, setReceipts] = useState<Receipt[]>(() => loadReceipts(item.id));
+  const [uploading, setUploading] = useState(false);
+  const [lightbox, setLightbox] = useState<Receipt | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const isDespesa = item.type === "DESPESA";
@@ -100,6 +105,30 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [onClose]);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      const newReceipts = await Promise.all(files.map(fileToReceipt));
+      const next = [...receipts, ...newReceipts];
+      setReceipts(next);
+      saveReceipts(item.id, next);
+    } catch {
+      // ignore
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeReceipt(id: string) {
+    const next = receipts.filter((r) => r.id !== id);
+    setReceipts(next);
+    if (next.length === 0) deleteAllReceipts(item.id);
+    else saveReceipts(item.id, next);
+  }
 
   function handleSave() {
     const amountCents = parseToCents(amountStr) || item.amountCents;
@@ -267,14 +296,56 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
           </div>
 
           <div className="ed2-field">
-            <label>ANEXAR COMPROVANTE</label>
-            <button type="button" className="ed2-select" style={{ opacity: 0.55, cursor: "not-allowed" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#94a3b8", fontSize: 14 }}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" width="17" height="17">
-                  <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                </svg>
-                Em breve
-              </span>
+            <label>COMPROVANTES</label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf"
+              multiple
+              hidden
+              onChange={handleFileChange}
+            />
+            {receipts.length > 0 && (
+              <div className="ed2-receipts-grid">
+                {receipts.map((r) => (
+                  <div key={r.id} className="ed2-receipt-thumb">
+                    {r.type.startsWith("image/") ? (
+                      <img
+                        src={r.dataUrl}
+                        alt={r.name}
+                        className="ed2-receipt-img"
+                        onClick={() => setLightbox(r)}
+                      />
+                    ) : (
+                      <button type="button" className="ed2-receipt-pdf" onClick={() => setLightbox(r)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" width="28" height="28">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <path d="M14 2v6h6"/>
+                          <path d="M9 13h6M9 17h4"/>
+                        </svg>
+                        <span>{r.name.length > 14 ? r.name.slice(0, 12) + "…" : r.name}</span>
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className="ed2-receipt-del"
+                      onClick={() => removeReceipt(r.id)}
+                      aria-label="Remover"
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              className="ed2-attach-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" width="16" height="16">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+              </svg>
+              {uploading ? "Processando…" : receipts.length > 0 ? "Adicionar mais" : "Anexar foto ou PDF"}
             </button>
           </div>
 
@@ -306,6 +377,18 @@ export default function FinanceItemEditModal({ item, categoryOptions, onClose, o
           onPick={(p) => { setPaymentType(p); setShowPayPicker(false); }}
           onClose={() => setShowPayPicker(false)}
         />
+      )}
+
+      {/* Lightbox */}
+      {lightbox && (
+        <div className="ed2-lightbox-scrim" onClick={() => setLightbox(null)}>
+          {lightbox.type.startsWith("image/") ? (
+            <img src={lightbox.dataUrl} alt={lightbox.name} className="ed2-lightbox-img" onClick={(e) => e.stopPropagation()} />
+          ) : (
+            <iframe src={lightbox.dataUrl} title={lightbox.name} className="ed2-lightbox-pdf" onClick={(e) => e.stopPropagation()} />
+          )}
+          <button type="button" className="ed2-lightbox-close" onClick={() => setLightbox(null)}>×</button>
+        </div>
       )}
     </div>,
     document.body,

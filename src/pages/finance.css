@@ -3516,6 +3516,129 @@
 
 .ed2-select > svg { margin-left: auto; }
 
+/* ── Comprovantes ── */
+.ed2-receipts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ed2-receipt-thumb {
+  position: relative;
+  border-radius: 10px;
+  overflow: visible;
+  aspect-ratio: 1;
+}
+
+.ed2-receipt-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+  cursor: zoom-in;
+  border: 1px solid rgba(255,255,255,.1);
+}
+
+.ed2-receipt-pdf {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  color: #94a3b8;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 6px;
+  word-break: break-all;
+}
+
+.ed2-receipt-del {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+
+.ed2-attach-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1.5px dashed rgba(96,165,250,.4);
+  background: rgba(96,165,250,.05);
+  color: #60a5fa;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.ed2-attach-btn:hover { background: rgba(96,165,250,.1); }
+.ed2-attach-btn:disabled { opacity: 0.6; cursor: wait; }
+
+/* ── Lightbox ── */
+.ed2-lightbox-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.ed2-lightbox-img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.ed2-lightbox-pdf {
+  width: 100%;
+  height: 85vh;
+  border: none;
+  border-radius: 12px;
+}
+
+.ed2-lightbox-close {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .ed2-foot {
   flex-shrink: 0;
   padding: 14px 16px calc(16px + env(safe-area-inset-bottom));

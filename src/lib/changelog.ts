@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.77": [
+    { emoji: "📎", text: "Comprovantes: anexe fotos e PDFs em qualquer lançamento — imagens são comprimidas automaticamente, toque para visualizar em tela cheia." },
+  ],
   "26.6.12.75": [
     { emoji: "☑️", text: "Importação: botão 'Marcar todas / Desmarcar todas' no cabeçalho da lista — opera sobre os itens visíveis (filtro de busca incluso)." },
   ],
