@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.64": [
+    { emoji: "☑️", text: "Importação: checkbox em cada transação — marque/desmarque individualmente quais importar sem abrir o detalhe." },
+    { emoji: "🏷️", text: "Importação: ao trocar categoria de uma transação, se existirem outras com o mesmo nome/CNPJ, o app pergunta se deseja aplicar a todas de uma vez." },
+  ],
   "26.6.12.63": [
     { emoji: "🔧", text: "Importação OFX: corrigido bug que alterava o saldo da conta bancária a cada leitura do mesmo arquivo — saldo não é mais acumulado automaticamente durante o import." },
     { emoji: "🔧", text: "Importação OFX BB: popup de ajuste de saldo não aparece mais quando o banco exporta LEDGERBAL=0 (valor inválido que gerava ajuste errado)." },
