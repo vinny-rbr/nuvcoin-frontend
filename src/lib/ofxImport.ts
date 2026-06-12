@@ -458,6 +458,8 @@ function parsePdfLines(text: string): { items: OfxParsedItem[]; ledgerBal: Ledge
     .flatMap((line): OfxParsedItem[] => {
       const dateMatch = line.match(/(\d{2}[./-]\d{2}[./-]\d{2,4})/);
       if (!dateMatch) return [];
+      // Skip header/summary lines that contain dates but are not transactions
+      if (/saldo anterior|período dos lançamentos|periodo dos lancamentos/i.test(line)) return [];
 
       // Collect all monetary amounts with optional C/D suffix (Caixa format).
       // Three fallback patterns handle OCR-dropped commas:
