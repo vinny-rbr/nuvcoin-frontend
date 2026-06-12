@@ -2,8 +2,9 @@ import type { FinanceItem, PaymentType } from "../types/finance";
 import { makeId } from "./financeService";
 import * as XLSX from "xlsx";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import pdfjsWorkerUrl from "pdfjs-dist/legacy/build/pdf.worker.mjs?url";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 export type OfxParsedItem = {
   id: string;
@@ -15,6 +16,13 @@ export type OfxParsedItem = {
 };
 
 export type BankFileKind = "OFX" | "CSV" | "XLSX" | "PDF";
+
+export type PdfProgress = {
+  phase: "loading" | "ocr";
+  page: number;
+  totalPages: number;
+  percent: number;
+};
 
 export type LedgerBal = {
   balanceCents: number;
@@ -397,37 +405,334 @@ export async function parseXlsx(file: File): Promise<OfxParsedItem[]> {
   return rowsArrayToParsedItems(rows);
 }
 
-function parsePdfLines(text: string): OfxParsedItem[] {
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .map((line) => {
-      const date = line.match(/\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/)?.[0];
-      const amountMatches = line.match(/-?\s*(?:R\$\s*)?\d{1,3}(?:\.\d{3})*,\d{2}|-?\s*(?:R\$\s*)?\d+,\d{2}/g) ?? [];
-      const amount = amountMatches.at(-1);
-      if (!date || !amount) return null;
+const DATE_RE = /\d{2}[./-]\d{2}[./-]\d{2,4}/;
+const AMOUNT_RE_TEST = /\d+,\d{2}/;
 
-      const title = line.replace(date, "").replace(amount, "").replace(/\b(saldo|total)\b.*$/i, "").trim();
-      return createParsedItem({ title, amount, date, rowText: line });
-    })
-    .filter((item): item is OfxParsedItem => Boolean(item));
+function preJoinPdfLines(raw: string[]): string[] {
+  // Fix 1 – OCR column-split: a line has a date but no amount; the next line
+  //         carries the amount (Tesseract broke the row at the CPF column).
+  //         Join them so the parser sees date + amount together.
+  //
+  // Fix 2 – Same-timestamp AZCX rows: the PDF prints several maquininha
+  //         totals at the exact same HH:MM:SS (e.g. 5 entries at 09:07:10).
+  //         Tesseract often fuses them into one super-line. Split on each
+  //         internal date occurrence so each sub-entry becomes its own line.
+  const joined: string[] = [];
+  for (let i = 0; i < raw.length; i++) {
+    const line = raw[i];
+    const hasDate = DATE_RE.test(line);
+    const hasAmount = AMOUNT_RE_TEST.test(line);
+
+    // Join orphaned date line with the following amount line
+    if (hasDate && !hasAmount && i + 1 < raw.length) {
+      joined.push(line + " " + raw[i + 1]);
+      i++;
+      continue;
+    }
+    joined.push(line);
+  }
+
+  // Split merged lines: if a joined line contains more than one date occurrence
+  // (from fused AZCX rows), re-split on each date boundary.
+  const split: string[] = [];
+  for (const line of joined) {
+    const parts = line.split(/(?=\d{2}[./-]\d{2}[./-]\d{4}\s*[-–]\s*\d{2}:\d{2}:\d{2})/);
+    for (const part of parts) {
+      const p = part.trim();
+      if (p) split.push(p);
+    }
+  }
+  return split;
 }
 
-export async function parsePdf(file: File): Promise<OfxParsedItem[]> {
-  const data = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data }).promise;
+function parsePdfLines(text: string): { items: OfxParsedItem[]; ledgerBal: LedgerBal | null } {
+  let lastDateISO = "";
+  let lastSaldoCents: number | null = null;
+
+  const rawLines = text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+
+  const items = preJoinPdfLines(rawLines)
+    .flatMap((line): OfxParsedItem[] => {
+      const dateMatch = line.match(/(\d{2}[./-]\d{2}[./-]\d{2,4})/);
+      if (!dateMatch) return [];
+
+      // Collect all monetary amounts with optional C/D suffix (Caixa format)
+      const amountRe = /(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})\s*([CD]\b)?/g;
+      const amounts: Array<{ raw: string; cents: number; suffix?: string }> = [];
+      let m: RegExpExecArray | null;
+      while ((m = amountRe.exec(line)) !== null) {
+        const cents = Math.round(
+          parseFloat(m[1].replace(/\./g, "").replace(",", ".")) * 100,
+        );
+        amounts.push({ raw: m[1], cents, suffix: m[2] });
+      }
+      if (amounts.length === 0) return [];
+
+      // Caixa extrato: last column = Saldo, second-to-last = Valor (transaction)
+      const valorEntry = amounts.length >= 2 ? amounts[amounts.length - 2] : amounts[0];
+      if (valorEntry.cents <= 0) return [];
+
+      // Track the running balance (last amount = saldo) for ledgerBal
+      const saldoEntry = amounts[amounts.length - 1];
+      const lineDate = parseDateISO(dateMatch[1]);
+      if (lineDate >= lastDateISO) {
+        lastDateISO = lineDate;
+        // Saldo suffix: C = positive balance, D = negative (overdraft)
+        lastSaldoCents = saldoEntry.suffix === "D" ? -saldoEntry.cents : saldoEntry.cents;
+      }
+
+      let type: FinanceItem["type"];
+      if (valorEntry.suffix === "D") {
+        type = "DESPESA";
+      } else if (valorEntry.suffix === "C") {
+        type = "RECEITA";
+      } else {
+        type = inferTypeFromText(line, parseBrazilianAmount(valorEntry.raw).sign);
+      }
+
+      const title =
+        line
+          .replace(/\d{2}[./-]\d{2}[./-]\d{2,4}(?:\s*[-–]\s*\d{2}:\d{2}:\d{2})?/, "")
+          .replace(/\b\d{5,6}\b/, "")
+          .replace(/\*+[\d./\-]+\*+/g, "")
+          .replace(/\d{1,3}(?:\.\d{3})*,\d{2}\s*[CD]?\b/g, "")
+          .replace(/\s+/g, " ")
+          .trim() || "Lancamento importado";
+
+      return [
+        {
+          id: makeId(),
+          type,
+          title,
+          amountCents: valorEntry.cents,
+          dateISO: lineDate,
+        },
+      ];
+    });
+
+  const ledgerBal: LedgerBal | null =
+    lastSaldoCents !== null && lastDateISO
+      ? { balanceCents: lastSaldoCents, dateISO: lastDateISO }
+      : null;
+
+  return { items, ledgerBal };
+}
+
+async function decompressDeflate(bytes: BufferSource): Promise<Uint8Array | null> {
+  for (const fmt of ["deflate", "deflate-raw"] as CompressionFormat[]) {
+    try {
+      const ds = new DecompressionStream(fmt);
+      const wr = ds.writable.getWriter();
+      const rd = ds.readable.getReader();
+
+      // Write and read concurrently — writing alone can deadlock if the
+      // internal buffer fills up before anyone drains the readable side.
+      const writePromise = wr.write(bytes).then(() => wr.close()).catch(() => {});
+      const parts: Uint8Array[] = [];
+      for (;;) {
+        const { done, value } = await rd.read();
+        if (done) break;
+        if (value) parts.push(value);
+      }
+      await writePromise;
+
+      const out = new Uint8Array(parts.reduce((s, p) => s + p.length, 0));
+      let off = 0;
+      for (const p of parts) { out.set(p, off); off += p.length; }
+      return out;
+    } catch { /* try next format */ }
+  }
+  return null;
+}
+
+function decodePdfLiteralString(raw: string): string {
+  return raw
+    .replace(/\\([0-7]{1,3})/g, (_, o) => String.fromCharCode(parseInt(o, 8)))
+    .replace(/\\n/g, " ")
+    .replace(/\\r/g, " ")
+    .replace(/\\t/g, " ")
+    .replace(/\\(.)/g, "$1");
+}
+
+function extractLinesFromStream(text: string): string[] {
   const lines: string[] = [];
+  const blocks = text.match(/BT[\s\S]*?ET/g) ?? [];
+  for (const block of blocks) {
+    const parts: string[] = [];
+    const re = /\(([^)\\]*(?:\\.[^)\\]*)*)\)\s*Tj?|\[([\s\S]*?)\]\s*TJ|<([0-9a-fA-F\s]*)>\s*Tj?/g;
+    let m;
+    while ((m = re.exec(block)) !== null) {
+      if (m[1] !== undefined) {
+        parts.push(decodePdfLiteralString(m[1]));
+      } else if (m[2] !== undefined) {
+        const inner = m[2].match(/\(([^)\\]*(?:\\.[^)\\]*)*)\)|<([0-9a-fA-F\s]*)>/g) ?? [];
+        for (const p of inner) {
+          if (p.startsWith("(")) {
+            parts.push(decodePdfLiteralString(p.slice(1, -1)));
+          } else {
+            const hex = p.slice(1, -1).replace(/\s/g, "");
+            let s = "";
+            for (let i = 0; i < hex.length; i += 2) s += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
+            parts.push(s);
+          }
+        }
+      } else if (m[3] !== undefined) {
+        const hex = m[3].replace(/\s/g, "");
+        let s = "";
+        for (let i = 0; i < hex.length; i += 2) s += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
+        parts.push(s);
+      }
+    }
+    const line = parts.join("").replace(/\s+/g, " ").trim();
+    if (line) lines.push(line);
+  }
+  return lines;
+}
+
+async function parsePdfViaRaw(data: ArrayBuffer): Promise<{ items: OfxParsedItem[]; ledgerBal: LedgerBal | null }> {
+  const allBytes = new Uint8Array(data);
+  const allLines: string[] = [];
+  let pos = 0;
+  let streamsProcessed = 0;
+
+  while (pos < allBytes.length - 8) {
+    if (allBytes[pos] !== 0x73) { pos++; continue; }
+    if (allBytes[pos+1] !== 0x74 || allBytes[pos+2] !== 0x72 ||
+        allBytes[pos+3] !== 0x65 || allBytes[pos+4] !== 0x61 || allBytes[pos+5] !== 0x6D) {
+      pos++; continue;
+    }
+    let dataStart = pos + 6;
+    if (allBytes[dataStart] === 0x0D) dataStart++;
+    if (allBytes[dataStart] !== 0x0A) { pos++; continue; }
+    dataStart++;
+
+    const lookback = new TextDecoder("latin1").decode(allBytes.subarray(Math.max(0, pos - 3000), pos));
+    const lengthMatches = [...lookback.matchAll(/\/Length\s+(\d+)/g)];
+    const lastLen = lengthMatches.at(-1);
+    if (!lastLen) { pos++; continue; }
+    const length = parseInt(lastLen[1]);
+    if (!length || length < 10 || length > 8_000_000) { pos++; continue; }
+    const dataEnd = dataStart + length;
+    if (dataEnd > allBytes.length) { pos++; continue; }
+
+    const decompressed = await decompressDeflate(new Uint8Array(allBytes.buffer, dataStart, dataEnd - dataStart));
+    if (decompressed) {
+      allLines.push(...extractLinesFromStream(new TextDecoder("latin1").decode(decompressed)));
+    }
+
+    pos = dataEnd;
+    streamsProcessed++;
+    if (streamsProcessed % 10 === 0) await new Promise((r) => setTimeout(r, 0));
+    if (allLines.length > 200) break;
+  }
+
+  return parsePdfLines(allLines.join("\n"));
+}
+
+async function parsePdfWithOCR(
+  pdf: pdfjsLib.PDFDocumentProxy,
+  onProgress?: (p: PdfProgress) => void,
+): Promise<{ items: OfxParsedItem[]; ledgerBal: LedgerBal | null }> {
+  const totalPages = pdf.numPages;
+  onProgress?.({ phase: "loading", page: 0, totalPages, percent: 0 });
+
+  // Dynamic import — Tesseract (~12MB) only loads when actually needed
+  const { createWorker } = await import("tesseract.js");
+  const worker = await createWorker("por", 1, {
+    logger: (m: { status: string; progress: number }) => {
+      if (m.status === "recognizing text") {
+        console.log(`[OCR] ${Math.round(m.progress * 100)}%`);
+      }
+    },
+  });
+
+  const allLines: string[] = [];
+  try {
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      onProgress?.({
+        phase: "ocr",
+        page: pageNum,
+        totalPages,
+        percent: Math.round(((pageNum - 1) / totalPages) * 100),
+      });
+
+      const page = await pdf.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 2.0 });
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d")!;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await page.render({ canvasContext: ctx as any, viewport } as any).promise;
+      const { data: { text } } = await worker.recognize(canvas);
+      allLines.push(...text.split("\n").filter((l) => l.trim()));
+      canvas.width = 0; // release memory
+
+      onProgress?.({
+        phase: "ocr",
+        page: pageNum,
+        totalPages,
+        percent: Math.round((pageNum / totalPages) * 100),
+      });
+    }
+  } finally {
+    await worker.terminate();
+  }
+
+  return parsePdfLines(allLines.join("\n"));
+}
+
+
+
+export async function parsePdf(
+  file: File,
+  onProgress?: (p: PdfProgress) => void,
+): Promise<{ items: OfxParsedItem[]; ledgerBal: LedgerBal | null }> {
+  const data = await file.arrayBuffer();
+  const dataCopy = data.slice(0); // pdfjs transfers the buffer to its worker
+  const pdf = await pdfjsLib.getDocument({ data }).promise;
+  const allLines: string[] = [];
 
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    lines.push(content.items.map((item) => ("str" in item ? item.str : "")).join(" "));
+    const rowMap = new Map<number, Array<{ x: number; str: string }>>();
+    for (const item of content.items) {
+      if (!("str" in item) || !item.str.trim()) continue;
+      const y = Math.round(item.transform[5]);
+      const x = item.transform[4];
+      let key = y;
+      for (const k of rowMap.keys()) {
+        if (Math.abs(k - y) <= 3) { key = k; break; }
+      }
+      if (!rowMap.has(key)) rowMap.set(key, []);
+      rowMap.get(key)!.push({ x, str: item.str });
+    }
+    [...rowMap.entries()]
+      .sort((a, b) => b[0] - a[0])
+      .forEach(([, cells]) => {
+        const line = cells.sort((a, b) => a.x - b.x).map((c) => c.str).join(" ");
+        if (line.trim()) allLines.push(line);
+      });
   }
 
-  return parsePdfLines(lines.join("\n"));
+  if (allLines.length > 0) return parsePdfLines(allLines.join("\n"));
+
+  // Fallback 1: decompress raw PDF streams (works for Form XObjects, custom fonts)
+  const rawResult = await parsePdfViaRaw(dataCopy);
+  if (rawResult.items.length > 0) return rawResult;
+
+  // Fallback 2: OCR via Tesseract (for image-based PDFs like Caixa)
+  return parsePdfWithOCR(pdf, onProgress);
 }
 
-export async function parseBankFile(file: File): Promise<{ kind: BankFileKind; items: OfxParsedItem[]; ledgerBal?: LedgerBal | null }> {
+export async function parseBankFile(
+  file: File,
+  options?: { onPdfProgress?: (p: PdfProgress) => void },
+): Promise<{ kind: BankFileKind; items: OfxParsedItem[]; ledgerBal?: LedgerBal | null }> {
   const extension = file.name.split(".").pop()?.toLowerCase();
 
   if (extension === "ofx") {
@@ -444,7 +749,8 @@ export async function parseBankFile(file: File): Promise<{ kind: BankFileKind; i
   }
 
   if (extension === "pdf") {
-    return { kind: "PDF", items: await parsePdf(file) };
+    const { items, ledgerBal } = await parsePdf(file, options?.onPdfProgress);
+    return { kind: "PDF", items, ledgerBal };
   }
 
   throw new Error("Formato nao suportado. Use OFX, CSV, XLSX ou PDF.");

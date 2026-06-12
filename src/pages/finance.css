@@ -2750,6 +2750,41 @@
 .dx-typemenu button:hover { color: #fff; }
 .dx-typemenu button.on { color: #fff; background: rgba(96,165,250,0.16); }
 
+.dx-confirm-delete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  font-size: 13px;
+  color: #fca5a5;
+  flex-wrap: wrap;
+}
+.dx-confirm-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.dx-confirm-actions button {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(148,163,184,0.2);
+  background: rgba(30,41,59,0.8);
+  color: #94a3b8;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dx-confirm-actions button.danger {
+  background: rgba(239,68,68,0.2);
+  border-color: rgba(239,68,68,0.4);
+  color: #fca5a5;
+  font-weight: 600;
+}
+
 .dx-searchbar {
   display: flex;
   align-items: center;

@@ -955,10 +955,11 @@ export default function Dashboard() {
           <div className="dash-hero-bal-row">
             <div>
               {(() => {
-                // When bank accounts are cadastered, show their real balance sum.
-                // Otherwise fall back to the transaction-derived cumulative balance.
-                const displayCents = bankAccounts.length > 0
-                  ? bankAccounts.reduce((s, a) => s + a.balanceCents, 0)
+                // Show stored account balances only when at least one account has a non-zero balance
+                // (meaning the user manually set it). Otherwise use the transaction-derived cumulative.
+                const storedSum = bankAccounts.reduce((s, a) => s + a.balanceCents, 0);
+                const displayCents = bankAccounts.length > 0 && storedSum !== 0
+                  ? storedSum
                   : heroData.saldoCents;
                 return (
                   <>

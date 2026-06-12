@@ -7,6 +7,7 @@ import {
   financeList,
   financeRefreshFromApi,
   financeRemove,
+  financeRemoveMany,
   financeSubscribe,
   financeUpdate,
   makeId,
@@ -143,6 +144,7 @@ export default function Despesas() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "pending" | "paid">("all");
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   // form state
   const [title, setTitle] = useState("");
@@ -277,6 +279,11 @@ export default function Despesas() {
     setEditingItem(null);
   }
 
+  function onDeleteAll() {
+    setItems(financeRemoveMany(monthItems.map((i) => i.id)));
+    setConfirmDeleteAll(false);
+  }
+
   function handleEditSaved(updated: FinanceItem[]) {
     setItems(updated);
   }
@@ -360,6 +367,19 @@ export default function Despesas() {
                 <path d="M22 3H2l8 9.46V19l4 2V12.46Z"/>
               </svg>
             </button>
+            {monthItems.length > 0 && (
+              <button
+                type="button"
+                className={`dx-icbtn${confirmDeleteAll ? " on" : ""}`}
+                title="Apagar todos do mês"
+                onClick={() => setConfirmDeleteAll((v) => !v)}
+                style={confirmDeleteAll ? { color: "#ff6b6b" } : undefined}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" width="20" height="20">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            )}
           </div>
         </div>
 
@@ -367,6 +387,16 @@ export default function Despesas() {
           <div className="dx-typemenu" onClick={(e) => e.stopPropagation()}>
             <button type="button" className="on">Despesas</button>
             <button type="button" onClick={() => { setTypeMenuOpen(false); navigate("/receitas"); }}>Receitas</button>
+          </div>
+        )}
+
+        {confirmDeleteAll && (
+          <div className="dx-confirm-delete">
+            <span>Apagar {monthItems.length} lançamento{monthItems.length !== 1 ? "s" : ""} de {MESES_PT[viewMonth]}?</span>
+            <div className="dx-confirm-actions">
+              <button type="button" onClick={() => setConfirmDeleteAll(false)}>Cancelar</button>
+              <button type="button" className="danger" onClick={onDeleteAll}>Apagar tudo</button>
+            </div>
           </div>
         )}
 

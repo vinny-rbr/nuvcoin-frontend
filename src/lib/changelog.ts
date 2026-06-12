@@ -4,6 +4,25 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.11.53": [
+    { emoji: "📄", text: "Importação PDF Caixa: corrigidas transações perdidas por OCR — linhas divididas em colunas e entradas AZCX fundidas agora são reconhecidas corretamente." },
+  ],
+  "26.6.11.52": [
+    { emoji: "🗑️", text: "Botão 'Apagar tudo' em Despesas e Receitas — remove todos os lançamentos do mês com confirmação inline." },
+  ],
+  "26.6.11.50": [
+    { emoji: "⚖️", text: "Importação PDF: saldo final do extrato é detectado automaticamente e oferece ajuste de saldo, igual ao OFX." },
+  ],
+  "26.6.11.48": [
+    { emoji: "📂", text: "Importação múltipla: selecione vários PDFs ou extratos de uma vez — todos os lançamentos são combinados em uma única revisão." },
+  ],
+  "26.6.11.45": [
+    { emoji: "📊", text: "Dashboard: saldo em contas agora mostra o valor real das transações quando as contas não têm saldo inicial definido." },
+    { emoji: "📄", text: "Importação PDF: barra de progresso real por página — você vê 'Página X de Y lida' em vez de travado." },
+  ],
+  "26.6.11.40": [
+    { emoji: "📄", text: "Importação de extrato PDF da Caixa corrigida: lançamentos agora são lidos linha a linha com tipo correto (crédito/débito)." },
+  ],
   "26.6.11.36": [
     { emoji: "📝", text: "Observação, Tags e Ignorar nos relatórios adicionados ao formulário de edição de despesas e receitas." },
   ],

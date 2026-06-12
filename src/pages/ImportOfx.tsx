@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 
 import { financeAdd, financeFlushRecent, financeList, financeRefreshFromApi, financeSubscribe, financeUpdate, makeId } from "../lib/financeService";
 import { categoriesForType, DEFAULT_CATEGORIES, listFinanceCategories } from "../lib/financeCategoriesService";
-import { parseBankFile, toFinanceItem, type OfxParsedItem, type LedgerBal } from "../lib/ofxImport";
+import { parseBankFile, toFinanceItem, type OfxParsedItem, type LedgerBal, type PdfProgress } from "../lib/ofxImport";
 import { adjustBankAccountBalance } from "../lib/bankAccountsService";
 import BankAccountChips from "../components/BankAccountChips";
 import type { BankAccount, FinanceItem, FinanceStatus } from "../types/finance";
@@ -388,7 +388,7 @@ function StepSelect({
   setDefaultStatus: (v: FinanceStatus) => void;
   selectedAccount: BankAccount | null;
   onAccountChange: (a: BankAccount | null) => void;
-  onPick: (file: File) => void;
+  onPick: (files: File[]) => void;
   onDemo: () => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -413,13 +413,13 @@ function StepSelect({
         onDrop={(e) => {
           e.preventDefault();
           setDrag(false);
-          const file = e.dataTransfer.files?.[0];
-          if (file) onPick(file);
+          const files = Array.from(e.dataTransfer.files ?? []);
+          if (files.length > 0) onPick(files);
         }}
       >
         <div className="ix-drop-icon"><CloudUpIcon /></div>
-        <div className="ix-drop-title">Arraste o extrato aqui</div>
-        <div className="ix-drop-sub">ou toque para escolher do aparelho</div>
+        <div className="ix-drop-title">Arraste os extratos aqui</div>
+        <div className="ix-drop-sub">ou toque para escolher — pode selecionar vários de uma vez</div>
         <div className="ix-formats">
           {["OFX", "CSV", "XLSX", "PDF"].map((f) => (
             <span key={f} className="ix-format">{f}</span>
@@ -429,11 +429,12 @@ function StepSelect({
           ref={inputRef}
           type="file"
           accept=".ofx,.OFX,.csv,.CSV,.xlsx,.XLSX,.xls,.XLS,.pdf,.PDF"
+          multiple
           hidden
           onChange={(e) => {
-            const file = e.target.files?.[0];
+            const files = Array.from(e.target.files ?? []);
             e.target.value = "";
-            if (file) onPick(file);
+            if (files.length > 0) onPick(files);
           }}
         />
       </div>
@@ -463,7 +464,7 @@ function StepSelect({
 
 // ── Step 2 — Reading ─────────────────────────────────────────────────
 
-function StepReading({ progress, stepIdx, fileName }: { progress: number; stepIdx: number; fileName: string }) {
+function StepReading({ progress, stepIdx, fileName, pdfMsg }: { progress: number; stepIdx: number; fileName: string; pdfMsg?: string }) {
   return (
     <div className="ix-fade">
       <div className="ix-card ix-reading">
@@ -473,7 +474,12 @@ function StepReading({ progress, stepIdx, fileName }: { progress: number; stepId
         <div className="ix-progress">
           <div className="ix-progress-bar" style={{ width: `${progress}%` }} />
         </div>
-        <div className="ix-reading-step">{READ_STEPS[Math.min(stepIdx, READ_STEPS.length - 1)]}</div>
+        <div className="ix-reading-step">
+          {pdfMsg ?? READ_STEPS[Math.min(stepIdx, READ_STEPS.length - 1)]}
+        </div>
+        {pdfMsg && (
+          <div className="ix-reading-hint">PDFs de imagem levam mais tempo — o app está lendo cada página</div>
+        )}
       </div>
     </div>
   );
@@ -1073,11 +1079,12 @@ function StepDone({ result, onRestart }: { result: ImportResult; onRestart: () =
 export default function ImportOfx() {
   const [step, setStep] = useState<WizardStep>("select");
   const [selectedAccount, setSelectedAccount] = useState<BankAccount | null>(null);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isDemo, setIsDemo] = useState(false);
   const [defaultStatus, setDefaultStatus] = useState<FinanceStatus>("paid");
   const [readProgress, setReadProgress] = useState(0);
   const [readStepIdx, setReadStepIdx] = useState(0);
+  const [pdfMsg, setPdfMsg] = useState<string | undefined>(undefined);
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null);
   const [newItems, setNewItems] = useState<ReviewNewItem[]>([]);
   const [dupItems, setDupItems] = useState<ReviewDupItem[]>([]);
@@ -1121,12 +1128,15 @@ export default function ImportOfx() {
 
     let cancelled = false;
     let p = 0;
+    let tickStopped = false;
     const tick = setInterval(() => {
+      if (tickStopped) return;
       p += 3 + Math.random() * 5;
       const clamped = Math.min(95, p); // cap at 95 until parse done
       setReadProgress(clamped);
       setReadStepIdx(Math.min(READ_STEPS.length - 1, Math.floor((clamped / 100) * READ_STEPS.length)));
     }, 110);
+
 
     const categories = {
       income: incomeCategories.length > 0 ? incomeCategories : ["Outros"],
@@ -1154,28 +1164,53 @@ export default function ImportOfx() {
             period: buildPeriod(parsed),
           };
           await new Promise((r) => setTimeout(r, 1200)); // let animation run
-        } else if (pendingFile) {
-          const ext = pendingFile.name.split(".").pop()?.toLowerCase();
-          let rawText: string | undefined;
-          if (ext === "ofx" || ext === "csv") {
-            rawText = await pendingFile.text();
-          }
-          const { items, ledgerBal: lb } = await parseBankFile(pendingFile);
-          parsed = items;
-          if (lb) setLedgerBal(lb);
-
+        } else if (pendingFiles.length > 0) {
           let bank = "Extrato";
           let account = "Conta bancária";
-          if (rawText) {
-            const extracted = extractBankInfo(rawText);
-            bank = extracted.bank;
-            account = extracted.account;
+          const totalFiles = pendingFiles.length;
+
+          for (let fi = 0; fi < totalFiles; fi++) {
+            if (cancelled) break;
+            const file = pendingFiles[fi];
+            if (totalFiles > 1) {
+              setPdfMsg(`Arquivo ${fi + 1} de ${totalFiles} — lendo…`);
+            }
+
+            const fileOnPdfProgress = (pr: PdfProgress) => {
+              tickStopped = true;
+              const fileBase = fi / totalFiles;
+              const fileShare = 1 / totalFiles;
+              const overall = Math.round((fileBase + fileShare * (pr.percent / 100)) * 100);
+              setReadProgress(overall);
+              const prefix = totalFiles > 1 ? `Arquivo ${fi + 1} de ${totalFiles} — ` : "";
+              if (pr.phase === "loading") {
+                setPdfMsg(`${prefix}Preparando leitura do PDF…`);
+              } else {
+                setPdfMsg(`${prefix}Página ${pr.page} de ${pr.totalPages} ${pr.page < pr.totalPages ? `lida, lendo ${pr.page + 1}…` : "— finalizando…"}`);
+              }
+            };
+
+            const ext = file.name.split(".").pop()?.toLowerCase();
+            let rawText: string | undefined;
+            if (ext === "ofx" || ext === "csv") rawText = await file.text();
+
+            const { items, ledgerBal: lb } = await parseBankFile(file, { onPdfProgress: fileOnPdfProgress });
+            parsed = [...parsed, ...items];
+            if (lb) setLedgerBal(lb);
+
+            if (rawText && bank === "Extrato") {
+              const extracted = extractBankInfo(rawText);
+              bank = extracted.bank;
+              account = extracted.account;
+            }
           }
+
+          const fileNames = pendingFiles.map((f) => f.name);
           info = {
             bank,
             bankInitial: bank.charAt(0).toUpperCase(),
             account,
-            fileName: pendingFile.name,
+            fileName: fileNames.length === 1 ? fileNames[0] : `${fileNames[0]} +${fileNames.length - 1}`,
             period: buildPeriod(parsed),
           };
         }
@@ -1263,16 +1298,18 @@ export default function ImportOfx() {
 
   // ── Handlers ────────────────────────────────
 
-  function pickFile(file: File) {
-    setPendingFile(file);
+  function pickFiles(files: File[]) {
+    if (files.length === 0) return;
+    setPendingFiles(files);
     setIsDemo(false);
     setReadProgress(0);
     setReadStepIdx(0);
+    setPdfMsg(undefined);
     setStep("reading");
   }
 
   function startDemo() {
-    setPendingFile(null);
+    setPendingFiles([]);
     setIsDemo(true);
     setReadProgress(0);
     setReadStepIdx(0);
@@ -1398,7 +1435,7 @@ export default function ImportOfx() {
 
   function restart() {
     financeFlushRecent();
-    setPendingFile(null);
+    setPendingFiles([]);
     setIsDemo(false);
     setReadProgress(0);
     setReadStepIdx(0);
@@ -1438,7 +1475,7 @@ export default function ImportOfx() {
           setDefaultStatus={setDefaultStatus}
           selectedAccount={selectedAccount}
           onAccountChange={setSelectedAccount}
-          onPick={pickFile}
+          onPick={pickFiles}
           onDemo={startDemo}
         />
       )}
@@ -1447,7 +1484,8 @@ export default function ImportOfx() {
         <StepReading
           progress={readProgress}
           stepIdx={readStepIdx}
-          fileName={isDemo ? "extrato_demo.ofx" : (pendingFile?.name ?? "…")}
+          fileName={isDemo ? "extrato_demo.ofx" : pendingFiles.length === 1 ? (pendingFiles[0]?.name ?? "…") : `${pendingFiles.length} arquivos`}
+          pdfMsg={pdfMsg}
         />
       )}
 

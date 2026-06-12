@@ -608,6 +608,29 @@ export function financeAdd(item: FinanceItem): FinanceItem[] {
   return updatedLocal; // Retorna local
 }
 
+export function financeRemoveMany(ids: string[]): FinanceItem[] {
+  if (ids.length === 0) return getCache();
+  ensureUserScopedCache();
+  const idSet = new Set(ids);
+  const updatedLocal = getCache().filter((x) => !idSet.has(x.id));
+  setCache(updatedLocal);
+  saveItemsStorage(updatedLocal);
+  const m = loadAcctMap();
+  for (const id of ids) delete m[id];
+  saveAcctMap(m);
+
+  if (USE_API) {
+    for (const id of ids) {
+      void safe(
+        async () => { await activeProvider.remove(id); },
+        async () => {},
+      );
+    }
+  }
+
+  return updatedLocal;
+}
+
 export function financeRemove(id: string): FinanceItem[] {
   ensureUserScopedCache();
   const updatedLocal = removeById(getCache(), id); // Remove primeiro em memoria
