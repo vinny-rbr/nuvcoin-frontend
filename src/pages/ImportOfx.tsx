@@ -138,10 +138,17 @@ function saveCatMemory(m: Record<string, string>): void {
   try { localStorage.setItem(CAT_MEM_KEY, JSON.stringify(m)); } catch {}
 }
 
-function extractMerchantKey(title: string): string {
-  return title
-    .toUpperCase()
+function cleanTitle(raw: string): string {
+  return raw
     .replace(/^\d{2}\/\d{2}\s+\d{2}:\d{2}\s+/, "")
+    .replace(/^\d{11,14}\s+/, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractMerchantKey(title: string): string {
+  return cleanTitle(title)
+    .toUpperCase()
     .replace(/COMPRA NO (D[ÉE]BITO|CR[ÉE]DITO)\s*[-–—]\s*/i, "")
     .replace(/TRANSFER[ÊE]NCIA (ENVIADA|RECEBIDA) PELO PIX\s*[-–—]\s*/i, "")
     .replace(/PAGAMENTO\s+DE\s+/i, "")
@@ -520,7 +527,7 @@ function TxnRow({
           {isIn ? <ArrowUpIcon /> : <ArrowDownIcon />}
         </div>
         <div className="ix-txn-main">
-          <div className="ix-txn-title">{item.parsedItem.title}</div>
+          <div className="ix-txn-title">{cleanTitle(item.parsedItem.title)}</div>
           <div className="ix-txn-meta">
             <span className="ix-txn-date">{item.dateLabel}</span>
             <CatChip item={item} />
@@ -610,7 +617,7 @@ function CategorySheet({
           </div>
           <div className="h-info">
             <span className="kick">{item.dateLabel}</span>
-            <strong>{item.parsedItem.title}</strong>
+            <strong>{cleanTitle(item.parsedItem.title)}</strong>
           </div>
           <span className={`h-amt ${isIn ? "in" : "out"}`}>
             {isIn ? "+" : "−"}{brl(item.parsedItem.amountCents)}
@@ -878,7 +885,7 @@ function StepReview({
   const searchQ = search.trim().toLowerCase();
   const visibleNew = searchQ
     ? newItems.filter((i) =>
-        i.parsedItem.title.toLowerCase().includes(searchQ) ||
+        cleanTitle(i.parsedItem.title).toLowerCase().includes(searchQ) ||
         i.merchantKey.toLowerCase().includes(searchQ)
       )
     : newItems;

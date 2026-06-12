@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.70": [
+    { emoji: "🔍", text: "Importação: título limpo — remove prefixo de data/hora e CNPJ do BB. Busca e exibição usam o nome real do comerciante." },
+  ],
   "26.6.12.69": [
     { emoji: "🔍", text: "Importação: busca filtra apenas por descrição — não retorna mais transações com categoria de mesmo nome." },
   ],
