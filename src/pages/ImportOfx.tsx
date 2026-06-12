@@ -879,8 +879,7 @@ function StepReview({
   const visibleNew = searchQ
     ? newItems.filter((i) =>
         i.parsedItem.title.toLowerCase().includes(searchQ) ||
-        i.merchantKey.toLowerCase().includes(searchQ) ||
-        i.cat.toLowerCase().includes(searchQ)
+        i.merchantKey.toLowerCase().includes(searchQ)
       )
     : newItems;
   const visibleDup = searchQ
