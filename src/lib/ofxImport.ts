@@ -677,7 +677,7 @@ async function parsePdfWithOCR(
       });
 
       const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 2.0 });
+      const viewport = page.getViewport({ scale: 3.0 });
       const canvas = document.createElement("canvas");
       canvas.width = viewport.width;
       canvas.height = viewport.height;
@@ -686,7 +686,7 @@ async function parsePdfWithOCR(
       await page.render({ canvasContext: ctx as any, viewport } as any).promise;
       const { data: { text } } = await worker.recognize(canvas);
       allLines.push(...text.split("\n").filter((l) => l.trim()));
-      canvas.width = 0; // release memory
+      canvas.width = 0; // release memory and allow GC between pages
 
       onProgress?.({
         phase: "ocr",
@@ -694,6 +694,9 @@ async function parsePdfWithOCR(
         totalPages,
         percent: Math.round((pageNum / totalPages) * 100),
       });
+
+      // Short breath between pages — lets browser GC reclaim canvas memory
+      await new Promise((r) => setTimeout(r, 120));
     }
   } finally {
     await worker.terminate();
