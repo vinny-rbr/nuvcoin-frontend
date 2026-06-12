@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.68": [
+    { emoji: "🔍", text: "Importação: campo de busca na tela de revisão — filtre transações por descrição ou categoria antes de lançar." },
+  ],
   "26.6.12.67": [
     { emoji: "🔧", text: "Importação: título da transação exibe o texto completo sem corte." },
   ],

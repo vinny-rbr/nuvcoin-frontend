@@ -853,6 +853,7 @@ function StepReview({
   const [editing, setEditing] = useState<ReviewNewItem | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const toastRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [search, setSearch] = useState("");
 
   function flash(msg: string) {
     setToast(msg);
@@ -873,6 +874,18 @@ function StepReview({
       flash(`Categoria "${cat}" definida neste lançamento.`);
     }
   }
+
+  const searchQ = search.trim().toLowerCase();
+  const visibleNew = searchQ
+    ? newItems.filter((i) =>
+        i.parsedItem.title.toLowerCase().includes(searchQ) ||
+        i.merchantKey.toLowerCase().includes(searchQ) ||
+        i.cat.toLowerCase().includes(searchQ)
+      )
+    : newItems;
+  const visibleDup = searchQ
+    ? dupItems.filter((d) => d.title.toLowerCase().includes(searchQ))
+    : dupItems;
 
   const included = newItems.filter((i) => i.included).length;
   const toUpdate = dupItems.filter((d) => d.action === "update").length;
@@ -951,6 +964,22 @@ function StepReview({
         </span>
       </div>
 
+      <div className="ix-search-wrap">
+        <svg className="ix-search-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="7" /><path d="M21 21l-4.35-4.35" />
+        </svg>
+        <input
+          className="ix-search-input"
+          type="search"
+          placeholder="Buscar por descrição ou categoria…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && (
+          <button type="button" className="ix-search-clear" onClick={() => setSearch("")}>×</button>
+        )}
+      </div>
+
       {newItems.length > 0 && (
         <div className="ix-applyall">
           <span className="ix-applyall-label">Aplicar a todos os novos:</span>
@@ -973,15 +1002,15 @@ function StepReview({
         </div>
       )}
 
-      {newItems.length > 0 && (
+      {visibleNew.length > 0 && (
         <>
           <div className="ix-list-head new">
             <ArrowDownIcon />
             <h4>Novos lançamentos</h4>
-            <span className="count">{included}/{newItems.length}</span>
+            <span className="count">{searchQ ? `${visibleNew.length} encontrados` : `${included}/${newItems.length}`}</span>
           </div>
           <div className="ix-stagger">
-            {newItems.map((i) => (
+            {visibleNew.map((i) => (
               <TxnRow
                 key={i.parsedItem.id}
                 item={i}
@@ -993,7 +1022,7 @@ function StepReview({
         </>
       )}
 
-      {dupItems.length > 0 && (
+      {visibleDup.length > 0 && (
         <>
           <div className="ix-list-head dup">
             <WarnIcon />
@@ -1004,11 +1033,17 @@ function StepReview({
             Mesma data, valor e descrição parecida. Escolha o que fazer com cada um.
           </p>
           <div className="ix-stagger">
-            {dupItems.map((d) => (
+            {visibleDup.map((d) => (
               <DupCard key={d.parsedItem.id} item={d} onAction={dupAction} />
             ))}
           </div>
         </>
+      )}
+
+      {searchQ && visibleNew.length === 0 && visibleDup.length === 0 && (
+        <div style={{ textAlign: "center", color: "var(--text-3)", padding: "32px 0", fontSize: 14 }}>
+          Nenhuma transação encontrada para "{search}"
+        </div>
       )}
 
       {editing && (

@@ -658,6 +658,52 @@
 .ix-chip.dup .dot { background: var(--warn); }
 .ix-chip.read .dot { background: var(--text-3); }
 
+/* ── Search bar ── */
+.ix-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.ix-search-ic {
+  position: absolute;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.ix-search-input {
+  width: 100%;
+  background: var(--surface-2, rgba(255,255,255,.06));
+  border: 1px solid var(--stroke, rgba(255,255,255,.1));
+  border-radius: 12px;
+  padding: 10px 36px 10px 36px;
+  font-size: 14px;
+  color: var(--text-1, #f1f5f9);
+  outline: none;
+  transition: border-color .15s;
+}
+
+.ix-search-input::placeholder { color: var(--text-3); }
+.ix-search-input:focus { border-color: rgba(96,165,250,.5); }
+.ix-search-input::-webkit-search-cancel-button { display: none; }
+
+.ix-search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-3);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
 /* ── Apply-all bar ── */
 .ix-applyall {
   display: flex;
