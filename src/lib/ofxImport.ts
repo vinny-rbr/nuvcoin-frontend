@@ -492,7 +492,10 @@ function parsePdfLines(text: string): { items: OfxParsedItem[]; ledgerBal: Ledge
       // Track the running balance (last amount = saldo) for ledgerBal
       const saldoEntry = amounts[amounts.length - 1];
       const lineDate = parseDateISO(dateMatch[1]);
-      if (lineDate >= lastDateISO) {
+      // Only capture saldo for the FIRST occurrence of the newest date seen.
+      // The PDF lists transactions newest-first, so the first line of the max date
+      // is the most recent transaction (correct closing balance).
+      if (lineDate > lastDateISO) {
         lastDateISO = lineDate;
         // Saldo suffix: C = positive balance, D = negative (overdraft)
         lastSaldoCents = saldoEntry.suffix === "D" ? -saldoEntry.cents : saldoEntry.cents;
