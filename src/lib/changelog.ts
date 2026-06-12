@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.11.57": [
+    { emoji: "📄", text: "Importação PDF Caixa: OCR sem vírgula decimal agora reconhecido — entradas AZCXVSCC/ELCD com valor compacto (ex: 19585C) são lidas corretamente." },
+  ],
   "26.6.11.53": [
     { emoji: "📄", text: "Importação PDF Caixa: corrigidas transações perdidas por OCR — linhas divididas em colunas e entradas AZCX fundidas agora são reconhecidas corretamente." },
   ],

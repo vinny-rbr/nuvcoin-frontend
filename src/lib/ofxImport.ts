@@ -459,15 +459,27 @@ function parsePdfLines(text: string): { items: OfxParsedItem[]; ledgerBal: Ledge
       const dateMatch = line.match(/(\d{2}[./-]\d{2}[./-]\d{2,4})/);
       if (!dateMatch) return [];
 
-      // Collect all monetary amounts with optional C/D suffix (Caixa format)
-      const amountRe = /(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2})\s*([CD]\b)?/g;
+      // Collect all monetary amounts with optional C/D suffix (Caixa format).
+      // Three fallback patterns handle OCR-dropped commas:
+      //   \d{1,3}\.\d{3}\d{2}(?=\s*[CD]) — "1.04216C" → "1.042,16" (comma fused with period)
+      //   \d{4,8}(?=\s*[CD])              — "19585C"   → "195,85"   (no separator at all)
+      const amountRe = /(\d{1,3}(?:\.\d{3})*,\d{2}|\d+,\d{2}|\d{1,3}\.\d{5}(?=\s*[CD]\b)|\d{4,8}(?=\s*[CD]\b))\s*([CD]\b)?/g;
       const amounts: Array<{ raw: string; cents: number; suffix?: string }> = [];
       let m: RegExpExecArray | null;
       while ((m = amountRe.exec(line)) !== null) {
-        const cents = Math.round(
-          parseFloat(m[1].replace(/\./g, "").replace(",", ".")) * 100,
-        );
-        amounts.push({ raw: m[1], cents, suffix: m[2] });
+        const raw = m[1];
+        let cents: number;
+        if (raw.includes(",")) {
+          cents = Math.round(parseFloat(raw.replace(/\./g, "").replace(",", ".")) * 100);
+        } else if (raw.includes(".")) {
+          // "1.04216" → OCR dropped comma in "1.042,16" → parse as thousands+cents
+          const parts = raw.match(/^(\d{1,3})\.(\d{3})(\d{2})$/);
+          cents = parts ? parseInt(parts[1] + parts[2], 10) * 100 + parseInt(parts[3], 10) : Math.round(parseFloat(raw) * 100);
+        } else {
+          // Pure integer → OCR dropped comma, already in centavos (e.g. 19585 = R$195,85)
+          cents = parseInt(raw, 10);
+        }
+        amounts.push({ raw, cents, suffix: m[2] });
       }
       if (amounts.length === 0) return [];
 
