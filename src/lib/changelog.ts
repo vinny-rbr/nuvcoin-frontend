@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.79": [
+    { emoji: "📊", text: "Central de Relatórios: nova tela hub com 12 tipos de relatório organizados em seções, filtro Todos/Grátis/Premium, busca, seletor de período (presets + personalizado) e sumário de receitas/despesas." },
+  ],
   "26.6.12.77": [
     { emoji: "📎", text: "Comprovantes: anexe fotos e PDFs em qualquer lançamento — imagens são comprimidas automaticamente, toque para visualizar em tela cheia." },
   ],

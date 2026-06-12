@@ -21,6 +21,7 @@ import Categorias from "./pages/Categorias";
 import ImportOfx from "./pages/ImportOfx";
 import Groups from "./pages/Groups"; // Página de grupos (Splitwise)
 import Relatorios from "./pages/Relatorios";
+import RelatoriosExtrato from "./pages/RelatoriosExtrato";
 import Perfil from "./pages/Perfil";
 import AdminSugestoes from "./pages/AdminSugestoes";
 import Contas from "./pages/Contas";
@@ -201,6 +202,18 @@ export default function App() {
             <Layout>
               <AnimatedPage>
                 <Relatorios />
+              </AnimatedPage>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/relatorios/extrato"
+        element={
+          <ProtectedRoute requireActiveSubscription>
+            <Layout>
+              <AnimatedPage>
+                <RelatoriosExtrato />
               </AnimatedPage>
             </Layout>
           </ProtectedRoute>
