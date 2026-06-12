@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.66": [
+    { emoji: "🔧", text: "Importação: título da transação agora mostra até 2 linhas em vez de cortar com reticências." },
+    { emoji: "🏷️", text: "Importação BB: prefixo de data+hora removido do agrupamento de comerciante — 'Aplicar aos N' agora aparece corretamente." },
+  ],
   "26.6.12.65": [
     { emoji: "🏦", text: "Carteiras: campo de saldo no formulário de edição — edite o saldo da conta sem precisar excluí-la." },
   ],

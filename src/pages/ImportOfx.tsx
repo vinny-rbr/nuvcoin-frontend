@@ -141,6 +141,7 @@ function saveCatMemory(m: Record<string, string>): void {
 function extractMerchantKey(title: string): string {
   return title
     .toUpperCase()
+    .replace(/^\d{2}\/\d{2}\s+\d{2}:\d{2}\s+/, "")
     .replace(/COMPRA NO (D[ÉE]BITO|CR[ÉE]DITO)\s*[-–—]\s*/i, "")
     .replace(/TRANSFER[ÊE]NCIA (ENVIADA|RECEBIDA) PELO PIX\s*[-–—]\s*/i, "")
     .replace(/PAGAMENTO\s+DE\s+/i, "")
