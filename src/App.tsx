@@ -26,6 +26,7 @@ import AdminSugestoes from "./pages/AdminSugestoes";
 import Contas from "./pages/Contas";
 import CartaoCredito from "./pages/CartaoCredito";
 import Planejamento from "./pages/Planejamento";
+import FluxoCaixa from "./pages/FluxoCaixa";
 
 type AnimatedPageProps = {
   children: ReactNode; // Conteúdo da página
@@ -256,6 +257,20 @@ export default function App() {
             <Layout>
               <AnimatedPage>
                 <Planejamento />
+              </AnimatedPage>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Fluxo de Caixa */}
+      <Route
+        path="/fluxo-caixa"
+        element={
+          <ProtectedRoute requireActiveSubscription>
+            <Layout>
+              <AnimatedPage>
+                <FluxoCaixa />
               </AnimatedPage>
             </Layout>
           </ProtectedRoute>

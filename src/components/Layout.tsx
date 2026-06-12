@@ -102,6 +102,11 @@ const NAV_ICONS = {
       <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
     </svg>
   ),
+  fluxoCaixa: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-7"/>
+    </svg>
+  ),
 };
 
 const navItems = [
@@ -113,6 +118,7 @@ const navItems = [
   { to: "/contas", label: "Carteiras", icon: NAV_ICONS.contas, requiresActiveSubscription: true },
   { to: "/cartao-credito", label: "Crédito", icon: NAV_ICONS.cartaoCredito, requiresActiveSubscription: true },
   { to: "/planejamento", label: "Planejamento", icon: NAV_ICONS.orcamento, requiresActiveSubscription: true },
+  { to: "/fluxo-caixa", label: "Fluxo de Caixa", icon: NAV_ICONS.fluxoCaixa, requiresActiveSubscription: true },
   { to: "/groups", label: "Grupos", icon: NAV_ICONS.groups, requiresActiveSubscription: false },
 ];
 

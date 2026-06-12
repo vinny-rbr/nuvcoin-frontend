@@ -41,6 +41,27 @@ function getPaymentLabel(paymentType: PaymentType): string {
   return "Crédito";
 }
 
+function exportItemsCSV(items: FinanceItem[], filename: string) {
+  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const header = ["Data", "Título", "Categoria", "Valor (R$)", "Pagamento", "Status"];
+  const rows = items.map((it) => [
+    it.dateISO.slice(0, 10).split("-").reverse().join("/"),
+    escape(it.title),
+    escape(it.category),
+    (it.amountCents / 100).toFixed(2).replace(".", ","),
+    getPaymentLabel(it.paymentType),
+    it.status === "paid" ? "Pago" : "Pendente",
+  ]);
+  const csv = [header.join(";"), ...rows.map((r) => r.join(";"))].join("\r\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function addMonthsISO(dateISO: string, monthsToAdd: number): string {
   const [year, month, day] = dateISO.split("-").map(Number);
   const target = new Date(year, month - 1 + monthsToAdd, 1);
@@ -367,6 +388,18 @@ export default function Despesas() {
                 <path d="M22 3H2l8 9.46V19l4 2V12.46Z"/>
               </svg>
             </button>
+            {monthItems.length > 0 && (
+              <button
+                type="button"
+                className="dx-icbtn"
+                title="Exportar CSV"
+                onClick={() => exportItemsCSV(visible, `despesas-${viewYear}-${String(viewMonth + 1).padStart(2, "0")}.csv`)}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" width="20" height="20">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+              </button>
+            )}
             {monthItems.length > 0 && (
               <button
                 type="button"

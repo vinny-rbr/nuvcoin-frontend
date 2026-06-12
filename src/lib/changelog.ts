@@ -4,6 +4,10 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.62": [
+    { emoji: "📈", text: "Fluxo de Caixa: nova tela mostrando entradas vs saídas mês a mês nos últimos 12 meses, com gráfico de barras e detalhamento por categoria." },
+    { emoji: "📥", text: "Exportar CSV: botão de download em Despesas e Receitas — exporta as transações do mês atual filtradas para .csv." },
+  ],
   "26.6.11.57": [
     { emoji: "📄", text: "Importação PDF Caixa: OCR sem vírgula decimal agora reconhecido — entradas AZCXVSCC/ELCD com valor compacto (ex: 19585C) são lidas corretamente." },
   ],
