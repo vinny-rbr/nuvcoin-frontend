@@ -6,6 +6,7 @@ export const INACTIVE_SUBSCRIPTION_MESSAGE =
 const SUBSCRIPTION_STATE_EVENT = "conciliaai_subscription_state_changed";
 
 export type SubscriptionStatus = "active" | "trial" | "inactive";
+export type PlanName = "Basico" | "Pro" | "Premium";
 
 const SUBSCRIPTION_STORAGE_KEYS = [
   "conciliaai_subscription_active",
@@ -172,6 +173,21 @@ export function subscribeToSubscriptionStatus(listener: (value: SubscriptionStat
     window.removeEventListener(SUBSCRIPTION_STATE_EVENT, handleCustomEvent as EventListener);
     window.removeEventListener("storage", handleStorageEvent);
   };
+}
+
+const PLAN_NAME_STORAGE_KEY = "conciliaai_plan_name";
+
+export function getPlanName(): PlanName | null {
+  if (typeof window === "undefined") return null;
+  const v = window.localStorage.getItem(PLAN_NAME_STORAGE_KEY);
+  if (v === "Basico" || v === "Pro" || v === "Premium") return v;
+  return null;
+}
+
+export function persistPlanName(name: string | null): void {
+  if (typeof window === "undefined") return;
+  if (!name) { window.localStorage.removeItem(PLAN_NAME_STORAGE_KEY); return; }
+  window.localStorage.setItem(PLAN_NAME_STORAGE_KEY, name);
 }
 
 function getAuthToken(): string | null {

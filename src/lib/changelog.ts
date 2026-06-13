@@ -4,6 +4,9 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: Record<string, ChangelogEntry[]> = {
+  "26.6.12.81": [
+    { emoji: "🔐", text: "Relatórios: desbloqueio por plano — Básico vê relatórios grátis, Pro libera Comparativo e Orçamento x Realizado, Premium libera tudo (DRE, Anual, Contador). Paywall adaptado por nível." },
+  ],
   "26.6.12.79": [
     { emoji: "📊", text: "Central de Relatórios: nova tela hub com 12 tipos de relatório organizados em seções, filtro Todos/Grátis/Premium, busca, seletor de período (presets + personalizado) e sumário de receitas/despesas." },
   ],

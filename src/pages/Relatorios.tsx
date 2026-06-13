@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import type { FinanceItem } from "../types/finance";
 import { financeList, financeRefreshFromApi, financeSubscribe } from "../lib/financeService";
+import { getPlanName } from "../lib/auth";
 import "./relatorios.css";
 
 // ── helpers ───────────────────────────────────────────
@@ -109,20 +110,21 @@ const P = {
 };
 
 // ── Report catalog ──
-type RepDef = { title:string; desc:string; pro:boolean; color:string; iconKey:keyof typeof P; route?:string };
+type Tier = "free" | "pro" | "premium";
+type RepDef = { title:string; desc:string; tier:Tier; color:string; iconKey:keyof typeof P; route?:string };
 const REPS: Record<string, RepDef> = {
-  inout:      {title:"Entradas e saídas",      desc:"Resumo do mês com saldo final",             pro:false, color:"#60A5FA", iconKey:"inout",   route:"/relatorios/extrato"},
-  pie:        {title:"Gastos por categoria",   desc:"Para onde seu dinheiro foi",                pro:false, color:"#A78BFA", iconKey:"pie"},
-  flame:      {title:"Maiores gastos",         desc:"Top despesas e recorrentes do período",     pro:false, color:"#F87171", iconKey:"flame"},
-  flow:       {title:"Fluxo de caixa",         desc:"Evolução do saldo mês a mês",              pro:false, color:"#2DD4BF", iconKey:"flow",    route:"/fluxo-caixa"},
-  compare:    {title:"Comparativo entre meses",desc:"Compare dois períodos lado a lado",         pro:true,  color:"#60A5FA", iconKey:"compare"},
-  budget:     {title:"Orçamento x realizado",  desc:"Metas planejadas vs. gastos reais",        pro:true,  color:"#4ADE80", iconKey:"target"},
-  dre:        {title:"DRE simplificado",       desc:"Resultado: receitas − custos − despesas",  pro:true,  color:"#FBBF24", iconKey:"dre"},
-  wallet:     {title:"Por conta / carteira",   desc:"Saldo e movimento por banco",              pro:false, color:"#2DD4BF", iconKey:"wallet"},
-  card:       {title:"Por cartão de crédito",  desc:"Fatura e gastos por cartão",               pro:false, color:"#F472B6", iconKey:"card"},
-  group:      {title:"Por grupo",              desc:"Despesas compartilhadas e divisões",       pro:false, color:"#A78BFA", iconKey:"group"},
-  annual:     {title:"Relatório anual",        desc:"Resumo completo do ano em um doc",         pro:true,  color:"#60A5FA", iconKey:"annual"},
-  accountant: {title:"Extrato para o contador",desc:"Lançamentos detalhados p/ contabilidade",  pro:true,  color:"#94A3B8", iconKey:"acct"},
+  inout:      {title:"Entradas e saídas",      desc:"Resumo do mês com saldo final",             tier:"free",    color:"#60A5FA", iconKey:"inout",   route:"/relatorios/extrato"},
+  pie:        {title:"Gastos por categoria",   desc:"Para onde seu dinheiro foi",                tier:"free",    color:"#A78BFA", iconKey:"pie"},
+  flame:      {title:"Maiores gastos",         desc:"Top despesas e recorrentes do período",     tier:"free",    color:"#F87171", iconKey:"flame"},
+  flow:       {title:"Fluxo de caixa",         desc:"Evolução do saldo mês a mês",              tier:"free",    color:"#2DD4BF", iconKey:"flow",    route:"/fluxo-caixa"},
+  compare:    {title:"Comparativo entre meses",desc:"Compare dois períodos lado a lado",         tier:"pro",     color:"#60A5FA", iconKey:"compare"},
+  budget:     {title:"Orçamento x realizado",  desc:"Metas planejadas vs. gastos reais",        tier:"pro",     color:"#4ADE80", iconKey:"target"},
+  dre:        {title:"DRE simplificado",       desc:"Resultado: receitas − custos − despesas",  tier:"premium", color:"#FBBF24", iconKey:"dre"},
+  wallet:     {title:"Por conta / carteira",   desc:"Saldo e movimento por banco",              tier:"free",    color:"#2DD4BF", iconKey:"wallet"},
+  card:       {title:"Por cartão de crédito",  desc:"Fatura e gastos por cartão",               tier:"free",    color:"#F472B6", iconKey:"card"},
+  group:      {title:"Por grupo",              desc:"Despesas compartilhadas e divisões",       tier:"free",    color:"#A78BFA", iconKey:"group"},
+  annual:     {title:"Relatório anual",        desc:"Resumo completo do ano em um doc",         tier:"premium", color:"#60A5FA", iconKey:"annual"},
+  accountant: {title:"Extrato para o contador",desc:"Lançamentos detalhados p/ contabilidade",  tier:"premium", color:"#94A3B8", iconKey:"acct"},
 };
 
 const SECTIONS: Array<{sec:string; ids:string[]}> = [
@@ -137,7 +139,7 @@ type Sheet =
   | {kind:"none"}
   | {kind:"period"}
   | {kind:"report"; id:string; items:FinanceItem[]; from:string; to:string}
-  | {kind:"paywall"; title:string; desc:string};
+  | {kind:"paywall"; title:string; desc:string; requiredTier:"pro"|"premium"};
 
 // ── Main component ──────────────────────────────────────
 export default function Relatorios() {
@@ -149,7 +151,9 @@ export default function Relatorios() {
   const [customFrom, setCustomFrom] = useState(initFrom);
   const [customTo, setCustomTo] = useState(initTo);
   const [search, setSearch] = useState("");
-  const [filterTab, setFilterTab] = useState<"all"|"free"|"pro">("all");
+  const [filterTab, setFilterTab] = useState<"all"|"free"|"pro"|"premium">("all");
+  const planName = getPlanName(); // "Basico" | "Pro" | "Premium" | null
+  const userTier: Tier = planName === "Premium" ? "premium" : planName === "Pro" ? "pro" : "free";
   const [sheet, setSheet] = useState<Sheet>({kind:"none"});
   const [toast, setToast] = useState<string|null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout>|null>(null);
@@ -199,13 +203,20 @@ export default function Relatorios() {
     return des.length ? des.reduce((t,it)=>it.amountCents>t.amountCents?it:t, des[0]) : null;
   },[periodItems]);
 
+  function isLocked(repTier: Tier): boolean {
+    if (repTier === "free") return false;
+    if (repTier === "pro") return userTier === "free";
+    return userTier !== "premium";
+  }
+
   // Filter report cards
   const sq = search.trim().toLowerCase();
   const visSections = SECTIONS.map(s=>({
     sec: s.sec,
     items: s.ids.map(id=>({id,...REPS[id]})).filter(r=>{
-      if(filterTab==="free" && r.pro) return false;
-      if(filterTab==="pro" && !r.pro) return false;
+      if(filterTab==="free" && r.tier!=="free") return false;
+      if(filterTab==="pro" && r.tier!=="pro") return false;
+      if(filterTab==="premium" && r.tier!=="premium") return false;
       if(sq && !r.title.toLowerCase().includes(sq) && !r.desc.toLowerCase().includes(sq)) return false;
       return true;
     }),
@@ -214,7 +225,11 @@ export default function Relatorios() {
   function openCard(id: string) {
     const def = REPS[id];
     if(!def) return;
-    if(def.pro) { setSheet({kind:"paywall", title:def.title, desc:def.desc}); return; }
+    if(isLocked(def.tier)) {
+      const rt = def.tier as "pro"|"premium";
+      setSheet({kind:"paywall", title:def.title, desc:def.desc, requiredTier:rt});
+      return;
+    }
     if(def.route) { navigate(def.route); return; }
     setSheet({kind:"report", id, items:periodItems, from:periFrom, to:periTo});
   }
@@ -281,15 +296,18 @@ export default function Relatorios() {
         </button>
       </div>
 
-      {/* Premium banner */}
-      <div className="cr-pro-banner" onClick={()=>setSheet({kind:"paywall",title:"Conciliaaí Premium",desc:"Todos os relatórios avançados liberados"})}>
-        <span className="cr-pb-ic"><SvgIc d={P.crown} sz={21}/></span>
-        <div className="cr-pb-txt">
-          <strong>Desbloqueie todos os relatórios</strong>
-          <span>DRE, anual, contador e mais com o plano Premium.</span>
+      {/* Premium/Pro banner — oculto se já é Premium */}
+      {userTier !== "premium" && (
+        <div className="cr-pro-banner" onClick={()=>setSheet({kind:"paywall",title:"Conciliaaí Premium",desc:"Todos os relatórios avançados liberados",requiredTier:"premium"})}>
+          <span className="cr-pb-ic"><SvgIc d={P.crown} sz={21}/></span>
+          <div className="cr-pb-txt">
+            {userTier === "pro"
+              ? <><strong>Desbloqueie relatórios Premium</strong><span>DRE, anual e extrato para o contador.</span></>
+              : <><strong>Desbloqueie todos os relatórios</strong><span>Comparativos, DRE, anual e muito mais.</span></>}
+          </div>
+          <span className="cr-pb-cta">{userTier === "pro" ? "Ver Premium" : "Ativar"}</span>
         </div>
-        <span className="cr-pb-cta">Ativar</span>
-      </div>
+      )}
 
       {/* Summary card */}
       <div className="rep-summary">
@@ -346,7 +364,8 @@ export default function Relatorios() {
       <div className="rep-seg" style={{marginBottom:20}}>
         <button className={filterTab==="all"?"is-active":""} onClick={()=>setFilterTab("all")}>Todos</button>
         <button className={filterTab==="free"?"is-active":""} onClick={()=>setFilterTab("free")}>Grátis</button>
-        <button className={filterTab==="pro"?"is-active":""} onClick={()=>setFilterTab("pro")}>Premium</button>
+        <button className={filterTab==="pro"?"is-active":""} onClick={()=>setFilterTab("pro")}>Pro</button>
+        <button className={filterTab==="premium"?"is-active":""} onClick={()=>setFilterTab("premium")}>Premium</button>
       </div>
 
       {/* Report sections */}
@@ -363,26 +382,30 @@ export default function Relatorios() {
             <div className="cr-section-line"/>
           </div>
           <div className="cr-cards">
-            {sec.items.map(rep=>(
-              <div key={rep.id} className={`cr-card${rep.pro?" cr-locked":""}`} onClick={()=>openCard(rep.id)}>
-                <span className="cr-ic" style={{background:hexBg(rep.color,0.14),color:rep.color}}>
-                  <SvgIc d={P[rep.iconKey]} sz={22}/>
-                </span>
-                <div className="cr-main">
-                  <div className="cr-title-row">
-                    <strong>{rep.title}</strong>
-                    {rep.pro && <span className="cr-pro-pill">PRO</span>}
+            {sec.items.map(rep=>{
+              const locked = isLocked(rep.tier);
+              return (
+                <div key={rep.id} className={`cr-card${locked?" cr-locked":""}`} onClick={()=>openCard(rep.id)}>
+                  <span className="cr-ic" style={{background:hexBg(rep.color,0.14),color:rep.color}}>
+                    <SvgIc d={P[rep.iconKey]} sz={22}/>
+                  </span>
+                  <div className="cr-main">
+                    <div className="cr-title-row">
+                      <strong>{rep.title}</strong>
+                      {rep.tier==="pro" && <span className="cr-pro-pill">PRO</span>}
+                      {rep.tier==="premium" && <span className="cr-pro-pill" style={{background:"linear-gradient(135deg,#FBBF24,#F59E0B)",color:"#3a2a06"}}>PREMIUM</span>}
+                    </div>
+                    <p>{rep.desc}</p>
                   </div>
-                  <p>{rep.desc}</p>
+                  <div className="cr-right">
+                    {repHint(rep.id) && <span className="cr-hint">{repHint(rep.id)}</span>}
+                    {locked
+                      ? <span className="cr-lock"><SvgIc d={P.lock}/></span>
+                      : <span className="cr-chev"><SvgIc d={P.chRt}/></span>}
+                  </div>
                 </div>
-                <div className="cr-right">
-                  {repHint(rep.id) && <span className="cr-hint">{repHint(rep.id)}</span>}
-                  {rep.pro
-                    ? <span className="cr-lock"><SvgIc d={P.lock}/></span>
-                    : <span className="cr-chev"><SvgIc d={P.chRt}/></span>}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ))}
@@ -483,27 +506,41 @@ export default function Relatorios() {
             })()}
 
             {/* Paywall */}
-            {sheet.kind==="paywall" && <>
-              <div style={{display:"flex",alignItems:"center",gap:13,marginBottom:4}}>
-                <span style={{width:46,height:46,borderRadius:13,background:"linear-gradient(135deg,#FBBF24,#F59E0B)",color:"#3a2a06",display:"grid",placeItems:"center",flexShrink:0}}>
-                  <SvgIc d={P.crown} sz={23}/>
-                </span>
-                <div>
-                  <h4 style={{fontFamily:"'Space Grotesk',system-ui",fontSize:16.5,fontWeight:700}}>{sheet.title}</h4>
-                  <p style={{fontSize:12,color:"#94A3B8",marginTop:3}}>Disponível no plano <b style={{color:"#FBBF24"}}>Premium</b></p>
-                </div>
-              </div>
-              <div style={{display:"grid",gap:8,margin:"4px 0 6px"}}>
-                {[sheet.desc,"DRE, comparativos e relatório anual","Extrato detalhado para o contador","Exportação ilimitada em PDF"].map(f=>(
-                  <div key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,fontWeight:600,color:"#e2e8f0"}}>
-                    <SvgIc d={P.check} sw="2.6"/>{f}
+            {sheet.kind==="paywall" && (()=>{
+              type PW = Extract<Sheet, {kind:"paywall"}>;
+              const pw = sheet as PW;
+              const isPro = pw.requiredTier === "pro";
+              const planLabel = isPro ? "Pro" : "Premium";
+              const planColor = isPro ? "#60A5FA" : "#FBBF24";
+              const planBg = isPro ? "linear-gradient(135deg,#3B82F6,#2563EB)" : "linear-gradient(135deg,#FBBF24,#F59E0B)";
+              const planTextColor = isPro ? "#fff" : "#3a2a06";
+              const proFeatures = isPro
+                ? [pw.desc,"Comparativo entre dois períodos","Orçamento planejado vs. realizado","Acesso a todos os recursos Pro"]
+                : [pw.desc,"DRE simplificado e relatório anual","Extrato detalhado para o contador","Todos os recursos Pro inclusos"];
+              return <>
+                <div style={{display:"flex",alignItems:"center",gap:13,marginBottom:4}}>
+                  <span style={{width:46,height:46,borderRadius:13,background:planBg,color:planTextColor,display:"grid",placeItems:"center",flexShrink:0}}>
+                    <SvgIc d={P.crown} sz={23}/>
+                  </span>
+                  <div>
+                    <h4 style={{fontFamily:"'Space Grotesk',system-ui",fontSize:16.5,fontWeight:700}}>{pw.title}</h4>
+                    <p style={{fontSize:12,color:"#94A3B8",marginTop:3}}>Disponível no plano <b style={{color:planColor}}>{planLabel}</b></p>
                   </div>
-                ))}
-              </div>
-              <button className="cr-pw-cta" onClick={()=>{closeSheet();showToast("Abrindo planos…");}}>Ativar plano Premium</button>
-              <p style={{fontSize:11,color:"#64748b",textAlign:"center"}}>7 dias grátis · cancele quando quiser</p>
-              <button className="sheet-cancel" onClick={closeSheet}>Agora não</button>
-            </>}
+                </div>
+                <div style={{display:"grid",gap:8,margin:"4px 0 6px"}}>
+                  {proFeatures.map(f=>(
+                    <div key={f} style={{display:"flex",alignItems:"center",gap:10,fontSize:13,fontWeight:600,color:"#e2e8f0"}}>
+                      <SvgIc d={P.check} sw="2.6"/>{f}
+                    </div>
+                  ))}
+                </div>
+                <button className="cr-pw-cta" style={isPro?{background:"linear-gradient(135deg,#3B82F6,#2563EB)"}:{}} onClick={()=>{closeSheet();showToast("Abrindo planos…");}}>
+                  Ativar plano {planLabel}
+                </button>
+                <p style={{fontSize:11,color:"#64748b",textAlign:"center"}}>7 dias grátis · cancele quando quiser</p>
+                <button className="sheet-cancel" onClick={closeSheet}>Agora não</button>
+              </>;
+            })()}
           </div>
         </div>,
         document.body

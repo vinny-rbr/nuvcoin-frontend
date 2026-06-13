@@ -6,6 +6,7 @@ import {
   deriveSubscriptionStatusFromAuthData,
   getSubscriptionStatus,
   INACTIVE_SUBSCRIPTION_MESSAGE,
+  persistPlanName,
   persistSubscriptionState,
   subscribeToSubscriptionStatus,
   type SubscriptionStatus,
@@ -74,6 +75,7 @@ export default function ProtectedRoute({ children, requireActiveSubscription = f
         const nextStatus = deriveSubscriptionStatusFromAuthData(data) ?? "inactive";
 
         persistSubscriptionState(nextStatus);
+        if (typeof data.planName === "string") persistPlanName(data.planName);
         if (isMounted) setSubscriptionStatus(nextStatus);
       } catch {
         persistSubscriptionState("inactive");
